@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/corinsandford/ARPG/DRRT/src/list.cpp
+DRRT/list.h
+-
+
+include/DRRT/heap.h
+vector
+-
+iostream
+-
+
+include/DRRT/list.h
+DRRT/heap.h
+-
+

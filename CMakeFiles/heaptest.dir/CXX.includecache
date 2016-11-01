@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/corinsandford/ARPG/DRRT/src/heap.cpp
+DRRT/heap.h
+-
+stdio.h
+-
+stdlib.h
+-
+time.h
+-
+cstdlib
+-
+
+include/DRRT/heap.h
+vector
+-
+iostream
+-
+DRRT/kdtreenode.h
+-
+
+include/DRRT/jlist.h
+iostream
+-
+
+include/DRRT/kdtreenode.h
+vector
+-
+DRRT/jlist.h
+-
+
