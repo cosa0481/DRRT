@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <DRRT/jlist.h>
+#include <DRRT/edge.h>
 
 /* Node that can be used in the KDTree, where T is the type of
  * data used to measure distance along each dimension. Other nodes
@@ -32,7 +33,7 @@ public:
 
     // RRT
     bool rrtParentUsed;             // flag for if this node has a parent
-    //Edge* rrtParentEdge;            // edge to the node that is this node's parent
+    Edge* rrtParentEdge;            // edge to the node that is this node's parent
 
     // RRT*
     float rrtTreeCost;              // the cost to get to the root through the tree
@@ -47,7 +48,7 @@ public:
 
     float rrtLMC;                   // locally minimum cost (1-step look ahead)
     float rrtH;                     // the heuristic estimate of the distance to the goal !!!!!
-    //Edge* tempEdge;                 // this is a temporary storage location to avoid
+    Edge* tempEdge;                 // this is a temporary storage location to avoid
                                     // calculating the same trajectory multiple times
 
     // RRTx (his idea)

@@ -3,6 +3,7 @@
 
 CMakeFiles/heaptest.dir/src/heap.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/heap.cpp
+ include/DRRT/edge.h
  include/DRRT/heap.h
  include/DRRT/jlist.h
  include/DRRT/kdtreenode.h

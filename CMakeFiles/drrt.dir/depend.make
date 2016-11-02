@@ -23,11 +23,13 @@ CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/kdtreenode.h
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/list.h
 
 CMakeFiles/drrt.dir/src/heap.cpp.o: src/heap.cpp
+CMakeFiles/drrt.dir/src/heap.cpp.o: include/DRRT/edge.h
 CMakeFiles/drrt.dir/src/heap.cpp.o: include/DRRT/heap.h
 CMakeFiles/drrt.dir/src/heap.cpp.o: include/DRRT/jlist.h
 CMakeFiles/drrt.dir/src/heap.cpp.o: include/DRRT/kdtreenode.h
 
 CMakeFiles/drrt.dir/src/jlist.cpp.o: src/jlist.cpp
+CMakeFiles/drrt.dir/src/jlist.cpp.o: include/DRRT/edge.h
 CMakeFiles/drrt.dir/src/jlist.cpp.o: include/DRRT/jlist.h
 CMakeFiles/drrt.dir/src/jlist.cpp.o: include/DRRT/kdtreenode.h
 
@@ -42,6 +44,7 @@ CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/kdtreenode.h
 CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/list.h
 
 CMakeFiles/drrt.dir/src/list.cpp.o: src/list.cpp
+CMakeFiles/drrt.dir/src/list.cpp.o: include/DRRT/edge.h
 CMakeFiles/drrt.dir/src/list.cpp.o: include/DRRT/jlist.h
 CMakeFiles/drrt.dir/src/list.cpp.o: include/DRRT/kdtreenode.h
 CMakeFiles/drrt.dir/src/list.cpp.o: include/DRRT/list.h

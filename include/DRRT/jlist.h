@@ -46,6 +46,7 @@ public:
         length = 0;
     }
 
+    // Functions
     void JlistPush( KDTreeNode* t );
     void JlistPush( KDTreeNode* t, float k );
     KDTreeNode* JlistTop();

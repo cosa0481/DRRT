@@ -8,7 +8,6 @@
 #include <DRRT/heap.h>
 #include <DRRT/edge.h>
 
-template <class T>
 class CSpace{
     // Expecting T = float or T = KDTreeNode or T = Edge
 public:
@@ -34,18 +33,18 @@ public:
     float pGoal;                        // the probabality that the goal is sampled
     std::string randNode;               // the sampling function to use (takes a CSpace)
 
-    // These will either be float* or KDTreeNode* or Edge*
-    T* goalNode;                        // the goal node
-    T* root;                            // the root node
-    T* moveGoal;                        // the current movegoal (robot position) node
+    // These will be KDTreeNode*s and float cspaces can be represented by
+    // using the dist fiel: KDTreeNode*->dist
+    KDTreeNode* goalNode;               // the goal node
+    KDTreeNode* root;                   // the root node
+    KDTreeNode* moveGoal;               // the current movegoal (robot position) node
 
     int itsUntilSample;                 // a count down to sample a particular point
     std::vector<float> itsSamplePoint;  // sample this when itsUntilSample == 0
-
     std::vector<float> timeSamplePoint; // sample this when waitTime has passed
     float waitTime;                     // time to wait in seconds
     u_int64_t startTimeNs;              // time this started
-    float elapsedTime;                  // elapsed time since started ( where time spent saving
+    float timeElapsed;                  // elapsed time since started ( where time spent saving
                                         // experimental data has been removed )
 
     //Obstacle* obstacleToRemove;         // an obstacle to remove
@@ -56,6 +55,8 @@ public:
     float dubinsMinVelocity;            // min velocity of Dubin's car (for dubins + time)
     float dubinsMaxVelocity;            // max velocity of Dubin's car (for dubins + time)
 
+    // This jlist must "hold" std::vector<float>s
+    // So use the JListNode->node->position when using this stack
     JList* sampleStack;                 // points to sample in the future
 
     float hypervolume;                  // hypervolume of the space
@@ -88,14 +89,14 @@ typedef struct rrtStarQueue{} rrtStarQueue;
 // Queue data structure used for RRT#
 typedef struct rrtSharpQueue{
     BinaryHeap Q;       // normal queue (sorted based on cost from goal;
-    CSpace<KDTreeNode> S;
+    CSpace S;
 } rrtSharpQueue;
 
 // Queue data structure used for RRTx
 typedef struct rrtXQueue{
     BinaryHeap Q;       // normal queue (sorted based on cost from goal)
     JList OS;           // obstacle successor stack
-    CSpace<KDTreeNode> S;
+    CSpace S;
     float changeThresh; // the threshold of local changes that we care about
 } rrtXQueue;
 

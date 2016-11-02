@@ -45,6 +45,10 @@ DRRT/list.h
 include/DRRT/drrt.h
 DRRT/kdtree.h
 -
+random
+-
+algorithm
+-
 
 include/DRRT/drrt_data_structures.h
 vector
@@ -61,7 +65,7 @@ DRRT/edge.h
 -
 
 include/DRRT/edge.h
-DRRT/kdtreenode.h
+vector
 -
 
 include/DRRT/ghostPoint.h
@@ -104,6 +108,8 @@ include/DRRT/kdtreenode.h
 vector
 -
 DRRT/jlist.h
+-
+DRRT/edge.h
 -
 
 include/DRRT/list.h

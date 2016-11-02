@@ -24,11 +24,13 @@ CMakeFiles/drrt.dir/src/ghostPoint.cpp.o
  include/DRRT/list.h
 CMakeFiles/drrt.dir/src/heap.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/heap.cpp
+ include/DRRT/edge.h
  include/DRRT/heap.h
  include/DRRT/jlist.h
  include/DRRT/kdtreenode.h
 CMakeFiles/drrt.dir/src/jlist.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/jlist.cpp
+ include/DRRT/edge.h
  include/DRRT/jlist.h
  include/DRRT/kdtreenode.h
 CMakeFiles/drrt.dir/src/kdtree.cpp.o
@@ -43,6 +45,7 @@ CMakeFiles/drrt.dir/src/kdtree.cpp.o
  include/DRRT/list.h
 CMakeFiles/drrt.dir/src/list.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/list.cpp
+ include/DRRT/edge.h
  include/DRRT/jlist.h
  include/DRRT/kdtreenode.h
  include/DRRT/list.h

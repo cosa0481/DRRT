@@ -18,6 +18,10 @@ time.h
 cstdlib
 -
 
+include/DRRT/edge.h
+vector
+-
+
 include/DRRT/heap.h
 vector
 -
@@ -34,5 +38,7 @@ include/DRRT/kdtreenode.h
 vector
 -
 DRRT/jlist.h
+-
+DRRT/edge.h
 -
 
