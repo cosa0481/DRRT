@@ -3,5 +3,6 @@
 
 CMakeFiles/jlisttest.dir/src/jlist.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/jlist.cpp
- include/DRRT/heap.h
+ include/DRRT/edge.h
  include/DRRT/jlist.h
+ include/DRRT/kdtreenode.h

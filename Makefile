@@ -111,17 +111,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named heaptest
+# Target rules for targets named test
 
 # Build rule for target.
-heaptest: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 heaptest
-.PHONY : heaptest
+test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test
+.PHONY : test
 
 # fast build rule for target.
-heaptest/fast:
-	$(MAKE) -f CMakeFiles/heaptest.dir/build.make CMakeFiles/heaptest.dir/build
-.PHONY : heaptest/fast
+test/fast:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/build
+.PHONY : test/fast
 
 #=============================================================================
 # Target rules for targets named drrt
@@ -163,6 +163,33 @@ src/drrt.cpp.s:
 	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/drrt.cpp.s
 .PHONY : src/drrt.cpp.s
 
+src/edge.o: src/edge.cpp.o
+
+.PHONY : src/edge.o
+
+# target to build an object file
+src/edge.cpp.o:
+	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/edge.cpp.o
+.PHONY : src/edge.cpp.o
+
+src/edge.i: src/edge.cpp.i
+
+.PHONY : src/edge.i
+
+# target to preprocess a source file
+src/edge.cpp.i:
+	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/edge.cpp.i
+.PHONY : src/edge.cpp.i
+
+src/edge.s: src/edge.cpp.s
+
+.PHONY : src/edge.s
+
+# target to generate assembly for a file
+src/edge.cpp.s:
+	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/edge.cpp.s
+.PHONY : src/edge.cpp.s
+
 src/ghostPoint.o: src/ghostPoint.cpp.o
 
 .PHONY : src/ghostPoint.o
@@ -196,7 +223,6 @@ src/heap.o: src/heap.cpp.o
 
 # target to build an object file
 src/heap.cpp.o:
-	$(MAKE) -f CMakeFiles/heaptest.dir/build.make CMakeFiles/heaptest.dir/src/heap.cpp.o
 	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/heap.cpp.o
 .PHONY : src/heap.cpp.o
 
@@ -206,7 +232,6 @@ src/heap.i: src/heap.cpp.i
 
 # target to preprocess a source file
 src/heap.cpp.i:
-	$(MAKE) -f CMakeFiles/heaptest.dir/build.make CMakeFiles/heaptest.dir/src/heap.cpp.i
 	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/heap.cpp.i
 .PHONY : src/heap.cpp.i
 
@@ -216,7 +241,6 @@ src/heap.s: src/heap.cpp.s
 
 # target to generate assembly for a file
 src/heap.cpp.s:
-	$(MAKE) -f CMakeFiles/heaptest.dir/build.make CMakeFiles/heaptest.dir/src/heap.cpp.s
 	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/heap.cpp.s
 .PHONY : src/heap.cpp.s
 
@@ -301,6 +325,33 @@ src/list.cpp.s:
 	$(MAKE) -f CMakeFiles/drrt.dir/build.make CMakeFiles/drrt.dir/src/list.cpp.s
 .PHONY : src/list.cpp.s
 
+src/test.o: src/test.cpp.o
+
+.PHONY : src/test.o
+
+# target to build an object file
+src/test.cpp.o:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/src/test.cpp.o
+.PHONY : src/test.cpp.o
+
+src/test.i: src/test.cpp.i
+
+.PHONY : src/test.i
+
+# target to preprocess a source file
+src/test.cpp.i:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/src/test.cpp.i
+.PHONY : src/test.cpp.i
+
+src/test.s: src/test.cpp.s
+
+.PHONY : src/test.s
+
+# target to generate assembly for a file
+src/test.cpp.s:
+	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/src/test.cpp.s
+.PHONY : src/test.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -309,11 +360,14 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... heaptest"
+	@echo "... test"
 	@echo "... drrt"
 	@echo "... src/drrt.o"
 	@echo "... src/drrt.i"
 	@echo "... src/drrt.s"
+	@echo "... src/edge.o"
+	@echo "... src/edge.i"
+	@echo "... src/edge.s"
 	@echo "... src/ghostPoint.o"
 	@echo "... src/ghostPoint.i"
 	@echo "... src/ghostPoint.s"
@@ -329,6 +383,9 @@ help:
 	@echo "... src/list.o"
 	@echo "... src/list.i"
 	@echo "... src/list.s"
+	@echo "... src/test.o"
+	@echo "... src/test.i"
+	@echo "... src/test.s"
 .PHONY : help
 
 

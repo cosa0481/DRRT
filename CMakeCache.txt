@@ -188,6 +188,12 @@ DRRT_BINARY_DIR:STATIC=/Users/corinsandford/ARPG/DRRT
 //Value Computed by CMake
 DRRT_SOURCE_DIR:STATIC=/Users/corinsandford/ARPG/DRRT
 
+//Path to a file.
+EIGEN3_INCLUDE_DIR:PATH=/usr/local/include/eigen3
+
+//The directory containing a CMake configuration file for Eigen3.
+Eigen3_DIR:PATH=Eigen3_DIR-NOTFOUND
+
 //Dependencies for target
 drrt_LIB_DEPENDS:STATIC=
 
@@ -329,4 +335,10 @@ CMAKE_STRIP-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+DRRT_INCLUDE_DIRS:INTERNAL=/Users/corinsandford/ARPG/DRRT;/Users/corinsandford/ARPG/DRRT/include
+DRRT_LIBRARIES:INTERNAL=
+//ADVANCED property for variable: EIGEN3_INCLUDE_DIR
+EIGEN3_INCLUDE_DIR-ADVANCED:INTERNAL=1
+//Details about finding Eigen3
+FIND_PACKAGE_MESSAGE_DETAILS_Eigen3:INTERNAL=[/usr/local/include/eigen3][v()]
 

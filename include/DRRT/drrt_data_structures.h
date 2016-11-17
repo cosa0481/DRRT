@@ -9,16 +9,15 @@
 #include <DRRT/edge.h>
 
 class CSpace{
-    // Expecting T = float or T = KDTreeNode or T = Edge
 public:
     int d;                              // dimensions
     //List<Obstacle>;                     // a list of obstacles
     //float obsDelta;                     // the granularity of obstacle checks on edges
-    std::vector<float> lowerBounds;     // 1xD vector containing the lower bounds
-    std::vector<float> upperBounds;     // 1xD vector containing the upper bounds
-    std::vector<float> width;           // 1xD vector containing upperBounds-lowerBounds
-    std::vector<float> start;           // 1xD vector containing start location
-    std::vector<float> goal;            // 1xD vector containing goal location
+    Eigen::VectorXd lowerBounds;        // 1xD vector containing the lower bounds
+    Eigen::VectorXd upperBounds;        // 1xD vector containing the upper bounds
+    Eigen::VectorXd width;              // 1xD vector containing upperBounds-lowerBounds
+    Eigen::VectorXd start;              // 1xD vector containing start location
+    Eigen::VectorXd goal;               // 1xD vector containing goal location
 
     /* Flags that indicate what type of search space we are using
      * (these are mostly here to reduce the amount of duplicate code
@@ -40,8 +39,8 @@ public:
     KDTreeNode* moveGoal;               // the current movegoal (robot position) node
 
     int itsUntilSample;                 // a count down to sample a particular point
-    std::vector<float> itsSamplePoint;  // sample this when itsUntilSample == 0
-    std::vector<float> timeSamplePoint; // sample this when waitTime has passed
+    Eigen::VectorXd itsSamplePoint;     // sample this when itsUntilSample == 0
+    Eigen::VectorXd timeSamplePoint;    // sample this when waitTime has passed
     float waitTime;                     // time to wait in seconds
     u_int64_t startTimeNs;              // time this started
     float timeElapsed;                  // elapsed time since started ( where time spent saving
@@ -68,8 +67,8 @@ public:
     bool inWarmupTime;                  // true if we are in the warm up time
 
     // Constructor
-    CSpace( int D, /*float ObsDelta,*/ std::vector<float> lower, std::vector<float> upper,
-           std::vector<float> startpoint, std::vector<float> endpoint ) :
+    CSpace( int D, /*float ObsDelta,*/ Eigen::VectorXd lower, Eigen::VectorXd upper,
+           Eigen::VectorXd startpoint, Eigen::VectorXd endpoint ) :
         d(D), lowerBounds(lower), upperBounds(upper), start(startpoint), goal(endpoint)
     {
         hypervolume = 0.0;      // flag indicating that this needs to be calculated
@@ -130,36 +129,36 @@ typedef struct RRTNodeNeighborIterator{
  * currentMoveInvalid is important for the algorithm in general
  */
 typedef struct RobotData{
-    std::vector<float> robotPose;   // this is where the robot is
-                                    // (i.e. where it was at the end of
-                                    // the last control loop
+    Eigen::VectorXd robotPose;  // this is where the robot is
+                                // (i.e. where it was at the end of
+                                // the last control loop
 
-    std::vector<float> nextRobotPose;   // this is where the robot will
-                                        // be at the end of the current
-                                        // control loop
+    Eigen::VectorXd nextRobotPose;  // this is where the robot will
+                                    // be at the end of the current
+                                    // control loop
 
     KDTreeNode* nextMoveTarget;     // this is the node at the root-end of
                                     // the edge contains nextRobotPose
 
-    float distanceFromNextRobotPoseToNextMoveTarget; // this holds the distance from
-                                                     // nextRobotPose to nextMoveTarget
-                                                     // along the trajectory the robot
-                                                     // will be following at that time
+    double distanceFromNextRobotPoseToNextMoveTarget;   // this holds the distance from
+                                                        // nextRobotPose to nextMoveTarget
+                                                        // along the trajectory the robot
+                                                        // will be following at that time
 
     bool moving;    // set to true when the robot starts moving
 
     bool currentMoveInvalid;    // this gets set to true if nextMoveTarget has become
                                 // invalid due to dynamic obstacles
 
-    std::vector<std::vector<float>> robotMovePath;  // this holds the path the robot has followed
-                                                    // from the start of movement up through robotPose
-    float numRobotMovePoints;                       // the number of points in robotMovePath
+    Eigen::MatrixXd robotMovePath;  // this holds the path the robot has followed
+                                    // from the start of movement up through robotPose
+    double numRobotMovePoints;      // the number of points in robotMovePath
 
-    std::vector<std::vector<float>> robotLocalPath; // this holds the path between robotPose and
-                                                    // nextRobotPose (not including the former)
-    float numLocalMovePoints;                       // the number of points in robotLocalPath
+    Eigen::MatrixXd robotLocalPath;     // this holds the path between robotPose and
+                                        // nextRobotPose (not including the former)
+    float numLocalMovePoints;           // the number of points in robotLocalPath
 
-    //Edge* robotEdge;    // this is the edge that contains the trajectory that the
+    Edge* robotEdge;    // this is the edge that contains the trajectory that the
                         // robot is currently following
 
     bool robotEdgeUsed; // true if robotEdge is populated;
@@ -173,18 +172,12 @@ typedef struct RobotData{
                                 // robotEdge (i.e. next time slice)
 
     // Constructor
-    RobotData( std::vector<float> rP, KDTreeNode* nMT, int maxPathNodes ) :
+    RobotData( Eigen::VectorXd rP, KDTreeNode* nMT, int maxPathNodes ) :
         robotPose(rP), nextRobotPose(rP), nextMoveTarget(nMT),
         distanceFromNextRobotPoseToNextMoveTarget(0.0), moving(false),
         currentMoveInvalid(false), numRobotMovePoints(1), numLocalMovePoints(1) /*Original Julia code does not have an initial value for numLocalMovePoints*/, robotEdgeUsed(false),
         distAlongRobotEdge(0.0), timeAlongRobotEdge(0.0)
-    {
-        std::vector<std::vector<float>> array;
-        array[0] = rP;
-        robotMovePath = array;
-        std::vector<std::vector<float>> array2;
-        robotLocalPath = array2;
-    }
+    {    }
 
 } RobotData;
 

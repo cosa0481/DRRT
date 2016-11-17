@@ -10,6 +10,12 @@
 DRRT/drrt.h
 -
 
+/Users/corinsandford/ARPG/DRRT/src/edge.cpp
+DRRT/kdtree.h
+-
+DRRT/edge.h
+-
+
 /Users/corinsandford/ARPG/DRRT/src/ghostPoint.cpp
 DRRT/ghostPoint.h
 -
@@ -64,8 +70,20 @@ DRRT/heap.h
 DRRT/edge.h
 -
 
+include/DRRT/drrt_distance_functions.h
+vector
+-
+math.h
+-
+eigen3/Eigen/Eigen
+-
+
 include/DRRT/edge.h
 vector
+-
+string
+-
+eigen3/Eigen/Eigen
 -
 
 include/DRRT/ghostPoint.h
@@ -102,6 +120,10 @@ DRRT/jlist.h
 DRRT/ghostPoint.h
 -
 DRRT/drrt_data_structures.h
+-
+DRRT/drrt_distance_functions.h
+-
+DRRT/edge.h
 -
 
 include/DRRT/kdtreenode.h

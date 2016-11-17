@@ -4,6 +4,7 @@
 CMakeFiles/drrt.dir/src/drrt.cpp.o: src/drrt.cpp
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/drrt.h
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/drrt_data_structures.h
+CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/drrt_distance_functions.h
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/edge.h
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/ghostPoint.h
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/heap.h
@@ -12,8 +13,20 @@ CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/kdtree.h
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/kdtreenode.h
 CMakeFiles/drrt.dir/src/drrt.cpp.o: include/DRRT/list.h
 
+CMakeFiles/drrt.dir/src/edge.cpp.o: src/edge.cpp
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/drrt_data_structures.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/drrt_distance_functions.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/edge.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/ghostPoint.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/heap.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/jlist.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/kdtree.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/kdtreenode.h
+CMakeFiles/drrt.dir/src/edge.cpp.o: include/DRRT/list.h
+
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: src/ghostPoint.cpp
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/drrt_data_structures.h
+CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/drrt_distance_functions.h
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/edge.h
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/ghostPoint.h
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o: include/DRRT/heap.h
@@ -35,6 +48,7 @@ CMakeFiles/drrt.dir/src/jlist.cpp.o: include/DRRT/kdtreenode.h
 
 CMakeFiles/drrt.dir/src/kdtree.cpp.o: src/kdtree.cpp
 CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/drrt_data_structures.h
+CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/drrt_distance_functions.h
 CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/edge.h
 CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/ghostPoint.h
 CMakeFiles/drrt.dir/src/kdtree.cpp.o: include/DRRT/heap.h

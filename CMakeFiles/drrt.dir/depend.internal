@@ -5,6 +5,18 @@ CMakeFiles/drrt.dir/src/drrt.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/drrt.cpp
  include/DRRT/drrt.h
  include/DRRT/drrt_data_structures.h
+ include/DRRT/drrt_distance_functions.h
+ include/DRRT/edge.h
+ include/DRRT/ghostPoint.h
+ include/DRRT/heap.h
+ include/DRRT/jlist.h
+ include/DRRT/kdtree.h
+ include/DRRT/kdtreenode.h
+ include/DRRT/list.h
+CMakeFiles/drrt.dir/src/edge.cpp.o
+ /Users/corinsandford/ARPG/DRRT/src/edge.cpp
+ include/DRRT/drrt_data_structures.h
+ include/DRRT/drrt_distance_functions.h
  include/DRRT/edge.h
  include/DRRT/ghostPoint.h
  include/DRRT/heap.h
@@ -15,6 +27,7 @@ CMakeFiles/drrt.dir/src/drrt.cpp.o
 CMakeFiles/drrt.dir/src/ghostPoint.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/ghostPoint.cpp
  include/DRRT/drrt_data_structures.h
+ include/DRRT/drrt_distance_functions.h
  include/DRRT/edge.h
  include/DRRT/ghostPoint.h
  include/DRRT/heap.h
@@ -36,6 +49,7 @@ CMakeFiles/drrt.dir/src/jlist.cpp.o
 CMakeFiles/drrt.dir/src/kdtree.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/kdtree.cpp
  include/DRRT/drrt_data_structures.h
+ include/DRRT/drrt_distance_functions.h
  include/DRRT/edge.h
  include/DRRT/ghostPoint.h
  include/DRRT/heap.h

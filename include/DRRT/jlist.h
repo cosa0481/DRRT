@@ -18,7 +18,7 @@ public:
     JListNode* child;
     JListNode* parent;
     KDTreeNode* node;
-    float key = 0;
+    double key = 0.0;
 
     // Corstructor
     JListNode(){}
@@ -48,11 +48,11 @@ public:
 
     // Functions
     void JlistPush( KDTreeNode* t );
-    void JlistPush( KDTreeNode* t, float k );
+    void JlistPush( KDTreeNode* t, double k );
     KDTreeNode* JlistTop();
-    void JlistTopKey( KDTreeNode* n, float* k );
+    void JlistTopKey( KDTreeNode* n, double* k );
     KDTreeNode* JlistPop();
-    void JlistPopKey( KDTreeNode* n, float* k );
+    void JlistPopKey( KDTreeNode* n, double* k );
     bool JlistRemove( JListNode* node );
     void JlistPrint();
     void JlistEmpty();

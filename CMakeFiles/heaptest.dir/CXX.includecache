@@ -21,6 +21,8 @@ cstdlib
 include/DRRT/edge.h
 vector
 -
+string
+-
 
 include/DRRT/heap.h
 vector

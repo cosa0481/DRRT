@@ -6,15 +6,22 @@ list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules )
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH} )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" )
 
+find_package( Eigen3 REQUIRED )
+
 set( _INCLUDE_DIRS
 		${CMAKE_BINARY_DIR}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
+                ${EIGEN3_INCLUDE_DIRS}
 		)
 
 set( _LIBRARIES
 		)
 
-include_directories( ${_INCLUDE_DIRS} )
+# Expose these for third parties
+set( DRRT_INCLUDE_DIRS ${_INCLUDE_DIRS}  CACHE INTERNAL "" FORCE )
+set( DRRT_LIBRARIES  ${_LIBRARIES} CACHE INTERNAL "" FORCE )
+
+include_directories( ${DRRT_INCLUDE_DIRS} )
 
 set( HDRS
                 include/DRRT/drrt.h
@@ -26,6 +33,7 @@ set( HDRS
                 include/DRRT/kdtreenode.h
                 include/DRRT/drrt_data_structures.h
                 include/DRRT/edge.h
+                include/DRRT/drrt_distance_functions.h
 		)
 
 set( SRCS
@@ -35,20 +43,37 @@ set( SRCS
                 src/ghostPoint.cpp
                 src/list.cpp
                 src/jlist.cpp
+                src/edge.cpp
 		)
 
 
 
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
+# VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )
 add_library( ${LIBRARY_NAME} ${SRCS} ${HDRS} )
-target_link_libraries( ${LIBRARY_NAME} ${_LIBRARIES} )
+target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 
-add_executable( heaptest src/heap.cpp ${HDRS} )
-target_link_libraries( heaptest ${LIBRARY_NAME} )
+#add_executable( heaptest src/heap.cpp ${HDRS} )
+#target_link_libraries( heaptest ${LIBRARY_NAME} )
 
 #add_executable( listtest src/list.cpp ${HDRS} )
 #target_link_libraries( listtest ${LIBRARY_NAME} )
 
 #add_executable( jlisttest src/jlist.cpp ${HDRS} )
 #target_link_libraries( jlisttest ${LIBRARY_NAME} )
+
+add_executable( test src/test.cpp ${HDRS} )
+target_link_libraries( test ${LIBRARY_NAME} )
+
+#install_package(
+#    PKG_NAME ${PROJECT_NAME}
+#    LIB_NAME ${LIBRARY_NAME}
+#    VERSION 2.1
+#    DESCRIPTION "DRRT library."
+#    INSTALL_INCLUDE_DIR true
+#    INSTALL_GENERATED_HEADERS ${GENERATED_HEADERS}
+#    DESTINATION ${CMAKE_INSTALL_PREFIX}
+#    INCLUDE_DIRS ${DRRT_INCLUDE_DIRS}
+#    LINK_LIBS ${DRRT_LIBRARIES}
+#    )

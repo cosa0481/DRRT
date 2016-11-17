@@ -18,19 +18,19 @@ int randInt( int min, int max )
 
 /////////////////////// Node Functions ///////////////////////
 
-float distance( KDTreeNode* x, KDTreeNode* y )
+double distance( KDTreeNode* x, KDTreeNode* y )
 {
     return distFunc( "threeTwoDRobotDist", x->position, y->position );
 }
 
-float Wdist( KDTreeNode* x, KDTreeNode* y )
+double Wdist( KDTreeNode* x, KDTreeNode* y )
 {
     return distFunc( "threeTwoDRobotDist", x->position, y->position );
 }
 
-float extractPathLength( KDTreeNode* node, KDTreeNode* root )
+double extractPathLength( KDTreeNode* node, KDTreeNode* root )
 {
-    float pathLength = 0.0;
+    double pathLength = 0.0;
     KDTreeNode* thisNode = node;
     while( node != root ) {
         if( !node->rrtParentUsed ) {
@@ -44,22 +44,22 @@ float extractPathLength( KDTreeNode* node, KDTreeNode* root )
     return pathLength;
 }
 
-std::vector<float> randPointDefault( CSpace* S )
+Eigen::VectorXd randPointDefault( CSpace* S )
 {
     int rand = randInt(1,S->d);
-    std::vector<float> first;
-    std::vector<float> second;
+    Eigen::VectorXd first;
+    Eigen::VectorXd second;
 
     for( int i = 0; i < S->lowerBounds.size(); i++ ) {
-        first[i] = rand * S->width[i];
-        second[i] = S->lowerBounds[i] + first[i];
+        first(i) = rand * S->width(i);
+        second(i) = S->lowerBounds(i) + first(i);
     }
     return second;
 }
 
 KDTreeNode* randNodeDefault( CSpace* S )
 {
-    std::vector<float> point = randPointDefault( S );
+    Eigen::VectorXd point = randPointDefault( S );
     return new KDTreeNode( point );
 }
 
@@ -116,15 +116,15 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S )
             return newNode;
         }
 
-        float minTimeToReachNode = S->start[3] + sqrt( (newNode->position[1] - S->root->position[1])*(newNode->position[1] - S->root->position[1]) + (newNode->position[2] - S->root->position[2])*(newNode->position[2] - S->root->position[2]) ) / S->robotVelocity;
+        double minTimeToReachNode = S->start(2) + sqrt( (newNode->position(0) - S->root->position(0))*(newNode->position(0) - S->root->position(0)) + (newNode->position(1) - S->root->position(1))*(newNode->position(1) - S->root->position(1)) ) / S->robotVelocity;
 
         // If point is too soon vs robot's available speed
         // or if it is in the "past" and the robot is moving
-        if( newNode->position[3] < minTimeToReachNode ||
-                (newNode->position[3] > S->moveGoal->position[3] &&
+        if( newNode->position(2) < minTimeToReachNode ||
+                (newNode->position(2) > S->moveGoal->position(2) &&
                  S->moveGoal != S->goalNode) ) {
             // Resample time in ok range
-            newNode->position[3] = minTimeToReachNode + randInt(0,1) * (S->moveGoal->position[3] - minTimeToReachNode);
+            newNode->position(2) = minTimeToReachNode + randInt(0,1) * (S->moveGoal->position(2) - minTimeToReachNode);
         }
         return newNode;
     }
@@ -133,52 +133,53 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S )
 
 /////////////////////// Geometric Functions ///////////////////////
 
-float distanceSqrdPointToSegment( std::vector<float> point, std::vector<float> startPoint,
-                                  std::vector<float> endPoint )
+double distanceSqrdPointToSegment( Eigen::VectorXd point,
+                                   Eigen::VectorXd startPoint,
+                                   Eigen::VectorXd endPoint )
 {
-    float vx = point[1] - startPoint[1];
-    float vy = point[2] - startPoint[2];
-    float ux = endPoint[1] - startPoint[1];
-    float uy = endPoint[2] - startPoint[2];
-    float determinate = vx*ux + vy*uy;
+    double vx = point(0) - startPoint(0);
+    double vy = point(1) - startPoint(1);
+    double ux = endPoint(0) - startPoint(0);
+    double uy = endPoint(1) - startPoint(1);
+    double determinate = vx*ux + vy*uy;
 
     if( determinate <= 0 ) {
         return vx*vx + vy*vy;
     } else {
-        float len = ux*ux + uy*uy;
+        double len = ux*ux + uy*uy;
         if( determinate >= len ) {
-            return (endPoint[1]-point[1])*(endPoint[1]-point[1]) +
-                    (endPoint[2]-point[2])*(endPoint[2]-point[2]);
+            return (endPoint(0)-point(0))*(endPoint(0)-point(0)) +
+                    (endPoint(1)-point(1))*(endPoint(1)-point(1));
         } else {
             return (ux*vy - uy*vx)*(ux*vy - uy*vx) / len;
         }
     }
 }
 
-float segmentDistSqrd(std::vector<float> PA, std::vector<float> PB,
-                      std::vector<float> QA, std::vector<float> QB)
+double segmentDistSqrd( Eigen::VectorXd PA, Eigen::VectorXd PB,
+                        Eigen::VectorXd QA, Eigen::VectorXd QB )
 {
     // Check if the points are definately not in collision by seeing
     // if both points of Q are on the same side of line containing P and vice versa
 
     bool possibleIntersect = true;
-    float m, diffA, diffB;
+    double m, diffA, diffB;
 
     // First check if P is close to vertical
-    if( std::abs(PB[1] - PA[1]) < 0.000001 ) {
+    if( std::abs(PB(0) - PA(0)) < 0.000001 ) {
         // P is close to vertical
-        if( (QA[1] >= PA[1] && QB[1] >= PA[1])
-                || (QA[1] <= PA[1] && QB[1] <= PA[1]) ) {
+        if( (QA(0) >= PA(0) && QB(0) >= PA(0))
+                || (QA(0) <= PA(0) && QB(0) <= PA(0)) ) {
             // Q is on one side of P
             possibleIntersect = false;
         }
     } else {
         // P is not close to vertical
-        m = (PB[2] - PA[2]) / (PB[1] - PA[1]);
+        m = (PB(1) - PA(1)) / (PB(0) - PA(0));
 
         // Equation for points on P: y = m(x - PA[1]) + PA[2]
-        diffA = (m*(QA[1]-PA[1]) + PA[2]) - QA[2];
-        diffB = (m*(QB[1]-PA[1]) + PA[2]) - QB[2];
+        diffA = (m*(QA(0)-PA(0)) + PA(1)) - QA(1);
+        diffB = (m*(QB(0)-PA(0)) + PA(1)) - QB(1);
         if( (diffA > 0.0 && diffB > 0.0) || (diffA < 0.0 && diffB < 0.0) ) {
             // Q is either fully above or below the line containing P
             possibleIntersect = false;
@@ -187,18 +188,18 @@ float segmentDistSqrd(std::vector<float> PA, std::vector<float> PB,
 
     if( possibleIntersect ) {
         // first check if Q is close to vertical
-        if( std::abs(QB[1] - QA[1]) < 0.000001 ) {
-            if( (PA[1] >= QA[1] && PB[1] >= QA[1]) || (PA[1] <= QA[1] && PB[1] <= QA[1]) ) {
+        if( std::abs(QB(0) - QA(0)) < 0.000001 ) {
+            if( (PA(0) >= QA(0) && PB(0) >= QA(0)) || (PA(0) <= QA(0) && PB(0) <= QA(0)) ) {
                 // P is on one side of Q
                 possibleIntersect = false;
             }
         } else {
             // Q is not close to vertical
-            m = (QB[2] - QA[2]) / (QB[1] - QA[1]);
+            m = (QB(1) - QA(1)) / (QB(0) - QA(0));
 
             // Equation for points on Q: y = m(x-QA[1]) + QA[2]
-            diffA = (m*(PA[1]-QA[1]) + QA[2]) - PA[2];
-            diffB = (m*(PB[1]-QA[1]) + QA[2]) - PB[2];
+            diffA = (m*(PA(0)-QA(0)) + QA(1)) - PA(1);
+            diffB = (m*(PB(0)-QA(0)) + QA(1)) - PB(1);
             if( (diffA > 0.0 && diffB > 0.0) || (diffA < 0.0 && diffB < 0.0) ) {
                 // P is either fully above or below the line containing Q
                 possibleIntersect = false;
@@ -214,22 +215,23 @@ float segmentDistSqrd(std::vector<float> PA, std::vector<float> PB,
     // When the lines do not intersect in 2D, the min distance must
     // be between one segment's end point and the other segment
     // (assuming lines are not parallel)
-    std::vector<float> distances = { distanceSqrdPointToSegment(PA,QA,QB),
-                                     distanceSqrdPointToSegment(PB,QA,QB),
-                                     distanceSqrdPointToSegment(QA,PA,PB),
-                                     distanceSqrdPointToSegment(QB,PA,PB) };
+    Eigen::VectorXd distances;
+    distances(0) = distanceSqrdPointToSegment(PA,QA,QB);
+    distances(1) = distanceSqrdPointToSegment(PB,QA,QB);
+    distances(2) = distanceSqrdPointToSegment(QA,PA,PB);
+    distances(3) = distanceSqrdPointToSegment(QB,PA,PB);
 
-    return *std::min_element( distances.begin(), distances.end() );
+    return distances.minCoeff();  //*std::min_element( distances.begin(), distances.end() );
 }
 
-int findIndexBeforeTime( std::vector<std::vector<float>> path, float timeToFind )
+int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind )
 {
-    if( path.size() < 1) {
+    if( path.rows() < 1) {
         return -1;
     }
 
-    int i = 0;
-    while( i+1 < path.size() && path[i+1][3] < timeToFind ) {
+    int i = -1;
+    while( i+1 < path.rows() && path(i+1,2) < timeToFind ) {
         i += 1;
     }
     return i;
@@ -241,11 +243,55 @@ int findIndexBeforeTime( std::vector<std::vector<float>> path, float timeToFind 
 
 /////////////////////// RRT Functions ///////////////////////
 bool extendRRT( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                KDTreeNode* closestNode, float delta,
-                float hyperBallRad, KDTreeNode* moveGoal )
+                KDTreeNode* closestNode, double delta,
+                double hyperBallRad, KDTreeNode* moveGoal )
 {
     // First calculate the shortest trajectory (and its distance) that
     // gets from newNode to closestNode while obeying the constraints
     // of the state space and the dynamics of the robot
     Edge* thisEdge = new Edge( newNode, closestNode );
+    calculateTrajectory( S, thisEdge );
+
+    // Figure out if we can link to the nearest node
+    if ( !validMove( S, thisEdge ) /*|| explicitEdgeCheck( S, thisEdge)*/ ) {
+        // We cannot link to nearest neighbor
+        return false;
+    }
+
+    // Otherwise we can link to the nearest neighbor
+    newNode->rrtParentEdge = thisEdge;
+    newNode->rrtTreeCost = closestNode->rrtLMC + newNode->rrtParentEdge->dist;
+    newNode->rrtLMC = newNode->rrtTreeCost; // only for compatability with visualization
+    newNode->rrtParentUsed = true;
+
+    // insert the new node into the KDTree
+    return kdInsert( Tree, newNode );
+}
+
+
+/////////////////////// RRT* Functions ///////////////////////
+KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
+                            KDTreeNode* closestNode, bool saveAllEdges )
+{
+    return new KDTreeNode();
+}
+
+bool extendRRTStar( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
+                    KDTreeNode* closestNode, double delta,
+                    double hyperBallRad, KDTreeNode* moveGoal )
+{
+    return false;
+}
+
+
+/////////////////////// RRT# Functions ///////////////////////
+
+
+/////////////////////// main (despite the name) ///////////////////////
+void RRTX( CSpace *S, double total_planning_time, double slice_time,
+           double delta, double ballConstant, double changeThresh,
+           std::string searchType, bool MoveRobotFlag,
+           bool saveVideoData, bool saveTree, std::string dataFile )
+{
+    std::cout << "Hey" << std::endl;
 }

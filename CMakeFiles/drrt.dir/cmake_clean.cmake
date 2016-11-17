@@ -5,6 +5,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/drrt.dir/src/ghostPoint.cpp.o"
   "CMakeFiles/drrt.dir/src/list.cpp.o"
   "CMakeFiles/drrt.dir/src/jlist.cpp.o"
+  "CMakeFiles/drrt.dir/src/edge.cpp.o"
   "libdrrt.pdb"
   "libdrrt.a"
 )

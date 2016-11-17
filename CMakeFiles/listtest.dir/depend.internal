@@ -3,5 +3,7 @@
 
 CMakeFiles/listtest.dir/src/list.cpp.o
  /Users/corinsandford/ARPG/DRRT/src/list.cpp
- include/DRRT/heap.h
+ include/DRRT/edge.h
+ include/DRRT/jlist.h
+ include/DRRT/kdtreenode.h
  include/DRRT/list.h

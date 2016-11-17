@@ -1,18 +1,18 @@
 #include <DRRT/ghostPoint.h>
 #include <DRRT/kdtree.h>
 
-ghostPointIterator::ghostPointIterator( KDTree* t, std::vector<float> qP):
+ghostPointIterator::ghostPointIterator( KDTree* t, Eigen::VectorXd qP):
        kdTree(t), queryPoint(qP),
        ghostTreeDepth(t->numWraps),
        currentGhost(qP),
        closestUnwrappedPoint(qP)
    {
-       std::vector<int> zeros(t->numWraps,0);
+       Eigen::VectorXi zeros(t->numWraps,0);
        wrapDimFlags = zeros;
    }
 
 
-std::vector<float> getNextGhostPoint( ghostPointIterator G, float bestDist )
+Eigen::VectorXd getNextGhostPoint( ghostPointIterator G, double bestDist )
 {
     // Will return out when done
     while( true ) {
@@ -26,7 +26,7 @@ std::vector<float> getNextGhostPoint( ghostPointIterator G, float bestDist )
 
         if( G.ghostTreeDepth == 0 ) {
             // We are finished, no more ghosts
-            std::vector<float> zeros(G.kdTree->numWraps,0);
+            Eigen::VectorXd zeros(G.kdTree->numWraps,0);
             return zeros;
         }
 
@@ -34,8 +34,8 @@ std::vector<float> getNextGhostPoint( ghostPointIterator G, float bestDist )
         G.wrapDimFlags[G.ghostTreeDepth] = 1;
 
         // Calculate this (wrapped) dimension of the ghost
-        float dimVal = G.queryPoint[G.kdTree->wrapPoints[G.ghostTreeDepth]];
-        float dimClosest = 0.0;
+        double dimVal = G.queryPoint[G.kdTree->wrapPoints[G.ghostTreeDepth]];
+        double dimClosest = 0.0;
         if( G.queryPoint[G.kdTree->wraps[G.ghostTreeDepth]] < G.kdTree->wrapPoints[G.ghostTreeDepth]/2.0 ) {
             // Wrap to the right
             dimVal += G.kdTree->wrapPoints[G.ghostTreeDepth];
@@ -61,7 +61,7 @@ std::vector<float> getNextGhostPoint( ghostPointIterator G, float bestDist )
         // best distance
         if( distFunc(G.kdTree->distanceFunction,
                      G.closestUnwrappedPoint,
-                     std::vector<float> (G.currentGhost.begin(),G.currentGhost.end())
+                     G.currentGhost
                      ) > bestDist ) {
             continue;
         }

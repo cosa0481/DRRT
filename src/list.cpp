@@ -5,6 +5,109 @@
 
 #include <DRRT/list.h>
 
+void List::listPush( KDTreeNode* tnode )
+{
+    ListNode* newNode = new ListNode( tnode );
+    newNode->child = front;
+    front = newNode;
+    length += 1;
+}
+
+void List::listPush( KDTreeNode* tnode, double key )
+{
+    ListNode* newNode = new ListNode( tnode );
+    newNode->child = front;
+    newNode->key = key;
+    front = newNode;
+    length += 1;
+}
+
+KDTreeNode* List::listTop()
+{
+    if( front == front->child ) {
+        // List is empty
+        return new KDTreeNode(-1);
+    }
+    return front->tnode;
+}
+
+void List::listTopKey( KDTreeNode* n, double* k )
+{
+    if( front == front->child ) {
+        // List is empty
+        n = new KDTreeNode(-1);
+        *k = -1;
+    }
+    n = front->tnode;
+    *k = front->key;
+}
+
+KDTreeNode* List::listPop()
+{
+    if( front == front->child ) {
+        // List is empty
+        return new KDTreeNode(-1);
+    }
+    ListNode* oldTop = front;
+    front = front->child;
+    length -= 1;
+    return oldTop->tnode;
+}
+
+void List::listPopKey( KDTreeNode* n, double* k )
+{
+    if( front == front->child ) {
+        // List is empty
+        n = new KDTreeNode(-1);
+        *k = -1;
+    }
+    ListNode* oldTop = front;
+    front = front->child;
+    length -= 1;
+    n = oldTop->tnode;
+    k = &oldTop->key;
+}
+
+void List::listEmpty()
+{
+    while( listPop()->dist != -1 );
+}
+
+void List::listPrint()
+{
+    ListNode* ptr = front;
+    while( ptr != ptr->child ) {
+        std::cout << ptr->tnode->dist << std::endl;
+        ptr = ptr->child;
+    }
+}
+
+List List::listCopy( ListNode* example )
+{
+    List newList = List();
+    ListNode* ptr = front;
+    ListNode* newfront = new ListNode( example->tnode );
+    newList.front = newfront;
+    ListNode* new_ptr = newList.front;
+
+    while( ptr != ptr->child ) {
+        ListNode* newNode = new ListNode( example->tnode );
+        new_ptr->child = newNode;
+        new_ptr->tnode = ptr->tnode;
+        new_ptr->key = ptr->key;
+
+        new_ptr = new_ptr->child;
+        ptr = ptr->child;
+    }
+    new_ptr->child = new_ptr;
+    new_ptr->tnode = ptr->tnode;
+    new_ptr->key = ptr->key;
+    newList.length = length;
+
+    return newList;
+}
+
+/* Test case
 int main()
 {
     List L = List();
@@ -48,4 +151,4 @@ int main()
     L2.listPrint();
     std::cout << "list2 printed" << std::endl;
     std::cout << "L.length =?= L2.length" << " : " << L.length << " =?= " << L2.length << std::endl;
-}
+}*/

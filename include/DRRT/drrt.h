@@ -1,7 +1,13 @@
+/* drrt.h
+ * Corin Sandford
+ * Fall 2016
+ * main function located here
+ */
+
 #ifndef DRRT_H
 #define DRRT_H
 
-#include <DRRT/kdtree.h>
+#include <DRRT/kdtree.h> // Pretty much everything is included here
 #include <random>
 #include <algorithm>
 
@@ -15,21 +21,21 @@ int randInt( int min, int max );
 
 // Returns Distance between two nodes (e.g., in the C-space)
 // Should obey the triangle inequality
-float distance( KDTreeNode* x, KDTreeNode* y );
+double distance( KDTreeNode* x, KDTreeNode* y );
 
 /* Returns distance between two nodes (e.g., in the workspace)
  * Should obey the triangle inequality.
  * Note that it is assumed that the first two dimensions of
  * the C-space are position in the workspace
  */
-float Wdist( KDTreeNode* x, KDTreeNode* y );
+double Wdist( KDTreeNode* x, KDTreeNode* y );
 
 // Returns true if nodeA certifies nodeB (only used in Alg. A)
 //bool certifierOf( KDTreeNode* nodeA, KDTreeNode* nodeB );
 
 // Extracts the cost of the graph path from th node to the root
 // by adding up the edge lengths between node and root
-float extractPathLength( KDTreeNode* node, KDTreeNode* root );
+double extractPathLength( KDTreeNode* node, KDTreeNode* root );
 
 
 /////////////////////// Obstacle Functions ///////////////////////
@@ -45,7 +51,7 @@ float extractPathLength( KDTreeNode* node, KDTreeNode* root );
 // Functions that interact in C-Space, including sampling functions
 
 // Returns a random point in S
-std::vector<float> randPointDefault( CSpace* S );
+Eigen::VectorXd randPointDefault( CSpace* S );
 
 // Returns a random node from S
 KDTreeNode* randNodeDefault( CSpace* S );
@@ -97,17 +103,19 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S );
 
 // Returns the min distance squared between the point and the segment
 // [startPoint, endPoint] assumes a 2D space
-float distanceSqrdPointToSegment( std::vector<float> point, std::vector<float> startPoint, std::vector<float> endPoint );
+double distanceSqrdPointToSegment( Eigen::VectorXd point,
+                                   Eigen::VectorXd startPoint,
+                                   Eigen::VectorXd endPoint );
 
 // All intput args represent points, this returns the minimum distance
 // between line segments [PA PB] and [QA QB] and assumes 2D space
-float segmentDistSqrd( std::vector<float> PA, std::vector<float> PB,
-                       std::vector<float> QA, std::vector<float> QB );
+double segmentDistSqrd( Eigen::VectorXd PA, Eigen::VectorXd PB,
+                        Eigen::VectorXd QA, Eigen::VectorXd QB );
 
 // Returns the index of the first time coordinate (3rd dimension) smaller
 // than the time
 // TODO: replace with binary search
-int findIndexBeforeTime( std::vector<std::vector<float>> path, float timeToFind );
+int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind );
 
 
 /////////////////////// Collision Checking Functions ///////////////////////
@@ -121,8 +129,8 @@ int findIndexBeforeTime( std::vector<std::vector<float>> path, float timeToFind 
 
 // Takes care of inserting a new node in RRT
 bool extendRRT( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                KDTreeNode* closestNode, float delta, float hyperBallRad,
-                KDTreeNode* moveGoal );
+                KDTreeNode* closestNode, double delta,
+                double hyperBallRad, KDTreeNode* moveGoal );
 
 
 /////////////////////// RRT* Functions ///////////////////////
@@ -139,8 +147,8 @@ KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
 
 // Takes care of inserting a new node in RRT*
 bool extendRRTStar( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                    KDTreeNode* closestNode, float delta, float hyperBallRad,
-                    KDTreeNode* moveGoal );
+                    KDTreeNode* closestNode, double delta,
+                    double hyperBallRad, KDTreeNode* moveGoal );
 
 
 /////////////////////// RRT# Functions ///////////////////////
@@ -148,7 +156,7 @@ bool extendRRTStar( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
 // THis includes priority heap related key functions, etc.
 
 // Returns the key value of a node
-float keyQ( KDTreeNode* node );
+double keyQ( KDTreeNode* node );
 
 // Less than function for key values
 bool lessQ( KDTreeNode* a, KDTreeNode* b );
@@ -212,12 +220,12 @@ void recalculateLMC( rrtSharpQueue* Q, KDTreeNode* node, KDTreeNode* root );
 
 // Takes care of inserting a new node in RRT#
 void extendRRTSharp( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                     KDTreeNode* closestNode, float delta, float hyperBallRad,
-                     KDTreeNode* moveGoal );
+                     KDTreeNode* closestNode, double delta,
+                     double hyperBallRad, KDTreeNode* moveGoal );
 
 // Propogates cost information through the graph
-void reduceInconsistencyRRTSharp( KDTreeNode* goalNode, float robotRad,
-                                  KDTreeNode* root, float hyperballRad );
+void reduceInconsistencyRRTSharp( KDTreeNode* goalNode, double robotRad,
+                                  KDTreeNode* root, double hyperballRad );
 
 
 /////////////////////// RRTx Functions ///////////////////////
@@ -240,7 +248,7 @@ bool verifyInQueue( BinaryHeap* Q, KDTreeNode* node );
 bool verifyInOSQueue( BinaryHeap* Q, KDTreeNode* node );
 
 // Removes members of the current neighbor list of node that are too far away
-void cullCurrentNeighbors( KDTreeNode* node, float hyperBallRad );
+void cullCurrentNeighbors( KDTreeNode* node, double hyperBallRad );
 
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
@@ -258,21 +266,21 @@ void makeParentOf( KDTreeNode* newParent, KDTreeNode* node,
 
 // Recalculates LMC based on neighbors
 void recalculateLMCMineVTwo( BinaryHeap* Q, KDTreeNode* node,
-                             KDTreeNode* root, float hyperBallRad );
+                             KDTreeNode* root, double hyperBallRad );
 
 // Takes care of inserting a new node
 void extendRRTX( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                 KDTreeNode* closestNode, float delta, float hyperBallRad,
-                 KDTreeNode* moveGoal );
+                 KDTreeNode* closestNode, double delta,
+                 double hyperBallRad, KDTreeNode* moveGoal );
 
 // This is the (non-initial) rewire function used by RRTx that is
 // responsible for propogating changes through the graph
 void rewire( BinaryHeap* Q, KDTreeNode* node, KDTreeNode* root,
-             float hyperBallRad, float changeThresh );
+             double hyperBallRad, double changeThresh );
 
 // Propogates cost information through the graph
-void reduceInconsistencyRRTX( KDTreeNode* goalNode, float robotRad,
-                              KDTreeNode* root, float hyperBallRad );
+void reduceInconsistencyRRTX( KDTreeNode* goalNode, double robotRad,
+                              KDTreeNode* root, double hyperBallRad );
 
 // Propogates orphan status to all nodes in the basin(s) of attraction
 // of the nodes in Q.OS stack (that have higher cost). This also takes
@@ -295,7 +303,8 @@ void addOtherTimesToRoot( CSpace* S, KDTree* Tree,
 
 // Attempts to find a new move target for the robot, places
 // it into RobotData (used when the old target has become invalid)
-void findNewTarget( CSpace* S, KDTree* Tree, RobotData* R, float hyperBallRad );
+void findNewTarget( CSpace* S, KDTree* Tree,
+                    RobotData* R, double hyperBallRad );
 
 /* Move robot the distance that it would move in slice_time time
  * if time is not a dimension of the C-Space, then a contant velocity
@@ -303,8 +312,8 @@ void findNewTarget( CSpace* S, KDTree* Tree, RobotData* R, float hyperBallRad );
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot( CSpace* S, BinaryHeap* Q, KDTree* Tree, float slice_time,
-                KDTreeNode* root, float hyperBallRad, RobotData* R );
+void moveRobot( CSpace* S, BinaryHeap* Q, KDTree* Tree, double slice_time,
+                KDTreeNode* root, double hyperBallRad, RobotData* R );
 
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
@@ -325,6 +334,10 @@ void moveRobot( CSpace* S, BinaryHeap* Q, KDTree* Tree, float slice_time,
 // S is the CSpace, the algorithm runs until either N nodes have been
 // sampled or TimeOut seconds pass, delta is the saturation distance,
 // ballConstant is the ball constant
-void RRTX( CSpace* S, float total_planning_time, float slice_time, float delta, float ballConstant, float changeThresh, std::string searchType, bool MoveRobotFlag, bool saveVideoData /* "statsArgs..." ???*/ );
+void RRTX( CSpace* S, double total_planning_time, double slice_time,
+           double delta, double ballConstant, double changeThresh,
+           std::string searchType, bool MoveRobotFlag,
+           bool saveVideoData, bool saveTree, std::string dataFile
+           /* "statsArgs..." ???*/ );
 
 #endif // DRRT_H

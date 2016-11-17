@@ -22,7 +22,7 @@ void JList::JlistPush( KDTreeNode* t )
     length += 1;
 }
 
-void JList::JlistPush( KDTreeNode* t, float k )
+void JList::JlistPush( KDTreeNode* t, double k )
 {
     JListNode* newNode = new JListNode( t );
     newNode->parent = front->parent;
@@ -48,12 +48,12 @@ KDTreeNode* JList::JlistTop()
     return front->node;
 }
 
-void JList::JlistTopKey( KDTreeNode* n, float* k )
+void JList::JlistTopKey( KDTreeNode* n, double* k )
 {
     if( length == 0 ) {
         // Jlist is empty
         n = new KDTreeNode();
-        *k = -1;
+        *k = -1.0;
     }
     n = front->node;
     *k = front->key;
@@ -83,12 +83,12 @@ KDTreeNode* JList::JlistPop()
     return oldTop->node;
 }
 
-void JList::JlistPopKey( KDTreeNode* n, float* k )
+void JList::JlistPopKey( KDTreeNode* n, double* k )
 {
     if( length == 0 ) {
         // Jlist is empty
         n = new KDTreeNode();
-        *k = -1;
+        *k = -1.0;
     }
 
     JListNode* oldTop = front;
@@ -158,7 +158,7 @@ void JList::JlistPrint()
 
 void JList::JlistEmpty()
 {
-    while( JlistPop()->dist != -1 );
+    while( JlistPop()->dist != -1.0 );
 }
 
 /* Test case
@@ -212,5 +212,4 @@ int main()
     std::cout << "Printing list" << std::endl;
     L.JlistPrint();
     return 0;
-}
-*/
+}*/
