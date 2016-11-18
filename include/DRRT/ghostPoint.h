@@ -6,7 +6,7 @@
 #ifndef GHOSTPOINT_H
 #define GHOSTPOINT_H
 
-#include <DRRT/kdtreenode.h>
+#include <eigen3/Eigen/Eigen>
 
 class KDTree;
 

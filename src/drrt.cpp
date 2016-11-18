@@ -293,5 +293,87 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
            std::string searchType, bool MoveRobotFlag,
            bool saveVideoData, bool saveTree, std::string dataFile )
 {
-    std::cout << "Hey" << std::endl;
+    KDTreeNode* T = new KDTreeNode();
+
+    //double robotSensorRange = 20.0; // used for "sensing" obstacles (should make input)
+
+    double startTime = time(0)*1000; // time in milliseconds
+    double elapsedTime = 0.0; // will hold save time to correct for time spent
+                              // not in the algorithm itself
+
+    // Initialization stuff
+
+    Eigen::VectorXi wraps;
+    wraps(0) = 3;
+    Eigen::VectorXd wrapPoints;
+    wrapPoints(0) = 2.0*PI;
+
+    // KDtree
+    // Dubin's car so 4th dimension wraps at 0 = 2pi
+    KDTree* KD = new KDTree( S->d,"KDdist", wraps, wrapPoints );
+
+    if( searchType == "RRT" ) {
+        rrtQueue Q = rrtQueue();
+    } else if( searchType == "RRT*" ) {
+        rrtStarQueue Q = rrtStarQueue();
+    } else if( searchType == "RRT#" ) {
+        rrtSharpQueue Q = rrtSharpQueue();
+        Q.Q = new BinaryHeap();
+        Q.S = S;
+    } else if( searchType == "RRTx" ) {
+        rrtXQueue Q = rrtXQueue();
+        Q.Q = new BinaryHeap();
+        Q.OS = new JList();
+        Q.S = S;
+        Q.changeThresh = changeThresh;
+    } else {
+        std::cout << "Unknown search type: " << searchType << std::endl;
+        exit(1);
+    }
+
+    S->sampleStack = new JList();   // stores a stack of points that we desire
+                                    // to insert in the future (used when an
+                                    // obstacle is removed)
+
+    S->delta = delta;
+
+    double robotRads = S->robotRadius;
+
+    // Define root node in the search tree graph
+    KDTreeNode* root = new KDTreeNode(S->start);
+
+    // Explicit check root
+    //explicitNodeCheck(S,root);
+
+    root->rrtTreeCost = 0.0;
+    root->rrtLMC = 0.0;
+
+    // Insert the root into the KDTree
+    kdInsert(KD,root);
+
+    // Define a goal node
+    KDTreeNode* goal = new KDTreeNode(S->goal);
+    goal->rrtTreeCost = INF;
+    goal->rrtLMC = INF;
+    S->goalNode = goal;
+    S->root = root;
+
+    S->moveGoal = goal;     // this will store a node at least as far from
+                            // the root as the robot. During movement its key
+                            // is used to limit propogation beyond the region
+                            // we care about
+
+    S->moveGoal->isMoveGoal = true;
+
+    // Parameters that have to do with the robot path following simulation
+    RobotData R = RobotData( S->goal, goal, 20000 );
+
+    double sliceCounter = 0; // helps with saving accurate time data
+
+    if( S->spaceHasTime ) {
+        // Add other "times" to root of tree
+        //` addOtherTimesToRoot( S, KD, goal, root, searchType );
+    }
+
+    // End of initialization
 }

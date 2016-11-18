@@ -49,26 +49,8 @@ public:
 };
 
 // Returns the distance between pointA and pointB using distanceFunction
-double distFunc( std::string distanceFunction, Eigen::VectorXd pointA, Eigen::VectorXd pointB)
-{
-    if( distanceFunction == "R3Dist" ) {
-        return sqrt((pointA[1]-pointB[1])*(pointA[1]-pointB[1])
-                + (pointA[2]-pointB[2])*(pointA[2]-pointB[2]) ) +
-                sqrt((pointA[3]-pointB[3])*(pointA[3]-pointB[3])
-                + (pointA[4]-pointB[4])*(pointA[4]-pointB[4]) ) +
-                sqrt((pointA[5]-pointB[5])*(pointA[5]-pointB[5])
-                + (pointA[6]-pointB[6])*(pointA[6]-pointB[6]) );
-    } else if( distanceFunction == "R3SDist" ) {
-        return R3SDist(pointA,pointB);
-    } else if( distanceFunction == "EuclideanDist" ) {
-        return EuclideanDist(pointA,pointB);
-    } else if( distanceFunction == "threeTwoDRobotDist" ) {
-        // drrt.h >> distance(), Wdist()
-        return EuclideanDist(pointA,pointB);
-    }
-
-    return 0.0;
-}
+double distFunc( std::string distanceFunction,
+                 Eigen::VectorXd pointA, Eigen::VectorXd pointB);
 
 void KDTreeInit( KDTree* K, int d, std::string distanceFunction );
 
@@ -158,11 +140,6 @@ bool kdFindWithinRangeInSubtree( std::string distanceFunction, KDTreeNode* root,
 void kdFindWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
 
 // Inserts a new point into the tree (used only for debugging)
-void kdInsert( KDTree* tree, Eigen::VectorXd a )
-{
-    KDTreeNode* N = new KDTreeNode();
-    N->position = a;
-    kdInsert(tree, N);
-}
+void kdInsert( KDTree* tree, Eigen::VectorXd a );
 
 #endif // KDTREE_H

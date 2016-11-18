@@ -44,6 +44,7 @@ set( SRCS
                 src/list.cpp
                 src/jlist.cpp
                 src/edge.cpp
+                src/drrt_distance_functions.cpp
 		)
 
 

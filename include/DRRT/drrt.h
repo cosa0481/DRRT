@@ -10,6 +10,7 @@
 #include <DRRT/kdtree.h> // Pretty much everything is included here
 #include <random>
 #include <algorithm>
+#include <time.h>
 
 // Returns a random integer between min and max
 int randInt( int min, int max );

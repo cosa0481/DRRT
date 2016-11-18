@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libdrrt.a  CMakeFiles/drrt.dir/src/drrt.cpp.o CMakeFiles/drrt.dir/src/kdtree.cpp.o CMakeFiles/drrt.dir/src/heap.cpp.o CMakeFiles/drrt.dir/src/ghostPoint.cpp.o CMakeFiles/drrt.dir/src/list.cpp.o CMakeFiles/drrt.dir/src/jlist.cpp.o CMakeFiles/drrt.dir/src/edge.cpp.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libdrrt.a

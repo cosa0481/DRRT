@@ -87,15 +87,15 @@ typedef struct rrtStarQueue{} rrtStarQueue;
 
 // Queue data structure used for RRT#
 typedef struct rrtSharpQueue{
-    BinaryHeap Q;       // normal queue (sorted based on cost from goal;
-    CSpace S;
+    BinaryHeap* Q;       // normal queue (sorted based on cost from goal;
+    CSpace* S;
 } rrtSharpQueue;
 
 // Queue data structure used for RRTx
 typedef struct rrtXQueue{
-    BinaryHeap Q;       // normal queue (sorted based on cost from goal)
-    JList OS;           // obstacle successor stack
-    CSpace S;
+    BinaryHeap* Q;       // normal queue (sorted based on cost from goal)
+    JList* OS;           // obstacle successor stack
+    CSpace* S;
     float changeThresh; // the threshold of local changes that we care about
 } rrtXQueue;
 
