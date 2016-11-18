@@ -129,7 +129,7 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind );
 // RRT#, and RRTx
 
 // Takes care of inserting a new node in RRT
-bool extendRRT( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
+bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
                 KDTreeNode* closestNode, double delta,
                 double hyperBallRad, KDTreeNode* moveGoal );
 
@@ -147,9 +147,7 @@ KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
                             KDTreeNode* closestNode, bool saveAllEdges );
 
 // Takes care of inserting a new node in RRT*
-bool extendRRTStar( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                    KDTreeNode* closestNode, double delta,
-                    double hyperBallRad, KDTreeNode* moveGoal );
+// Uses above implementation of extend with Q = rrtStarQueue
 
 
 /////////////////////// RRT# Functions ///////////////////////
@@ -220,13 +218,11 @@ void makeInitialInNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge ed
 void recalculateLMC( rrtSharpQueue* Q, KDTreeNode* node, KDTreeNode* root );
 
 // Takes care of inserting a new node in RRT#
-void extendRRTSharp( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                     KDTreeNode* closestNode, double delta,
-                     double hyperBallRad, KDTreeNode* moveGoal );
+// Usese above implementation of extend with Q = rrtSharpQueue
 
 // Propogates cost information through the graph
-void reduceInconsistencyRRTSharp( KDTreeNode* goalNode, double robotRad,
-                                  KDTreeNode* root, double hyperballRad );
+void reduceInconsistency( Queue Q, KDTreeNode* goalNode, double robotRad,
+                          KDTreeNode* root, double hyperBallRad );
 
 
 /////////////////////// RRTx Functions ///////////////////////
@@ -245,7 +241,7 @@ bool markedOS( KDTreeNode node );
 bool verifyInQueue( BinaryHeap* Q, KDTreeNode* node );
 
 // Makes sure the node is in the OS queue
-// Removes it from the normal queu if necessary
+// Removes it from the normal queue if necessary
 bool verifyInOSQueue( BinaryHeap* Q, KDTreeNode* node );
 
 // Removes members of the current neighbor list of node that are too far away
@@ -270,9 +266,7 @@ void recalculateLMCMineVTwo( BinaryHeap* Q, KDTreeNode* node,
                              KDTreeNode* root, double hyperBallRad );
 
 // Takes care of inserting a new node
-void extendRRTX( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                 KDTreeNode* closestNode, double delta,
-                 double hyperBallRad, KDTreeNode* moveGoal );
+// Uses above implementation of extend with Q = rrtXQueue
 
 // This is the (non-initial) rewire function used by RRTx that is
 // responsible for propogating changes through the graph
@@ -280,8 +274,7 @@ void rewire( BinaryHeap* Q, KDTreeNode* node, KDTreeNode* root,
              double hyperBallRad, double changeThresh );
 
 // Propogates cost information through the graph
-void reduceInconsistencyRRTX( KDTreeNode* goalNode, double robotRad,
-                              KDTreeNode* root, double hyperBallRad );
+// Usese above implementation with Q = rrtSharpQueue
 
 // Propogates orphan status to all nodes in the basin(s) of attraction
 // of the nodes in Q.OS stack (that have higher cost). This also takes

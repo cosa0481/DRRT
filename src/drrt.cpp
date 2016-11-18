@@ -242,30 +242,38 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind )
 
 
 /////////////////////// RRT Functions ///////////////////////
-bool extendRRT( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
+bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
                 KDTreeNode* closestNode, double delta,
                 double hyperBallRad, KDTreeNode* moveGoal )
 {
-    // First calculate the shortest trajectory (and its distance) that
-    // gets from newNode to closestNode while obeying the constraints
-    // of the state space and the dynamics of the robot
-    Edge* thisEdge = new Edge( newNode, closestNode );
-    calculateTrajectory( S, thisEdge );
+    if( typeid(Q) == typeid(rrtQueue) ) {
+        // First calculate the shortest trajectory (and its distance) that
+        // gets from newNode to closestNode while obeying the constraints
+        // of the state space and the dynamics of the robot
+        Edge* thisEdge = new Edge( newNode, closestNode );
+        calculateTrajectory( S, thisEdge );
 
-    // Figure out if we can link to the nearest node
-    if ( !validMove( S, thisEdge ) /*|| explicitEdgeCheck( S, thisEdge)*/ ) {
-        // We cannot link to nearest neighbor
-        return false;
+        // Figure out if we can link to the nearest node
+        if ( !validMove( S, thisEdge ) /*|| explicitEdgeCheck( S, thisEdge)*/ ) {
+            // We cannot link to nearest neighbor
+            return false;
+        }
+
+        // Otherwise we can link to the nearest neighbor
+        newNode->rrtParentEdge = thisEdge;
+        newNode->rrtTreeCost = closestNode->rrtLMC + newNode->rrtParentEdge->dist;
+        newNode->rrtLMC = newNode->rrtTreeCost; // only for compatability with visualization
+        newNode->rrtParentUsed = true;
+
+        // insert the new node into the KDTree
+        return kdInsert( Tree, newNode );
+    } else if( typeid(Q) == typeid(rrtStarQueue) ) {
+        return kdInsert( Tree, newNode );
+    } else if( typeid(Q) == typeid(rrtSharpQueue) ) {
+        return kdInsert( Tree, newNode );
+    } else { // typeid(Q) == typeid(rrtXQueue)
+        return kdInsert( Tree, newNode );
     }
-
-    // Otherwise we can link to the nearest neighbor
-    newNode->rrtParentEdge = thisEdge;
-    newNode->rrtTreeCost = closestNode->rrtLMC + newNode->rrtParentEdge->dist;
-    newNode->rrtLMC = newNode->rrtTreeCost; // only for compatability with visualization
-    newNode->rrtParentUsed = true;
-
-    // insert the new node into the KDTree
-    return kdInsert( Tree, newNode );
 }
 
 
@@ -276,16 +284,20 @@ KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
     return new KDTreeNode();
 }
 
-bool extendRRTStar( CSpace* S, KDTree* Tree, KDTreeNode* newNode,
-                    KDTreeNode* closestNode, double delta,
-                    double hyperBallRad, KDTreeNode* moveGoal )
-{
-    return false;
-}
-
 
 /////////////////////// RRT# Functions ///////////////////////
 
+void reduceInconsistency( Queue Q, KDTreeNode* goalNode, double robotRad,
+                          KDTreeNode* root, double hyperBallRad )
+{
+
+}
+
+void moveRobot( CSpace* S, BinaryHeap* Q, KDTree* Tree, double slice_time,
+                KDTreeNode* root, double hyperBallRad, RobotData* R )
+{
+
+}
 
 /////////////////////// main (despite the name) ///////////////////////
 void RRTX( CSpace *S, double total_planning_time, double slice_time,
@@ -293,13 +305,11 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
            std::string searchType, bool MoveRobotFlag,
            bool saveVideoData, bool saveTree, std::string dataFile )
 {
-    KDTreeNode* T = new KDTreeNode();
-
     //double robotSensorRange = 20.0; // used for "sensing" obstacles (should make input)
 
-    double startTime = time(0)*1000; // time in milliseconds
-    double elapsedTime = 0.0; // will hold save time to correct for time spent
-                              // not in the algorithm itself
+    double startTime = time(0)*1000;    // time in milliseconds
+    double saveElapsedTime = 0.0;       // will hold save time to correct for time spent
+                                        // not in the algorithm itself
 
     // Initialization stuff
 
@@ -312,10 +322,13 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     // Dubin's car so 4th dimension wraps at 0 = 2pi
     KDTree* KD = new KDTree( S->d,"KDdist", wraps, wrapPoints );
 
+    Queue Q;
     if( searchType == "RRT" ) {
         rrtQueue Q = rrtQueue();
+        Q.S = S;
     } else if( searchType == "RRT*" ) {
         rrtStarQueue Q = rrtStarQueue();
+        Q.S = S;
     } else if( searchType == "RRT#" ) {
         rrtSharpQueue Q = rrtSharpQueue();
         Q.Q = new BinaryHeap();
@@ -372,8 +385,119 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
 
     if( S->spaceHasTime ) {
         // Add other "times" to root of tree
-        //` addOtherTimesToRoot( S, KD, goal, root, searchType );
+        // addOtherTimesToRoot( S, KD, goal, root, searchType );
     }
 
     // End of initialization
+
+    // While planning time left, plan (will break out when done)
+    double robot_slice_start = time(0)*1000.0; // time in milliseconds
+    S->startTimeNs = robot_slice_start/1000000.0; // time in nanoseconds
+    S->timeElapsed = 0.0;
+    double slice_end_time;
+
+    double oldrrtLMC = INF;
+    double now_time = time(0)*1000.0;
+    bool warmUpTimeJustEnded;
+    double truncElapsedTime;
+
+    while( true ) {
+        double hyperBallRad = std::min( delta, ballConstant*(pow(std::log(1+KD->treeSize)/(KD->treeSize),1/S->d)));
+        now_time = time(0)*1000.0;
+
+        // Calculate the end time of the first slice
+        slice_end_time = (1+sliceCounter)*slice_time;
+
+        // See if warmup time has ended
+        warmUpTimeJustEnded = false;
+        if( S->inWarmupTime && S->warmupTime < S->timeElapsed ) {
+            warmUpTimeJustEnded = true;
+            S->inWarmupTime = false;
+        }
+
+        // If this robot has used all of its allotted planning time of this slice
+        S->timeElapsed = (time(0)/1000 - S->startTimeNs)/1000000000 - saveElapsedTime;
+        if( S->timeElapsed >= slice_end_time ) {
+            // Calculate the end time of the next slice
+            slice_end_time = (1+sliceCounter)*slice_time;
+
+            robot_slice_start = now_time;
+            sliceCounter += 1;
+            truncElapsedTime = floor(S->timeElapsed*1000)/1000;
+
+            // Move robot if the robot is allowed to move,
+            // otherwise planning is finished so break
+            /* Changed elapsedTime[checkPtr] to S->timeElapsed since I believe they are the same at this point */
+            if( S->timeElapsed > total_planning_time + slice_time ) {
+                if( MoveRobotFlag ) {
+                    moveRobot( S,Q.Q,KD,slice_time,root,hyperBallRad,&R ); // Assumes Q is rrtxQueue and Q.Q is its BinaryHeap
+                } else {
+                    std::cout << "done (robot not moved)" << std::endl;
+                    break;
+                }
+            }
+
+            // Make graph consistent (RRT# and RRTx)
+            if( searchType == "RRTx" || searchType == "RRT#" ) {
+                reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
+                if( S->moveGoal->rrtLMC != oldrrtLMC ) {
+                    oldrrtLMC = S->moveGoal->rrtLMC;
+                }
+            }
+
+            // Check if robot has reached its movement goal
+            if( R.robotPose == root->position ) {
+                break;
+            }
+
+            // START normal graph search stuff
+            // Pick a random node
+            KDTreeNode* newNode = randNodeOrFromStack( S );
+
+            // Happens when we explicitly sample the goal every so often
+            if( newNode->kdInTree ) {
+                // Nodes will be updated automatically as
+                // information gets propogated to it
+                continue;
+            }
+
+            // Find closest old node to the new node
+            KDTreeNode* closestNode = new KDTreeNode();
+            double* closestDist = NULL;
+            kdFindNearest( closestNode, closestDist, KD, newNode->position );
+
+            // Saturate
+            if( *closestDist > delta && newNode != S->goalNode ) {
+                saturate( newNode->position, closestNode->position, delta );
+            }
+
+            // Check for collisions vs obstacles
+            //bool explicitlyUnSafe;
+            //explicityNodeCheck( explicitlyUnSafe, S, newNode );
+            //if( explicitlyUnSafe ) {
+            //    continue;
+            //}
+
+            // Extend
+            extend( S, KD, Q, newNode, closestNode, delta, hyperBallRad, S->moveGoal );
+
+            // Make graph consistent (RRT# and RRTx)
+            if( searchType == "RRTx" || searchType == "RRT#" ) {
+                reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
+                if( S->moveGoal->rrtLMC != oldrrtLMC ) {
+                    oldrrtLMC = S->moveGoal->rrtLMC;
+                }
+            }
+        }
+    }
+
+    Eigen::ArrayXd firstpoints, lastpoints;
+    firstpoints = R.robotMovePath.block( 0,0, R.numRobotMovePoints-1,6 );
+    lastpoints = R.robotMovePath.block( 1,0, R.numRobotMovePoints-1,6 );
+
+    double moveLength = 0.0;
+    std::cout << "Robot traveled: " << moveLength << std::endl;
+
+    double totalTime = time(0)*1000.0 - startTime;
+    std::cout << "Total time: " << totalTime << std::endl;
 }

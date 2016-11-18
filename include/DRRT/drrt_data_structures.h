@@ -77,27 +77,27 @@ public:
     }
 };
 
+typedef struct Queue{
+    CSpace* S;
+    BinaryHeap* Q;      // normal queue (sorted based on cost from goal
+    JList* OS;          // obstacle successor stack
+    float changeThresh; // threshold of local changes that we care about
+
+} Queue;
+
 // Queue data structure used for RRT, basically empty, used
 // to bake coding easier
-typedef struct rrtQueue{} rrtQueue;
+typedef struct rrtQueue : Queue{} rrtQueue;
 
 // Queue data structure used for RRT*, basically empty, used
 // to make coding easier
-typedef struct rrtStarQueue{} rrtStarQueue;
+typedef struct rrtStarQueue : Queue{} rrtStarQueue;
 
 // Queue data structure used for RRT#
-typedef struct rrtSharpQueue{
-    BinaryHeap* Q;       // normal queue (sorted based on cost from goal;
-    CSpace* S;
-} rrtSharpQueue;
+typedef struct rrtSharpQueue : Queue{} rrtSharpQueue;
 
 // Queue data structure used for RRTx
-typedef struct rrtXQueue{
-    BinaryHeap* Q;       // normal queue (sorted based on cost from goal)
-    JList* OS;           // obstacle successor stack
-    CSpace* S;
-    float changeThresh; // the threshold of local changes that we care about
-} rrtXQueue;
+typedef struct rrtXQueue : Queue{} rrtXQueue;
 
 // This is used to make iteration through a particular node's
 // neighbor edges easier given that each node stores all of its

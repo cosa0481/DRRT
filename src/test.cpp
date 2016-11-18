@@ -11,7 +11,7 @@ using namespace std;
 
 int main( int argc, char* argv[] )
 {
-    string algorithmName = "RRT";               // "RRT", "RRT*", "RRT#", or "RRTx"
+    string algorithmName = "RRTx";               // "RRT", "RRT*", "RRT#", or "RRTx"
     string expName = "Debug";                   // Name for output files
 
     double changeThresh = 1.0;                  // only for RRTx
