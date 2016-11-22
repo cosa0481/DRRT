@@ -95,8 +95,10 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S );
 //void addObsToCSpace( CSpace C, Obstacle* O );
 
 // Makes sure that node can, in fact, reach all neighbors
-// USED FOR ERROR CHECKING -collision-
-//void checkNeighborsForEdgeProblems( )
+// Returns true if there is an edge problem
+// (used for error checking) -collision-
+// MISSING IMPLEMENTATION OF EXPLICITEDGECHECK(CSpace,KDTreeNode,KDTreeNode)
+bool checkNeighborsForEdgeProblems( CSpace* S, KDTreeNode* thisNode );
 
 
 /////////////////////// Geometric Functions ///////////////////////
@@ -123,15 +125,20 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind );
 // Collision checking, etc. This includus certificate stuff that is currently
 // unused, but could be added later with little difficulty
 
+// Checks if the edge is in collision with any obstacles in the C-space
+// Returns true if there the edge is in collision
+// MISSING IMPLEMENTATION OF EXPLICITEDGECHECK(CSpace,KDTreeNode,KDTreeNode)
+bool explicitEdgeCheck( CSpace* S, Edge* edge );
+
 
 /////////////////////// RRT Functions ///////////////////////
 // Functions used for RRT. Some of these are also used in RRT*
 // RRT#, and RRTx
 
 // Takes care of inserting a new node in RRT
-bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
-                KDTreeNode* closestNode, double delta,
-                double hyperBallRad, KDTreeNode* moveGoal );
+bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
+             KDTreeNode* closestNode, double delta,
+             double hyperBallRad, KDTreeNode* moveGoal );
 
 
 /////////////////////// RRT* Functions ///////////////////////
@@ -143,8 +150,8 @@ bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
  * then it saves a copy of each edge in each node (to avoid work duplication
  * in RRT# and RRTx)
  */
-KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
-                            KDTreeNode* closestNode, bool saveAllEdges );
+void findBestParent( CSpace* S, KDTreeNode* newNode, JList* nodeList,
+                     KDTreeNode* closestNode, bool saveAllEdges );
 
 // Takes care of inserting a new node in RRT*
 // Uses above implementation of extend with Q = rrtStarQueue
@@ -152,76 +159,54 @@ KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
 
 /////////////////////// RRT# Functions ///////////////////////
 // Functions used for RRT#. Some of these are also used in RRTx
-// THis includes priority heap related key functions, etc.
-
-// Returns the key value of a node
-double keyQ( KDTreeNode* node );
-
-// Less than function for key values
-bool lessQ( KDTreeNode* a, KDTreeNode* b );
-
-// Greater than function for key values
-bool greaterQ( KDTreeNode* a, KDTreeNode* b );
-
-// Priority queue marker function (marks when a node is in the queue)
-void markQ( KDTreeNode* node );
-
-// Priority queue unmarker function (unmarks when a node is removed)
-void unmarkQ( KDTreeNode* node);
-
-// Priority queue check marker function (checks if the node is marked)
-bool markedQ( KDTreeNode node );
-
-// Sets the priority queue index of the node
-void setIndexQ( KDTreeNode* node );
-
-// Set the priority queue index to the unused value
-void unsetIndexQ( KDTreeNode* node );
-
-// Returns the priority queue index
-int getIndexQ( KDTreeNode node );
+// This includes priority heap related key functions **(these are in heap.h)** etc.
 
 // Checks all nodes in the heap to see if there are edge problems -collision-
-//bool checkHeapForEdgeProblems( BinaryHeap* Q);
+// Returns true if there are edge problems
+bool checkHeapForEdgeProblems( Queue* Q );
 
 // Resets the neighbor iterator
 void resetNeighborIterator( RRTNodeNeighborIterator* It );
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, rrtSharpQueue* Q );
+JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q );
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, rrtSharpQueue* Q );
+JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q );
 
 // Links an edge -from- node -to- newNeighbor
 // Edge should already be populated correctly.
-void makeNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge edge );
+void makeNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* edge );
 
 // Links an "initial" "out" edge -from- node -to newNeighbor
 // Edge should already be populated correctly.
 // This is actually only used for -RRTx- but is included here because
 // of its similarity to the function above.
-void makeInitialOutNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge edge );
+void makeInitialOutNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* edge );
 
 // Links an "initial" "in" edge -from- node -to- newNeighbor
 // (i.e. the edge is only stored on the recieving node and not on the sending node)
 // Edge should already be populated correctly.
 // This is actually only used for -RRTx- but is included here because
 // of its similarity to the functions above.
-void makeInitialInNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge edge );
+void makeInitialInNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* edge );
 
 // Recalculates LMC based on neighbors that this node can reach
 // Note the first argument in unused but necessary for the multiple
 // dispatch that is used to differentiate between RRT* and RRT#
-void recalculateLMC( rrtSharpQueue* Q, KDTreeNode* node, KDTreeNode* root );
+void recalculateLMC( Queue* Q, KDTreeNode* node, KDTreeNode* root );
+
+// Updates the priority queue (adds node if necessary, does not if not)
+// Returns true if node is added
+bool updateQueue( Queue* Q, KDTreeNode* newNode, KDTreeNode* root );
 
 // Takes care of inserting a new node in RRT#
 // Usese above implementation of extend with Q = rrtSharpQueue
 
 // Propogates cost information through the graph
-void reduceInconsistency( Queue Q, KDTreeNode* goalNode, double robotRad,
+void reduceInconsistency( Queue* Q, KDTreeNode* goalNode, double robotRad,
                           KDTreeNode* root, double hyperBallRad );
 
 

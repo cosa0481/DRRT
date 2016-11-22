@@ -737,4 +737,4 @@ void calculateHoverTrajectory( CSpace* S, Edge* edge )
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//void explicitEdgeCheck( CSpace* S, Edge* edge, Obstacle* obstacle ) {}
+//bool explicitEdgeCheck( CSpace* S, Edge* edge, Obstacle* obstacle ){}

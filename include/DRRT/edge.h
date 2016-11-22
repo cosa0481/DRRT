@@ -130,7 +130,8 @@ public:
     // More general collision checking functions appear in drrt.h
 
     // Checks if the edge is in collision with a particular obstacle
+    // Returns true if in collision
     // Dubin's edge version
-    //void explicitEdgeCheck( CSpace* S, Edge* edge, Obstacle* obstacle );
+    //bool explicitEdgeCheck( CSpace* S, Edge* edge, Obstacle* obstacle );
 
 #endif // EDGE_H

@@ -7,6 +7,7 @@
 #define JLIST_H
 
 #include <iostream>
+#include <DRRT/edge.h>
 
 class KDTreeNode;
 
@@ -18,11 +19,13 @@ public:
     JListNode* child;
     JListNode* parent;
     KDTreeNode* node;
+    Edge* edge;
     double key = 0.0;
 
     // Corstructor
     JListNode(){}
     JListNode(KDTreeNode* t) : node(t) {}
+    JListNode(Edge* e) : edge(e) {}
 };
 
 // A simple JList
@@ -30,11 +33,14 @@ class JList{
 public:
     JListNode* front;
     JListNode* back;
-    JListNode* bound; // bounds either side of the list
+    JListNode* bound;   // bounds either side of the list
     int length;
+    bool useNodes;      // flag for indicating whether this JList
+                        // is one of Edges or KDTreeNode's. True
+                        // if JList uses KDTreeNode's
 
     // Constructor
-    JList()
+    JList( bool nodeflag ) : useNodes(nodeflag)
     {
         JListNode* endNode = new JListNode();
         endNode->child = endNode;
@@ -48,11 +54,17 @@ public:
 
     // Functions
     void JlistPush( KDTreeNode* t );
+    void JlistPush( Edge* e );
     void JlistPush( KDTreeNode* t, double k );
-    KDTreeNode* JlistTop();
+    void JlistPush( Edge* e, double k );
+    void JlistTop( KDTreeNode* t );
+    void JlistTop( Edge* e );
     void JlistTopKey( KDTreeNode* n, double* k );
-    KDTreeNode* JlistPop();
+    void JlistTopKey( Edge* e, double* k );
+    void JlistPop( KDTreeNode* t );
+    void JlistPop( Edge* e );
     void JlistPopKey( KDTreeNode* n, double* k );
+    void JlistPopKey( Edge* e, double* k );
     bool JlistRemove( JListNode* node );
     void JlistPrint();
     void JlistEmpty();

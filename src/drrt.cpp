@@ -44,6 +44,9 @@ double extractPathLength( KDTreeNode* node, KDTreeNode* root )
     return pathLength;
 }
 
+
+/////////////////////// C-Space Functions ///////////////////////
+
 Eigen::VectorXd randPointDefault( CSpace* S )
 {
     int rand = randInt(1,S->d);
@@ -99,7 +102,9 @@ KDTreeNode* randNodeOrFromStack( CSpace* S )
 {
     if( S->sampleStack->length > 0 ) {
         // Using the sampleStack so KDTreeNode->position is popped
-        return new KDTreeNode( S->sampleStack->JlistPop()->position );
+        KDTreeNode* temp = new KDTreeNode();
+        S->sampleStack->JlistPop(temp);
+        return new KDTreeNode( temp->position );
     } else {
         return randNodeOrGoal( S );
     }
@@ -109,7 +114,9 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S )
 {
     if( S->sampleStack->length > 0 ) {
         // Using the sampleStack so KDTreeNode->position is popped
-        return new KDTreeNode( S->sampleStack->JlistPop()->position );
+        KDTreeNode* temp = new KDTreeNode();
+        S->sampleStack->JlistPop(temp);
+        return new KDTreeNode( temp->position );
     } else {
         KDTreeNode* newNode = randNodeOrGoal( S );
         if( newNode == S->goalNode ) {
@@ -130,6 +137,27 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S )
     }
 }
 
+bool checkNeighborsForEdgeProblems( CSpace* S, KDTreeNode* thisNode )
+{
+    if( thisNode->rrtParentUsed ) {
+//        if( explicitEdgeCheck( S, thisNode, thisNode->rrtParentEdge->endNode ) ) {
+//            return true;
+//        }
+    }
+
+    JListNode* listItem = thisNode->rrtNeighborsOut->front;
+    KDTreeNode* neighborNode;
+    while( listItem != listItem->child ) {
+        neighborNode = listItem->node;
+
+//        if( neighborNode->rrtParentUsed && explicitEdgeCheck( S, neighborNode, neighborNode->rrtParentEdge->endNode ) ) {
+//            return true;
+//        }
+
+        listItem = listItem->child; // iterate
+    }
+    return false;
+}
 
 /////////////////////// Geometric Functions ///////////////////////
 
@@ -240,13 +268,28 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind )
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
+bool explicitEdgeCheck( CSpace* S, Edge* edge )
+{
+    // If ignoring obstacles
+    if( S->inWarmupTime ) return false;
+
+//    JListNode* obstacleListNode = S->obstacles.front;
+//    for( int i = 0; i < obstacles.length; i++ ) {
+//        if( explicitEdgeCheck( S, edge, obstacleListNode->node) ) { // obstacleListNode.data ( also maybe should be explicitNodeCheck? )
+//            return true;
+//        }
+//        obstacleListNode = obstacleListNode->child; // iterate
+//    }
+    return false;
+}
 
 /////////////////////// RRT Functions ///////////////////////
-bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
+
+bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
                 KDTreeNode* closestNode, double delta,
                 double hyperBallRad, KDTreeNode* moveGoal )
 {
-    if( typeid(Q) == typeid(rrtQueue) ) {
+    if( typeid(*Q) == typeid(rrtQueue) ) {
         // First calculate the shortest trajectory (and its distance) that
         // gets from newNode to closestNode while obeying the constraints
         // of the state space and the dynamics of the robot
@@ -254,7 +297,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
         calculateTrajectory( S, thisEdge );
 
         // Figure out if we can link to the nearest node
-        if ( !validMove( S, thisEdge ) /*|| explicitEdgeCheck( S, thisEdge)*/ ) {
+        if ( !validMove( S, thisEdge ) || explicitEdgeCheck( S, thisEdge) ) {
             // We cannot link to nearest neighbor
             return false;
         }
@@ -267,30 +310,231 @@ bool extend( CSpace* S, KDTree* Tree, Queue Q, KDTreeNode* newNode,
 
         // insert the new node into the KDTree
         return kdInsert( Tree, newNode );
-    } else if( typeid(Q) == typeid(rrtStarQueue) ) {
+    } else if( typeid(*Q) == typeid(rrtStarQueue) ) {
+        // Find all nodes within the (shrinking hyperball of (saturated) newNode
+        JList* nodeList = new JList(true);
+        kdFindWithinRange( nodeList, Tree, hyperBallRad, newNode->position );
+
+        // Try to find and link to best parent
+        findBestParent( S, newNode, nodeList, closestNode, false); // saveAllEdges: false b/c no implementation for saving
+        if( !newNode->rrtParentUsed ) {
+            emptyRangeList( nodeList ); // clean up
+            return false;
+        }
+
+        newNode->rrtTreeCost = newNode->rrtLMC;
+
+        // Insert new node into the KDTre
+        kdInsert( Tree, newNode );
+
+        // If this is inserted in a an unhelpful part of the C-space then
+        // don't waste time rewiring (assumes triange inequality, added
+        // by MO, not technically part of RRT* but can only improve it)
+        if( newNode->rrtLMC > moveGoal->rrtLMC ) {
+            emptyRangeList( nodeList ); // clean up
+            return false;
+        }
+
+        // Now rewire neighbors that should use newNode as their parent
+        JListNode* listItem = nodeList->front;
+        KDTreeNode* nearNode;
+        Edge* thisEdge;
+        for( int i = 0; i < nodeList->length; i++ ) {
+            nearNode = listItem->node;
+
+            // Watch out for cycles
+            if( newNode->rrtParentEdge->endNode == nearNode ) {
+                listItem = listItem->child; // iterate through list
+                continue;
+            }
+
+            // Calculate the shortest trajectory (and its distance) that
+            // gets from nearNode to newNode while obeying the constraints
+            // of the state space and the dynamics of the robot
+            thisEdge = newEdge( nearNode, newNode );
+            calculateTrajectory( S, thisEdge );
+
+            // Rewire neighbors that would do betten to use this node
+            // as their parent unless they are in collision or
+            // impossible due to dynamics of robot/space
+            if( nearNode->rrtLMC > newNode->rrtLMC + thisEdge->dist && validMove( S, thisEdge ) && !explicitEdgeCheck( S, thisEdge ) ) {
+                // Make this node the parent of the neighbor node
+                nearNode->rrtParentEdge = thisEdge;
+                nearNode->rrtParentUsed = true;
+
+                // Recalculate tree cost of neighbor
+                nearNode->rrtTreeCost = nearNode->rrtLMC + thisEdge->dist;
+                nearNode->rrtLMC = newNode->rrtLMC + thisEdge->dist;
+            }
+            listItem = listItem->child; // iterate through list
+        }
+        emptyRangeList( nodeList ); // clean up
+        return true;
+    } else if( typeid(*Q) == typeid(rrtSharpQueue) ) {
         return kdInsert( Tree, newNode );
-    } else if( typeid(Q) == typeid(rrtSharpQueue) ) {
-        return kdInsert( Tree, newNode );
-    } else { // typeid(Q) == typeid(rrtXQueue)
+    } else { // typeid(*Q) == typeid(rrtXQueue)
         return kdInsert( Tree, newNode );
     }
 }
 
 
 /////////////////////// RRT* Functions ///////////////////////
-KDTreeNode* findBestParent( CSpace* S, KDTreeNode* newNode, JList nodeList,
-                            KDTreeNode* closestNode, bool saveAllEdges )
+
+void findBestParent( CSpace* S, KDTreeNode* newNode, JList* nodeList,
+                     KDTreeNode* closestNode, bool saveAllEdges )
 {
-    return new KDTreeNode();
+    // If the list is empty
+    if( nodeList->length == 0 ) {
+        if( S->goalNode != newNode ) {
+            nodeList->JlistPush( closestNode );
+        }
+    }
+
+    // Update LMC value based on nodes in the list
+    newNode->rrtLMC = INF;
+    newNode->rrtTreeCost = INF;
+    newNode->rrtParentUsed = false;
+
+    // Find best parent (or if one even exists)
+    JListNode* listItem = nodeList->front;
+    KDTreeNode* nearNode;
+    Edge* thisEdge;
+    while( listItem->child != listItem ) {
+        nearNode = listItem->node;
+
+        // First calculate the shortest trajectory (and its distance)
+        // that gets from newNode to nearNode while obeying the
+        // constraints of the state space and the dynamics
+        // of the robot
+        thisEdge = newEdge( newNode, nearNode );
+        calculateTrajectory( S, thisEdge );
+
+        if( saveAllEdges ) {
+            nearNode->tempEdge = thisEdge;
+        }
+
+        // Check for validity vs edge collisions vs obstacles and
+        // vs the time-dynamics of the robot and space
+        if( explicitEdgeCheck(S,thisEdge) || !validMove(S,thisEdge) ) {
+            if( saveAllEdges ) {
+                nearNode->tempEdge->dist = INF;
+            }
+
+            listItem = listItem->child; // iterate through list
+            continue;
+        }
+
+        if( newNode->rrtLMC > nearNode->rrtLMC + thisEdge->dist ) {
+            // Found a potentiall better parent
+            newNode->rrtLMC = nearNode->rrtLMC + thisEdge->dist;
+            newNode->rrtParentEdge = thisEdge;
+            newNode->rrtParentUsed = true;
+        }
+
+        listItem = listItem->child; // iterate thorugh list
+    }
 }
 
 
 /////////////////////// RRT# Functions ///////////////////////
+bool checkHeapForEdgeProblems( Queue* Q )
+{
+    KDTreeNode* node;
+    for( int i = 0; i < Q->Q->indexOfLast; i++ ) {
+        node = &Q->Q->H[i];
+        if( checkNeighborsForEdgeProblems( Q->S, node ) ) return true;
+    }
+    return false;
+}
 
-void reduceInconsistency( Queue Q, KDTreeNode* goalNode, double robotRad,
+void resetNeighborIterator( RRTNodeNeighborIterator* It )
+{
+    It->listFlag = 0;
+}
+
+JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
+{
+    if( typeid(*Q) == typeid(rrtSharpQueue) ) {
+        if( It->listFlag == 0 ) {
+            It->listItem = It->thisNode->rrtNeighborsOut->front;
+            It->listFlag = 1;
+        } else {
+            It->listItem = It->listItem->child;
+        }
+        if( It->listItem == It->listItem->child ) {
+            // Done with all neighbors
+            return new JListNode();
+        }
+        return It->listItem;
+    }
+    return new JListNode();
+}
+
+JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
+{
+    if( typeid(*Q) == typeid(rrtSharpQueue) ) {
+        if( It->listFlag == 0 ) {
+            It->listItem = It->thisNode->rrtNeighborsIn->front;
+            It->listFlag = 1;
+        } else {
+            It->listItem = It->listItem->child;
+        }
+        if( It->listItem == It->listItem->child ) {
+            // Done with all neighbors
+            return new JListNode();
+        }
+        return It->listItem;
+    }
+    return new JListNode();
+}
+
+void makeNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* edge )
+{
+    node->rrtNeighborsOut->JlistPush( edge );
+    edge->listItemInStartNode = newNeighbor->rrtNeighborsOut->front;
+
+    newNeighbor->rrtNeighborsIn->JlistPush( edge );
+    edge->listItemInEndNode = newNeighbor->rrtNeighborsIn->front;
+}
+
+void makeInitialOutNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* edge )
+{
+    node->InitialNeighborListOut->JlistPush( edge );
+}
+
+void makeInitialInNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* edge )
+{
+    node->InitialNeighborListIn->JlistPush( edge );
+}
+
+
+
+void reduceInconsistency( Queue* Q, KDTreeNode* goalNode, double robotRad,
                           KDTreeNode* root, double hyperBallRad )
 {
+    if( typeid(*Q) == typeid(rrtSharpQueue) ) {
 
+    } else { // typeid(*Q) == typeid(rrtXQueue)
+
+    }
+}
+
+
+/////////////////////// RRTx Functions ///////////////////////
+
+void markOS( KDTreeNode* node )
+{
+
+}
+
+void unmarkOS( KDTreeNode* node )
+{
+
+}
+
+bool markedOS( KDTreeNode* node )
+{
+    return true;
 }
 
 void moveRobot( CSpace* S, BinaryHeap* Q, KDTree* Tree, double slice_time,
@@ -322,31 +566,34 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     // Dubin's car so 4th dimension wraps at 0 = 2pi
     KDTree* KD = new KDTree( S->d,"KDdist", wraps, wrapPoints );
 
-    Queue Q;
+    Queue* Q = new Queue();
     if( searchType == "RRT" ) {
-        rrtQueue Q = rrtQueue();
-        Q.S = S;
+        rrtQueue* Q = new rrtQueue();
+        Q->S = S;
     } else if( searchType == "RRT*" ) {
-        rrtStarQueue Q = rrtStarQueue();
-        Q.S = S;
+        rrtStarQueue* Q = new rrtStarQueue();
+        Q->S = S;
     } else if( searchType == "RRT#" ) {
-        rrtSharpQueue Q = rrtSharpQueue();
-        Q.Q = new BinaryHeap();
-        Q.S = S;
+        rrtSharpQueue* Q = new rrtSharpQueue();
+        Q->Q = new BinaryHeap(false); // false >> use priority queue functions (keyQ)
+                                      // sorted based on cost from goal
+        Q->S = S;
     } else if( searchType == "RRTx" ) {
-        rrtXQueue Q = rrtXQueue();
-        Q.Q = new BinaryHeap();
-        Q.OS = new JList();
-        Q.S = S;
-        Q.changeThresh = changeThresh;
+        rrtXQueue* Q = new rrtXQueue();
+        Q->Q = new BinaryHeap(false); // false >> use priority queue functions (keyQ)
+                                      // sorted based on cost from goal
+        Q->OS = new JList(true); // Obstacle successor stack
+                                 // true >> uses KDTreeNode's (Needs Obstacles??)
+        Q->S = S;
+        Q->changeThresh = changeThresh;
     } else {
         std::cout << "Unknown search type: " << searchType << std::endl;
         exit(1);
     }
 
-    S->sampleStack = new JList();   // stores a stack of points that we desire
-                                    // to insert in the future (used when an
-                                    // obstacle is removed)
+    S->sampleStack = new JList(true);   // stores a stack of points that we desire
+                                        // to insert in the future (used when an
+                                        // obstacle is removed) true >> uses KDTreeNode's
 
     S->delta = delta;
 
@@ -430,7 +677,7 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             /* Changed elapsedTime[checkPtr] to S->timeElapsed since I believe they are the same at this point */
             if( S->timeElapsed > total_planning_time + slice_time ) {
                 if( MoveRobotFlag ) {
-                    moveRobot( S,Q.Q,KD,slice_time,root,hyperBallRad,&R ); // Assumes Q is rrtxQueue and Q.Q is its BinaryHeap
+                    moveRobot( S,Q->Q,KD,slice_time,root,hyperBallRad,&R ); // Assumes Q is rrtxQueue and Q.Q is its BinaryHeap
                 } else {
                     std::cout << "done (robot not moved)" << std::endl;
                     break;

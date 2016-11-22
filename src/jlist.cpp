@@ -22,6 +22,22 @@ void JList::JlistPush( KDTreeNode* t )
     length += 1;
 }
 
+void JList::JlistPush( Edge* e )
+{
+    JListNode* newNode = new JListNode( e );
+    newNode->parent = front->parent;
+    newNode->child = front;
+
+    if( length == 0 ) {
+        back = newNode;
+    } else {
+        front->parent = newNode;
+    }
+
+    front = newNode;
+    length += 1;
+}
+
 void JList::JlistPush( KDTreeNode* t, double k )
 {
     JListNode* newNode = new JListNode( t );
@@ -39,31 +55,67 @@ void JList::JlistPush( KDTreeNode* t, double k )
     length += 1;
 }
 
-KDTreeNode* JList::JlistTop()
+void JList::JlistPush( Edge* e, double k )
 {
+    JListNode* newNode = new JListNode( e );
+    newNode->parent = front->parent;
+    newNode->child = front;
+
     if( length == 0 ) {
-        // Jlist is empty
-        return new KDTreeNode();
+        back = newNode;
+    } else {
+        front->parent = newNode;
     }
-    return front->node;
+
+    newNode->key = k;
+    front = newNode;
+    length += 1;
 }
 
-void JList::JlistTopKey( KDTreeNode* n, double* k )
+void JList::JlistTop( KDTreeNode* t )
 {
     if( length == 0 ) {
         // Jlist is empty
-        n = new KDTreeNode();
+        t = new KDTreeNode();
+    }
+    t = front->node;
+}
+
+void JList::JlistTop( Edge* e ) {
+    if( length == 0 ) {
+        // Jlist is empty
+        e = new Edge();
+    }
+    e = front->edge;
+}
+
+void JList::JlistTopKey( KDTreeNode* t, double* k )
+{
+    if( length == 0 ) {
+        // Jlist is empty
+        t = new KDTreeNode();
         *k = -1.0;
     }
-    n = front->node;
+    t = front->node;
     *k = front->key;
 }
 
-KDTreeNode* JList::JlistPop()
+void JList::JlistTopKey( Edge* e, double * k )
 {
     if( length == 0 ) {
         // Jlist is empty
-        return new KDTreeNode();
+        e = new Edge();
+        *k = -1.0;
+    }
+    e = front->edge;
+    *k = front->key;
+}
+
+void JList::JlistPop( KDTreeNode* t )
+{
+    if( length == 0 ) {
+        // Jlist is empty
+        t = new KDTreeNode();
     }
 
     JListNode* oldTop = front;
@@ -80,7 +132,31 @@ KDTreeNode* JList::JlistPop()
     oldTop->child = oldTop; // added in case Jlist nodes hang around after this
     oldTop->parent = oldTop;
 
-    return oldTop->node;
+    t = oldTop->node;
+}
+
+void JList::JlistPop( Edge* e )
+{
+    if( length == 0 ) {
+        // Jlist is empty
+        e = new Edge();
+    }
+
+    JListNode* oldTop = front;
+    if( length > 1 ) {
+        front->child->parent = front->parent;
+        front = front->child;
+    } else if( length == 1 ) {
+        back = bound;
+        front = bound;
+    }
+
+    length -= 1;
+
+    oldTop->child = oldTop; // added in case Jlist nodes hang around after this
+    oldTop->parent = oldTop;
+
+    e = oldTop->edge;
 }
 
 void JList::JlistPopKey( KDTreeNode* n, double* k )
@@ -106,6 +182,32 @@ void JList::JlistPopKey( KDTreeNode* n, double* k )
     oldTop->parent = oldTop;
 
     n = oldTop->node;
+    *k = oldTop->key;
+}
+
+void JList::JlistPopKey( Edge* e, double* k )
+{
+    if( length == 0 ) {
+        // Jlist is empty
+        e = new Edge();
+        *k = -1.0;
+    }
+
+    JListNode* oldTop = front;
+    if( length > 1 ) {
+        front->child->parent = front->parent;
+        front = front->child;
+    } else if( length == 1 ) {
+        back = bound;
+        front = bound;
+    }
+
+    length -= 1;
+
+    oldTop->child = oldTop;
+    oldTop->parent = oldTop;
+
+    e = oldTop->edge;
     *k = oldTop->key;
 }
 
@@ -158,7 +260,9 @@ void JList::JlistPrint()
 
 void JList::JlistEmpty()
 {
-    while( JlistPop()->dist != -1.0 );
+    KDTreeNode* temp = new KDTreeNode();
+    JlistPop(temp);
+    while( temp->dist != -1.0 ) JlistPop(temp);
 }
 
 /* Test case

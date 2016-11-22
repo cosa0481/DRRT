@@ -16,29 +16,48 @@ public:
     std::vector<KDTreeNode> H;  // stores the things that are in the heap
     int indexOfLast;            // the index of the last node in the heap array
     int parentOfLast;           // stores the index of the parent of the last node
+    bool useDefault;            // flag for using key or keyQ e.g. (DRRT.jl>>3289)
 
     // Functions for interacting with marks and indices
     // Returns the key value of the node
-    double key( KDTreeNode t ) { return t.dist; }
+    double keyD( KDTreeNode node ) { return node.dist; }
+    double keyQ( KDTreeNode node ) { return std::min( node.rrtTreeCost, node.rrtLMC ); }
+    double key( KDTreeNode node ) { return ( useDefault ? keyD(node) : keyQ(node) ); }
     // Default less than function
-    bool lessThan( KDTreeNode a, KDTreeNode b ) { return (a.dist < b.dist); }
+    bool lessD( KDTreeNode a, KDTreeNode b ) { return (a.dist < b.dist); }
+    bool lessQ( KDTreeNode a, KDTreeNode b ) { return ((keyQ(a) < keyQ(b)) || (keyQ(a) == keyQ(b) && a.isMoveGoal)); }
+    bool lessThan( KDTreeNode a, KDTreeNode b ) { return ( useDefault ? lessD(a,b) : lessQ(a,b) ); }
     // Default greater than function DATA
-    bool greaterThan( KDTreeNode a, KDTreeNode b ) { return (a.dist > b.dist); }
+    bool greaterD( KDTreeNode a, KDTreeNode b ) { return (a.dist > b.dist); }
+    bool greaterQ( KDTreeNode a, KDTreeNode b ) { return ((keyQ(a) > keyQ(b)) || (keyQ(a) == keyQ(b) && b.isMoveGoal)); }
+    bool greaterThan( KDTreeNode a, KDTreeNode b ) { return ( useDefault ? greaterD(a,b) : greaterQ(a,b) ); }
     // Default heap marker function (marks when a node is in the heap)
-    void mark( KDTreeNode* t ) { t->inHeap = true; }
+    void markD( KDTreeNode* node ) { node->inHeap = true; }
+    void markQ( KDTreeNode* node ) { node->inPriorityQueue = true; }
+    void mark( KDTreeNode* node ) { return ( useDefault ? markD(node) : markQ(node) ); }
     // Default heap unmarker function (un marks when a node is removed)
-    void unmark( KDTreeNode* t ) { t->inHeap = false; }
+    void unmarkD( KDTreeNode* node ) { node->inHeap = false; }
+    void unmarkQ( KDTreeNode* node ) { node->inPriorityQueue = false; }
+    void unmark( KDTreeNode* node ) { return ( useDefault ? unmarkD(node) : unmarkQ(node) ); }
     // Default heap check marker function (checks if node is marked)
-    bool marked( KDTreeNode t ) { return t.inHeap; }
+    bool markedD( KDTreeNode node ) { return node.inHeap; }
+    bool markedQ( KDTreeNode node ) { return node.inPriorityQueue; }
+    bool marked( KDTreeNode node ) { return ( useDefault ? markedD(node) : markedQ(node) ); }
     // Sets the heap index to a value
-    void setIndex( KDTreeNode* t, int value ) { t->heapIndex = value; }
+    void setIndexD( KDTreeNode* node, int value ) { node->heapIndex = value; }
+    void setIndexQ( KDTreeNode* node, int value ) { node->priorityQueueIndex = value; }
+    void setIndex( KDTreeNode* node, int value ) { return ( useDefault ? setIndexD(node,value) : setIndexQ(node,value) ); }
     // Set the heap index to the unused value (-1)
-    void unsetIndex( KDTreeNode* t ) { t->heapIndex = -1; }
+    void unsetIndexD( KDTreeNode* node ) { node->heapIndex = -1; }
+    void unsetIndexQ( KDTreeNode* node ) { node->priorityQueueIndex = -1; }
+    void unsetIndex( KDTreeNode* node ) { return ( useDefault ? unsetIndexD(node) : unsetIndexQ(node) ); }
     // Returns the heap index
-    int getIndex( KDTreeNode t ) { return t.heapIndex; }
+    int getIndexD( KDTreeNode node ) { return node.heapIndex; }
+    int getIndexQ( KDTreeNode node ) { return node.priorityQueueIndex; }
+    int getIndex( KDTreeNode node ) { return ( useDefault ? getIndexD(node) : getIndexQ(node) ); }
 
     // Constructor
-    BinaryHeap() : indexOfLast(0), parentOfLast(-1)
+    BinaryHeap( bool useD ) : indexOfLast(0), parentOfLast(-1), useDefault(useD)
     {
         H.push_back( KDTreeNode() );
     }

@@ -65,32 +65,32 @@ public:
 
     // Constructors
     KDTreeNode() : kdInTree(false), kdParentExist(false), kdChildLExist(false),
-                   kdChildRExist(false), heapIndex(-1), inHeap(false), dist(-1),
-                   rrtParentUsed(false), rrtNeighborsOut(new JList()), rrtNeighborsIn(new JList()),
-                   priorityQueueIndex(-1), inPriorityQueue(false), SuccessorList(new JList()),
-                   InitialNeighborListOut(new JList()), InitialNeighborListIn(new JList()),
+        kdChildRExist(false), heapIndex(-1), inHeap(false), dist(-1),
+        rrtParentUsed(false), rrtNeighborsOut(new JList(false)), rrtNeighborsIn(new JList(false)),
+        priorityQueueIndex(-1), inPriorityQueue(false), SuccessorList(new JList(false)),
+        InitialNeighborListOut(new JList(false)), InitialNeighborListIn(new JList(false)),
                    inOSQueue(false), isMoveGoal(false)
     {}
     KDTreeNode(float d) :  kdInTree(false), kdParentExist(false), kdChildLExist(false),
         kdChildRExist(false), heapIndex(-1), inHeap(false), dist(d),
-        rrtParentUsed(false), rrtNeighborsOut(new JList()), rrtNeighborsIn(new JList()),
-        priorityQueueIndex(-1), inPriorityQueue(false), SuccessorList(new JList()),
-        InitialNeighborListOut(new JList()), InitialNeighborListIn(new JList()),
+        rrtParentUsed(false), rrtNeighborsOut(new JList(false)), rrtNeighborsIn(new JList(false)),
+        priorityQueueIndex(-1), inPriorityQueue(false), SuccessorList(new JList(false)),
+        InitialNeighborListOut(new JList(false)), InitialNeighborListIn(new JList(false)),
         inOSQueue(false), isMoveGoal(false)
     {}
     KDTreeNode(float d, Eigen::VectorXd pos) :  kdInTree(false), kdParentExist(false),
         kdChildLExist(false), kdChildRExist(false), heapIndex(-1), inHeap(false), dist(d),
-        position(pos), rrtParentUsed(false), rrtNeighborsOut(new JList()),
-        rrtNeighborsIn(new JList()), priorityQueueIndex(-1), inPriorityQueue(false),
-        SuccessorList(new JList()), InitialNeighborListOut(new JList()),
-        InitialNeighborListIn(new JList()), inOSQueue(false), isMoveGoal(false)
+        position(pos), rrtParentUsed(false), rrtNeighborsOut(new JList(false)),
+        rrtNeighborsIn(new JList(false)), priorityQueueIndex(-1), inPriorityQueue(false),
+        SuccessorList(new JList(false)), InitialNeighborListOut(new JList(false)),
+        InitialNeighborListIn(new JList(false)), inOSQueue(false), isMoveGoal(false)
     {}
     KDTreeNode(Eigen::VectorXd pos) : kdInTree(false), kdParentExist(false),
         kdChildLExist(false), kdChildRExist(false), heapIndex(-1), inHeap(false), dist(-1),
-        position(pos), rrtParentUsed(false), rrtNeighborsOut(new JList()),
-        rrtNeighborsIn(new JList()), priorityQueueIndex(-1), inPriorityQueue(false),
-        SuccessorList(new JList()), InitialNeighborListOut(new JList()),
-        InitialNeighborListIn(new JList()), inOSQueue(false), isMoveGoal(false)
+        position(pos), rrtParentUsed(false), rrtNeighborsOut(new JList(false)),
+        rrtNeighborsIn(new JList(false)), priorityQueueIndex(-1), inPriorityQueue(false),
+        SuccessorList(new JList(false)), InitialNeighborListOut(new JList(false)),
+        InitialNeighborListIn(new JList(false)), inOSQueue(false), isMoveGoal(false)
     {}
 };
 

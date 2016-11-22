@@ -5,14 +5,15 @@
 #include <string>
 #include <DRRT/kdtreenode.h>
 #include <DRRT/jlist.h>
+#include <DRRT/list.h>
 #include <DRRT/heap.h>
 #include <DRRT/edge.h>
 
 class CSpace{
 public:
     int d;                              // dimensions
-    //List<Obstacle>;                     // a list of obstacles
-    //float obsDelta;                     // the granularity of obstacle checks on edges
+    List obstacles;                     // a list of obstacles
+    float obsDelta;                     // the granularity of obstacle checks on edges
     Eigen::VectorXd lowerBounds;        // 1xD vector containing the lower bounds
     Eigen::VectorXd upperBounds;        // 1xD vector containing the upper bounds
     Eigen::VectorXd width;              // 1xD vector containing upperBounds-lowerBounds
@@ -54,7 +55,7 @@ public:
     float dubinsMinVelocity;            // min velocity of Dubin's car (for dubins + time)
     float dubinsMaxVelocity;            // max velocity of Dubin's car (for dubins + time)
 
-    // This jlist must "hold" std::vector<float>s
+    // This jlist must "hold" MatrixXd's ?
     // So use the JListNode->node->position when using this stack
     JList* sampleStack;                 // points to sample in the future
 

@@ -519,7 +519,7 @@ bool kdFindKNearestInSubtree( KDTreeNode* farthestNode, double* farthestNodeDist
 
 std::vector<KDTreeNode> kdFindKNearest( KDTree *tree, int k, Eigen::VectorXd queryPoint )
 {
-    BinaryHeap H = BinaryHeap();
+    BinaryHeap H = BinaryHeap(true); // true >> use heap functions (key not keyQ)
 
     // Insert root node in heap
     tree->root->dist = distFunc( tree->distanceFunction, queryPoint, tree->root->position );
