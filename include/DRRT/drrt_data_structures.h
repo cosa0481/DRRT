@@ -80,7 +80,7 @@ public:
 
 typedef struct Queue{
     CSpace* S;
-    BinaryHeap* Q;      // normal queue (sorted based on cost from goal
+    BinaryHeap* Q;      // normal queue (sorted based on cost from goal)
     JList* OS;          // obstacle successor stack
     float changeThresh; // threshold of local changes that we care about
 

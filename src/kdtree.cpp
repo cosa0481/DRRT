@@ -685,6 +685,35 @@ void kdFindWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd qu
     }
 }
 
+void kdFindMoreWithinRange( JList* L, KDTree* tree, double range, Eigen::VectorXd queryPoint )
+{
+    // Insert root node in list if it is within range
+    double distToRoot = distFunc( tree->distanceFunction, queryPoint, tree->root->position );
+    if( distToRoot <= range ) {
+        addToRangeList( L, tree->root, distToRoot );
+    }
+
+    // Find nodes within range
+    kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, queryPoint, L );
+
+    if( tree->numWraps > 0 ) {
+        // If dimensions wrap around, need to search vs. identities (ghosts)
+        ghostPointIterator pointIterator = ghostPointIterator( tree, queryPoint );
+        Eigen::VectorXd thisGhostPoint;
+        while( true ) {
+            thisGhostPoint = getNextGhostPoint( pointIterator, range );
+            Eigen::VectorXd zeros(tree->numWraps,0);
+            if( thisGhostPoint == zeros ) {
+                break;
+            }
+
+            // Now see if any points in the space are closer to this ghost
+            kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, thisGhostPoint, L );
+        }
+    }
+
+}
+
 void kdInsert( KDTree* tree, Eigen::VectorXd a )
 {
     KDTreeNode* N = new KDTreeNode();

@@ -23,7 +23,7 @@ public:
     double key = 0.0;
 
     // Corstructor
-    JListNode(){}
+    JListNode() : key(-1.0) {}
     JListNode(KDTreeNode* t) : node(t) {}
     JListNode(Edge* e) : edge(e) {}
 };

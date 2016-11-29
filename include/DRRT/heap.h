@@ -88,7 +88,7 @@ public:
 
     // Removes the top valued node from the heap and returns it
     // If heap is empty, return node with data = -1
-    KDTreeNode popHeap();
+    KDTreeNode* popHeap();
 
     // Removes the node from the heap, assuming that it is in the heap
     bool removeFromHeap( KDTreeNode* node );
@@ -122,7 +122,7 @@ public:
     KDTreeNode* topHeapB() { return topHeap(); }
 
     // Removes the top valued node from the heap and returns it
-    KDTreeNode popHeapB();
+    KDTreeNode* popHeapB();
 
     // Removes the node from the heap, assuming it is in the heap
     bool removeFromHeapB( KDTreeNode* node );

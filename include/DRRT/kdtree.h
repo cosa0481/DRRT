@@ -139,6 +139,14 @@ bool kdFindWithinRangeInSubtree( std::string distanceFunction, KDTreeNode* root,
 // This data is contained in the JList at S
 void kdFindWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
 
+// Returns all nodes within range of queryPoint and also their distance.
+// They are returned in a list with elements of type KDTreeNode
+// THe list to be used is passed in so additional points can be added
+// to it (e.ge, if we want to have one list containing the points that
+// are close to a couple of different points X1,..,Xn, then call this
+// for X2,...,Xn after first calling kdFindWithinRange for X1
+void kdFindMoreWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
+
 // Inserts a new point into the tree (used only for debugging)
 void kdInsert( KDTree* tree, Eigen::VectorXd a );
 

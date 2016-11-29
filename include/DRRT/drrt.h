@@ -136,6 +136,7 @@ bool explicitEdgeCheck( CSpace* S, Edge* edge );
 // RRT#, and RRTx
 
 // Takes care of inserting a new node in RRT
+// Returns true if successful
 bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
              KDTreeNode* closestNode, double delta,
              double hyperBallRad, KDTreeNode* moveGoal );
@@ -196,14 +197,16 @@ void makeInitialInNeighborOf( KDTreeNode* newNeighbor, KDTreeNode* node, Edge* e
 // Recalculates LMC based on neighbors that this node can reach
 // Note the first argument in unused but necessary for the multiple
 // dispatch that is used to differentiate between RRT* and RRT#
-void recalculateLMC( Queue* Q, KDTreeNode* node, KDTreeNode* root );
+// Returns true if successful
+bool recalculateLMC( Queue* Q, KDTreeNode* node, KDTreeNode* root );
 
 // Updates the priority queue (adds node if necessary, does not if not)
 // Returns true if node is added
-bool updateQueue( Queue* Q, KDTreeNode* newNode, KDTreeNode* root );
+void updateQueue( Queue* Q, KDTreeNode* newNode,
+                  KDTreeNode* root, double hyperBallRad );
 
 // Takes care of inserting a new node in RRT#
-// Usese above implementation of extend with Q = rrtSharpQueue
+// Uses above implementation of extend with Q = rrtSharpQueue
 
 // Propogates cost information through the graph
 void reduceInconsistency( Queue* Q, KDTreeNode* goalNode, double robotRad,
@@ -223,11 +226,11 @@ void unmarkOS( KDTreeNode* node );
 bool markedOS( KDTreeNode node );
 
 // Makes sure the node is in the priority queue
-bool verifyInQueue( BinaryHeap* Q, KDTreeNode* node );
+bool verifyInQueue( Queue* Q, KDTreeNode* node );
 
 // Makes sure the node is in the OS queue
 // Removes it from the normal queue if necessary
-bool verifyInOSQueue( BinaryHeap* Q, KDTreeNode* node );
+bool verifyInOSQueue( Queue* Q, KDTreeNode* node );
 
 // Removes members of the current neighbor list of node that are too far away
 void cullCurrentNeighbors( KDTreeNode* node, double hyperBallRad );
@@ -235,19 +238,20 @@ void cullCurrentNeighbors( KDTreeNode* node, double hyperBallRad );
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
-JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, rrtXQueue Q );
+JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q );
 
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
-JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, rrtXQueue Q );
+JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q );
 
 // Makes newParent the parent of node via the edge
 void makeParentOf( KDTreeNode* newParent, KDTreeNode* node,
                    Edge* edge, KDTreeNode* root );
 
 // Recalculates LMC based on neighbors
-void recalculateLMCMineVTwo( BinaryHeap* Q, KDTreeNode* node,
+// Returns true if successful
+bool recalculateLMCMineVTwo( Queue* Q, KDTreeNode* node,
                              KDTreeNode* root, double hyperBallRad );
 
 // Takes care of inserting a new node
@@ -255,17 +259,18 @@ void recalculateLMCMineVTwo( BinaryHeap* Q, KDTreeNode* node,
 
 // This is the (non-initial) rewire function used by RRTx that is
 // responsible for propogating changes through the graph
-void rewire( BinaryHeap* Q, KDTreeNode* node, KDTreeNode* root,
+// Returns true if successful
+bool rewire( Queue* Q, KDTreeNode* node, KDTreeNode* root,
              double hyperBallRad, double changeThresh );
 
 // Propogates cost information through the graph
-// Usese above implementation with Q = rrtSharpQueue
+// Uses above implementation with Q = rrtXQueue
 
 // Propogates orphan status to all nodes in the basin(s) of attraction
 // of the nodes in Q.OS stack (that have higher cost). This also takes
 // the robot to remember if node the robot was moving at is one of the
-// nodes that has become an orphan
-void propogateDescendants( KDTreeNode* node, RobotData* R );
+// nodes that has become an orphan. Returns true if successful.
+bool propogateDescendants( Queue* Q, RobotData* R );
 
 /* If C-Space has a time dimension, add a sequence of descendents
  * to the root, where each great^n-grandchild is at the same
@@ -291,17 +296,26 @@ void findNewTarget( CSpace* S, KDTree* Tree,
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot( CSpace* S, BinaryHeap* Q, KDTree* Tree, double slice_time,
+void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
                 KDTreeNode* root, double hyperBallRad, RobotData* R );
 
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
 // be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
-//JList* findPointsInConflictWithObstacle( CSpace* S, KDTree* Tree, Obstacle* O, KDTreeNode* root );
+/*JList* findPointsInConflictWithObstacle( CSpace* S, KDTree* Tree,
+                                         Obstacle* O, KDTreeNode* root );*/
 
 // This adds the obstacle (checks for edge conflicts with the obstactle
 // and then puts the affected nodes into the appropriate heaps -collision-
-//void addNewObstactle( CSpace* S, KDTree* Tree, BinaryHeap* Q, Obstactle* O, KDTreeNode* root, int fileCounter, RobotData* R );
+/*void addNewObstacle( CSpace* S, KDTree* Tree, Queue* Q, Obstacle* O,
+                     KDTreeNode* root, int fileCounter, RobotData* R );*/
+
+// This removes the obstacle (checks for edge conflicts with the obstacle
+// and then puts the affected nodes into the appropriate heaps)
+/*void removeObstacle( CSpace* S, KDTree* Tree, Queue* Q, Obstacle* O,
+                     KDTreeNode* root, double hyperBallRad,
+                     double timeElapsed, KDTreeNode* moveGoal );*/
+
 
 /////////////////////// main (despite the name) ///////////////////////
 // The following now calls RRT, RRT*, RRT#, and RRTx.

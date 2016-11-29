@@ -96,17 +96,17 @@ KDTreeNode* BinaryHeap::topHeap()
     return &H[1];
 }
 
-KDTreeNode BinaryHeap::popHeap()
+KDTreeNode* BinaryHeap::popHeap()
 {
-    if( indexOfLast < 1 ) return KDTreeNode();
-    KDTreeNode oldTopNode = H[1];
+    if( indexOfLast < 1 ) return new KDTreeNode();
+    KDTreeNode* oldTopNode = &H[1];
     H[1] = H[indexOfLast];
     setIndex( &H[1], 1 );
     indexOfLast -= 1;
     parentOfLast = indexOfLast/2;
     bubbleDown( 1 );
-    unmark( &oldTopNode );
-    unsetIndex( &oldTopNode );
+    unmark( oldTopNode );
+    unsetIndex( oldTopNode );
     return oldTopNode;
 }
 
@@ -259,17 +259,17 @@ bool BinaryHeap::addToHeapB( KDTreeNode* node )
     return true;
 }
 
-KDTreeNode BinaryHeap::popHeapB()
+KDTreeNode* BinaryHeap::popHeapB()
 {
-    if( indexOfLast < 1 ) return KDTreeNode();
-    KDTreeNode oldTopNode = H[1];
+    if( indexOfLast < 1 ) return new KDTreeNode();
+    KDTreeNode* oldTopNode = &H[1];
     H[1] = H[indexOfLast];
     setIndex( &H[1], 1 );
     indexOfLast -= 1;
     parentOfLast = indexOfLast/2;
     bubbleDownB( 1 );
-    unmark( &oldTopNode );
-    unsetIndex( &oldTopNode );
+    unmark( oldTopNode );
+    unsetIndex( oldTopNode );
     return oldTopNode;
 }
 
