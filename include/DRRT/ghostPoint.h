@@ -35,6 +35,6 @@ typedef struct ghostPointIterator {
 
 // This returns the next ghost point, not that it starts
 // at the first -ghost- and does not return the original point DATA
-Eigen::VectorXd getNextGhostPoint( ghostPointIterator G, double bestDist );
+Eigen::VectorXd getNextGhostPoint( ghostPointIterator* G, double bestDist );
 
 #endif // GHOSTPOINT_H

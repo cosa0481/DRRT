@@ -6,6 +6,26 @@
 
 #include <DRRT/drrt.h>
 
+void error( std::string e )
+{
+    std::cout << e << std::endl;
+}
+
+void error( double d )
+{
+    std::cout << d << std::endl;
+}
+
+void error( int i )
+{
+    std::cout << i << std::endl;
+}
+
+double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start )
+{
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now()-start).count();
+}
+
 int randInt( int min, int max )
 {
     std::random_device rd;
@@ -50,12 +70,12 @@ double extractPathLength( KDTreeNode* node, KDTreeNode* root )
 Eigen::VectorXd randPointDefault( CSpace* S )
 {
     int rand = randInt(1,S->d);
-    Eigen::VectorXd first;
-    Eigen::VectorXd second;
+    double first;
+    Eigen::VectorXd second(S->width.size());
 
-    for( int i = 0; i < S->lowerBounds.size(); i++ ) {
-        first(i) = rand * S->width(i);
-        second(i) = S->lowerBounds(i) + first(i);
+    for( int i = 0; i < S->width.size(); i++ ) {
+        first = rand * S->width(i);
+        second(i) = S->lowerBounds(i) + first;
     }
     return second;
 }
@@ -68,8 +88,8 @@ KDTreeNode* randNodeDefault( CSpace* S )
 
 KDTreeNode* randNodeOrGoal( CSpace* S )
 {
-    int rand = randInt(0,1);
-    if( rand > S->pGoal ) {
+    double r = (double)rand()/(RAND_MAX);
+    if( r > S->pGoal ) {
         return randNodeDefault( S );
     } else {
         return S->goalNode;
@@ -131,7 +151,8 @@ KDTreeNode* randNodeInTimeOrFromStack( CSpace* S )
                 (newNode->position(2) > S->moveGoal->position(2) &&
                  S->moveGoal != S->goalNode) ) {
             // Resample time in ok range
-            newNode->position(2) = minTimeToReachNode + randInt(0,1) * (S->moveGoal->position(2) - minTimeToReachNode);
+            double r = (double) rand() / (RAND_MAX);
+            newNode->position(2) = minTimeToReachNode + r * (S->moveGoal->position(2) - minTimeToReachNode);
         }
         return newNode;
     }
@@ -289,7 +310,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
                 KDTreeNode* closestNode, double delta,
                 double hyperBallRad, KDTreeNode* moveGoal )
 {
-    if( typeid(*Q) == typeid(rrtQueue) ) {
+    if( Q->type == "RRT" ) {
         // First calculate the shortest trajectory (and its distance) that
         // gets from newNode to closestNode while obeying the constraints
         // of the state space and the dynamics of the robot
@@ -310,7 +331,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
 
         // insert the new node into the KDTree
         return kdInsert( Tree, newNode );
-    } else if( typeid(*Q) == typeid(rrtStarQueue) ) {
+    } else if( Q->type == "RRT*" ) {
         // Find all nodes within the (shrinking hyperball of (saturated) newNode
         JList* nodeList = new JList(true);
         kdFindWithinRange( nodeList, Tree, hyperBallRad, newNode->position );
@@ -370,7 +391,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
         }
         emptyRangeList( nodeList ); // clean up
         return true;
-    } else if( typeid(*Q) == typeid(rrtSharpQueue) ) {
+    } else if( Q->type == "RRT#" ) {
         // Find all nodes within the (shrinking) hyperball of
         // (saturated) newNode
         JList* nodeList = new JList(true);
@@ -464,7 +485,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
         // Insert the node into the priority queue
         Q->Q->addToHeap( newNode );
         return true;
-    } else { // typeid(*Q) == typeid(rrtXQueue)
+    } else { // Q->type == "RRTx"
         // Find all nodes within the (shrinking) hyper ball of
         // (saturated) newNode
         JList* nodeList = new JList(true);
@@ -747,7 +768,7 @@ void updateQueue( Queue* Q, KDTreeNode* newNode,
 void reduceInconsistency( Queue* Q, KDTreeNode* goalNode, double robotRad,
                           KDTreeNode* root, double hyperBallRad )
 {
-    if( typeid(*Q) == typeid(rrtSharpQueue) ) {
+    if( Q->type == "RRT#" ) {
 
         KDTreeNode* thisNode, neighborNode;
         JListNode* listItem;
@@ -767,7 +788,7 @@ void reduceInconsistency( Queue* Q, KDTreeNode* goalNode, double robotRad,
                 listItem = listItem->child; // iterate through list
             }
         }
-    } else { // typeid(*Q) == typeid(rrtXQueue)
+    } else { // Q->type == "RRTx";
         KDTreeNode* thisNode;
         while( Q->Q->indexOfLast > 0 &&
                (Q->Q->lessQ(*(Q->Q->topHeap()), *goalNode) ||
@@ -1461,41 +1482,41 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
 {
     //double robotSensorRange = 20.0; // used for "sensing" obstacles (should make input)
 
-    double startTime = time(0)*1000;    // time in milliseconds
+    //double startTime = time(0)*1000;    // time in nanoseconds
     double saveElapsedTime = 0.0;       // will hold save time to correct for time spent
-                                        // not in the algorithm itself
+                                        // not in the algorithm itself (time in seconds)
 
     // Initialization stuff
 
-    Eigen::VectorXi wraps;
+    Eigen::VectorXi wraps(1);
     wraps(0) = 3;
-    Eigen::VectorXd wrapPoints;
+    Eigen::VectorXd wrapPoints(1);
     wrapPoints(0) = 2.0*PI;
 
     // KDtree
     // Dubin's car so 4th dimension wraps at 0 = 2pi
-    KDTree* KD = new KDTree( S->d,"KDdist", wraps, wrapPoints );
+    KDTree* KD = new KDTree( S->d,"R3SDist", wraps, wrapPoints );
 
     Queue* Q = new Queue();
     if( searchType == "RRT" ) {
-        rrtQueue* Q = new rrtQueue();
         Q->S = S;
+        Q->type = searchType;
     } else if( searchType == "RRT*" ) {
-        rrtStarQueue* Q = new rrtStarQueue();
         Q->S = S;
+        Q->type = searchType;
     } else if( searchType == "RRT#" ) {
-        rrtSharpQueue* Q = new rrtSharpQueue();
         Q->Q = new BinaryHeap(false); // false >> use priority queue functions (keyQ)
                                       // sorted based on cost from goal
         Q->S = S;
+        Q->type = searchType;
     } else if( searchType == "RRTx" ) {
-        rrtXQueue* Q = new rrtXQueue();
         Q->Q = new BinaryHeap(false); // false >> use priority queue functions (keyQ)
                                       // sorted based on cost from goal
         Q->OS = new JList(true); // Obstacle successor stack
                                  // true >> uses KDTreeNode's (Needs Obstacles??)
         Q->S = S;
         Q->changeThresh = changeThresh;
+        Q->type = searchType;
     } else {
         std::cout << "Unknown search type: " << searchType << std::endl;
         exit(1);
@@ -1546,21 +1567,26 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     }
 
     // End of initialization
+    error("Finished Initialization");
 
     // While planning time left, plan (will break out when done)
-    double robot_slice_start = time(0)*1000.0; // time in milliseconds
-    S->startTimeNs = robot_slice_start/1000000.0; // time in nanoseconds
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTime = std::chrono::high_resolution_clock::now();
+    double robot_slice_start = std::chrono::duration_cast<std::chrono::nanoseconds>(startTime-startTime).count(); //time(0)*1000000000.0; // time in nanoseconds
+    S->startTimeNs = robot_slice_start; // time in nanoseconds
     S->timeElapsed = 0.0;
     double slice_end_time;
 
     double oldrrtLMC = INF;
-    double now_time = time(0)*1000.0;
+    double now_time = getTimeNs(startTime); //time(0)*1000000000.0; // time in nanoseconds
     bool warmUpTimeJustEnded;
     double truncElapsedTime;
 
+    int i = 0;
     while( true ) {
-        double hyperBallRad = std::min( delta, ballConstant*(pow(std::log(1+KD->treeSize)/(KD->treeSize),1/S->d)));
-        now_time = time(0)*1000.0;
+
+        double hyperBallRad;
+        hyperBallRad = std::min( delta, ballConstant*(pow(std::log(1+KD->treeSize)/(KD->treeSize),1/S->d)));
+        now_time = getTimeNs(startTime); //time(0)*1000.0; // time in nanoseconds
 
         // Calculate the end time of the first slice
         slice_end_time = (1+sliceCounter)*slice_time;
@@ -1573,29 +1599,34 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
         }
 
         // If this robot has used all of its allotted planning time of this slice
-        S->timeElapsed = (time(0)/1000 - S->startTimeNs)/1000000000 - saveElapsedTime;
+        double now = getTimeNs(startTime); //time(0)*1000.0; // time in nanoseconds
+        S->timeElapsed = (now - S->startTimeNs)/1000000000.0 - saveElapsedTime; // time in seconds
         if( S->timeElapsed >= slice_end_time ) {
+            std::cout << "\nIteration: " << i << std::endl << "------------" << std::endl;
+            i++;
             // Calculate the end time of the next slice
             slice_end_time = (1+sliceCounter)*slice_time;
 
             robot_slice_start = now_time;
             sliceCounter += 1;
-            truncElapsedTime = floor(S->timeElapsed*1000)/1000;
+            truncElapsedTime = floor(S->timeElapsed*1000.0)/1000.0;
 
             // Move robot if the robot is allowed to move,
             // otherwise planning is finished so break
             /* Changed elapsedTime[checkPtr] to S->timeElapsed since I believe they are the same at this point */
             if( S->timeElapsed > total_planning_time + slice_time ) {
                 if( MoveRobotFlag ) {
+                    error("Moving robot");
                     moveRobot( S,Q,KD,slice_time,root,hyperBallRad,&R ); // Assumes Q is rrtxQueue and Q.Q is its BinaryHeap
                 } else {
-                    std::cout << "done (robot not moved)" << std::endl;
+                    error("done (robot not moved)");
                     break;
                 }
             }
 
             // Make graph consistent (RRT# and RRTx)
             if( searchType == "RRTx" || searchType == "RRT#" ) {
+                error("Reducing inconsistencies");
                 reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
                 if( S->moveGoal->rrtLMC != oldrrtLMC ) {
                     oldrrtLMC = S->moveGoal->rrtLMC;
@@ -1604,11 +1635,13 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
 
             // Check if robot has reached its movement goal
             if( R.robotPose == root->position ) {
+                error("Reached goal");
                 break;
             }
 
             // START normal graph search stuff
             // Pick a random node
+            error("Getting random node");
             KDTreeNode* newNode = randNodeOrFromStack( S );
 
             // Happens when we explicitly sample the goal every so often
@@ -1620,14 +1653,20 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
 
             // Find closest old node to the new node
             KDTreeNode* closestNode = new KDTreeNode();
-            double* closestDist = NULL;
+            double closestDist = INF;
+            error("Finding nearest node in KD tree");
             kdFindNearest( closestNode, closestDist, KD, newNode->position );
 
             // Saturate
-            if( *closestDist > delta && newNode != S->goalNode ) {
+            if( closestDist > delta && newNode != S->goalNode ) {
+                error("Saturating node");
+                std::cout << newNode->position << std::endl;
+                error(" ");
+                std::cout << closestNode->position << std::endl;
                 saturate( newNode->position, closestNode->position, delta );
             }
 
+            /*** ASSUMING NO OBSTACLES FOR NOW ***/
             // Check for collisions vs obstacles
             //bool explicitlyUnSafe;
             //explicityNodeCheck( explicitlyUnSafe, S, newNode );
@@ -1636,10 +1675,12 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             //}
 
             // Extend
+            error("Extending graph");
             extend( S, KD, Q, newNode, closestNode, delta, hyperBallRad, S->moveGoal );
 
             // Make graph consistent (RRT# and RRTx)
             if( searchType == "RRTx" || searchType == "RRT#" ) {
+                error("Reducing inconsistencies");
                 reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
                 if( S->moveGoal->rrtLMC != oldrrtLMC ) {
                     oldrrtLMC = S->moveGoal->rrtLMC;
@@ -1655,6 +1696,6 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     double moveLength = 0.0;
     std::cout << "Robot traveled: " << moveLength << std::endl;
 
-    double totalTime = time(0)*1000.0 - startTime;
+    double totalTime = getTimeNs(startTime);
     std::cout << "Total time: " << totalTime << std::endl;
 }

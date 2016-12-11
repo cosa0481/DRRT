@@ -75,10 +75,14 @@ public:
         hypervolume = 0.0;      // flag indicating that this needs to be calculated
         inWarmupTime = false;
         warmupTime = 0.0;       // default value for time for build graph with no obstacles
+        Eigen::ArrayXd upper_array = upper;
+        Eigen::ArrayXd lower_array = lower;
+        width = upper_array - lower_array;
     }
 };
 
 typedef struct Queue{
+    std::string type;
     CSpace* S;
     BinaryHeap* Q;      // normal queue (sorted based on cost from goal)
     JList* OS;          // obstacle successor stack

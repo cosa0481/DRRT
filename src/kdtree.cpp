@@ -93,7 +93,7 @@ bool kdInsert( KDTree* tree, KDTreeNode* node )
 /////////////////////// Nearest ///////////////////////
 
 bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
-                             double* nearestNodeDist,
+                             double &nearestNodeDist,
                              std::string distanceFunction,
                              KDTreeNode* root,
                              Eigen::VectorXd queryPoint,
@@ -144,7 +144,7 @@ bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
             if( parent == root ) {
                 // The parent is the root and we are done
                 nearestNode = currentClosestNode;
-                *nearestNodeDist = currentClosestDist;
+                nearestNodeDist = currentClosestDist;
                 return true;
             }
 
@@ -172,12 +172,12 @@ bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
 
             // Find right subtree distance
             KDTreeNode* Rnode = new KDTreeNode();
-            double* Rdist = 0;
+            double Rdist = 0;
             kdFindNearestInSubtree( Rnode, Rdist, distanceFunction, parent->kdChildR, queryPoint, currentClosestNode, currentClosestDist );
 
-            if( *Rdist < currentClosestDist ) {
+            if( Rdist < currentClosestDist ) {
                 currentClosestNode = Rnode;
-                currentClosestDist = *Rdist;
+                currentClosestDist = Rdist;
             }
         }
         else if( (parent->position(parent->kdSplit) <= queryPoint(parent->kdSplit)) && parent->kdChildLExist ) {
@@ -186,18 +186,18 @@ bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
 
             // Find left subtree distance
             KDTreeNode* Lnode = new KDTreeNode();
-            double* Ldist = 0;
+            double Ldist = 0;
             kdFindNearestInSubtree( Lnode, Ldist, distanceFunction, parent->kdChildL, queryPoint, currentClosestNode, currentClosestDist );
-            if( *Ldist < currentClosestDist ) {
+            if( Ldist < currentClosestDist ) {
                 currentClosestNode = Lnode;
-                currentClosestDist = *Ldist;
+                currentClosestDist = Ldist;
             }
         }
 
         if( parent == root ) {
             // The parent is the root and we are done
             nearestNode = currentClosestNode;
-            *nearestNodeDist = currentClosestDist;
+            nearestNodeDist = currentClosestDist;
             return true;
         }
 
@@ -205,31 +205,35 @@ bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
     }
 }
 
-bool kdFindNearest( KDTreeNode* nearestNode, double* nearestNodeDist,
+bool kdFindNearest( KDTreeNode* nearestNode, double &nearestNodeDist,
                     KDTree* tree, Eigen::VectorXd queryPoint )
 {
     // Initial search (only search if the space does not wrap around)
-    double distToRoot = distFunc( tree->distanceFunction, queryPoint, tree->root->position );
+    double distToRoot = distFunc( tree->distanceFunction, queryPoint,
+                                  tree->root->position );
     KDTreeNode* Lnode = new KDTreeNode();
-    double* Ldist = 0;
-    kdFindNearestInSubtree( Lnode, Ldist, tree->distanceFunction, tree->root, queryPoint, tree->root, distToRoot );
+    double Ldist = 0;
+    kdFindNearestInSubtree( Lnode, Ldist, tree->distanceFunction, tree->root,
+                            queryPoint, tree->root, distToRoot );
 
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
-        ghostPointIterator pointIterator = ghostPointIterator( tree, queryPoint );
+        ghostPointIterator* pointIterator = new ghostPointIterator( tree, queryPoint );
         Eigen::VectorXd thisGhostPoint;
         while( true ) {
-            thisGhostPoint = getNextGhostPoint( pointIterator, *Ldist );
-            Eigen::VectorXd zeros( pointIterator.kdTree->numWraps, 0 );
-            if( thisGhostPoint == zeros ) break;
+            thisGhostPoint = getNextGhostPoint( pointIterator, Ldist );
+            if( thisGhostPoint.isZero(0) ) break;
 
             // Now see if any points in the space are closer to this ghost
-            double distGhostToRoot = distFunc( tree->distanceFunction, thisGhostPoint, tree->root->position );
+            double distGhostToRoot = distFunc( tree->distanceFunction, thisGhostPoint,
+                                               tree->root->position );
             KDTreeNode* thisLnode = new KDTreeNode();
-            double* thisLdist = 0;
-            kdFindNearestInSubtree( thisLnode, thisLdist, tree->distanceFunction, tree->root, thisGhostPoint, tree->root, distGhostToRoot );
+            double thisLdist = 0;
+            kdFindNearestInSubtree( thisLnode, thisLdist, tree->distanceFunction,
+                                    tree->root, thisGhostPoint, tree->root,
+                                    distGhostToRoot );
 
-            if( *thisLdist < *Ldist ) {
+            if( thisLdist < Ldist ) {
                 // Found a closer point
                 Lnode = thisLnode;
                 Ldist = thisLdist;
@@ -237,12 +241,12 @@ bool kdFindNearest( KDTreeNode* nearestNode, double* nearestNodeDist,
         }
     }
     nearestNode = Lnode;
-    *nearestNodeDist = *Ldist;
+    nearestNodeDist = Ldist;
     return true;
 }
 
 bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
-                                      double* nearestNodeDist,
+                                      double &nearestNodeDist,
                                       std::string distanceFunction,
                                       KDTreeNode* root,
                                       Eigen::VectorXd queryPoint,
@@ -293,7 +297,7 @@ bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
             if( parent == root ) {
                 // The parent is the root and we are done
                 nearestNode = currentClosestNode;
-                *nearestNodeDist = currentClosestDist;
+                nearestNodeDist = currentClosestDist;
                 return true;
             }
 
@@ -321,12 +325,12 @@ bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
 
             // Find right subtree distance
             KDTreeNode* Rnode = new KDTreeNode();
-            double* Rdist = 0;
+            double Rdist = 0;
             kdFindNearestInSubtree( Rnode, Rdist, distanceFunction, parent->kdChildR, queryPoint, currentClosestNode, currentClosestDist );
 
-            if( *Rdist < currentClosestDist ) {
+            if( Rdist < currentClosestDist ) {
                 currentClosestNode = Rnode;
-                currentClosestDist = *Rdist;
+                currentClosestDist = Rdist;
             }
         }
         else if( (parent->position(parent->kdSplit) <= queryPoint(parent->kdSplit)) && parent->kdChildLExist ) {
@@ -335,11 +339,11 @@ bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
 
             // Find left subtree distance
             KDTreeNode* Lnode = new KDTreeNode();
-            double* Ldist = 0;
+            double Ldist = 0;
             kdFindNearestInSubtree( Lnode, Ldist, distanceFunction, parent->kdChildL, queryPoint, currentClosestNode, currentClosestDist );
-            if( *Ldist < currentClosestDist ) {
+            if( Ldist < currentClosestDist ) {
                 currentClosestNode = Lnode;
-                currentClosestDist = *Ldist;
+                currentClosestDist = Ldist;
             }
         }
 
@@ -349,12 +353,12 @@ bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
             double thisDist = distFunc( distanceFunction, queryPoint, parent->position );
             if( thisDist < currentClosestDist ) {
                 nearestNode = parent;
-                *nearestNodeDist = thisDist;
+                nearestNodeDist = thisDist;
                 return true;
             }
 
             nearestNode = currentClosestNode;
-            *nearestNodeDist = currentClosestDist;
+            nearestNodeDist = currentClosestDist;
             return true;
         }
 
@@ -362,7 +366,7 @@ bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
     }
 }
 
-bool kdFindNearestWithGuess( KDTreeNode* nearestNode, double* nearestNodeDist,
+bool kdFindNearestWithGuess( KDTreeNode* nearestNode, double &nearestNodeDist,
                              KDTree* tree, Eigen::VectorXd queryPoint, KDTreeNode* guess )
 {
     double distToGuess = distFunc( tree->distanceFunction, queryPoint, guess->position );
@@ -372,22 +376,22 @@ bool kdFindNearestWithGuess( KDTreeNode* nearestNode, double* nearestNodeDist,
     }
 
     KDTreeNode* Lnode = new KDTreeNode();
-    double* Ldist = 0;
+    double Ldist = 0;
     kdFindNearestinSubtreeWithGuess( Lnode, Ldist, tree->distanceFunction, tree->root, queryPoint, guess, distToGuess );
 
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
-        ghostPointIterator pointIterator = ghostPointIterator( tree, queryPoint );
+        ghostPointIterator* pointIterator =  new ghostPointIterator( tree, queryPoint );
         Eigen::VectorXd thisGhostPoint;
         while( true ) {
-            thisGhostPoint = getNextGhostPoint( pointIterator, *Ldist );
-            Eigen::VectorXd zeros( pointIterator.kdTree->numWraps, 0 );
+            thisGhostPoint = getNextGhostPoint( pointIterator, Ldist );
+            Eigen::VectorXd zeros( pointIterator->kdTree->numWraps, 0 );
             if( thisGhostPoint == zeros) break;
 
             // Now see if any points in the space are closer to this ghost
             double distGhostToGuess = distFunc( tree->distanceFunction, thisGhostPoint, guess->position );
             KDTreeNode* thisLnode = new KDTreeNode();
-            double* thisLdist = 0;
+            double thisLdist = 0;
             kdFindNearestinSubtreeWithGuess( thisLnode, thisLdist, tree->distanceFunction, tree->root, thisGhostPoint, guess, distGhostToGuess );
 
             if( thisLdist < Ldist ) {
@@ -398,7 +402,7 @@ bool kdFindNearestWithGuess( KDTreeNode* nearestNode, double* nearestNodeDist,
         }
     }
     nearestNode = Lnode;
-    *nearestNodeDist = *Ldist;
+    nearestNodeDist = Ldist;
     return true;
 }
 
@@ -673,11 +677,10 @@ void kdFindWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd qu
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
 
-        ghostPointIterator pointIterator = ghostPointIterator( tree, queryPoint );
+        ghostPointIterator* pointIterator = new ghostPointIterator( tree, queryPoint );
         while( true ) {
             Eigen::VectorXd thisGhostPoint = getNextGhostPoint( pointIterator, range );
-            Eigen::VectorXd zeros( pointIterator.kdTree->numWraps, 0 );
-            if( thisGhostPoint == zeros ) break;
+            if( thisGhostPoint.isZero(0) ) break;
 
             // Now see if any points in the space are closer to this ghost
             kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, thisGhostPoint, S );
@@ -698,7 +701,7 @@ void kdFindMoreWithinRange( JList* L, KDTree* tree, double range, Eigen::VectorX
 
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, need to search vs. identities (ghosts)
-        ghostPointIterator pointIterator = ghostPointIterator( tree, queryPoint );
+        ghostPointIterator* pointIterator = new ghostPointIterator( tree, queryPoint );
         Eigen::VectorXd thisGhostPoint;
         while( true ) {
             thisGhostPoint = getNextGhostPoint( pointIterator, range );

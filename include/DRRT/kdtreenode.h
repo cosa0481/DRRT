@@ -25,7 +25,7 @@ public:
     double dist;                    // ditto, this will hold the distance
 
     // More data used for KD Tree
-    Eigen::VectorXd position;       // a d x 1 array where d is the dimensions of the space (5)
+    Eigen::Vector4d position;    // a d x 1 array where d is the dimensions of the space (5)
     int kdSplit;                    // the dimension used for splitting at this node
     KDTreeNode* kdParent;           // parent in the tree
     KDTreeNode* kdChildL;           // left child in the tree

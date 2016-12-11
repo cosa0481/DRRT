@@ -9,8 +9,18 @@
 
 #include <DRRT/kdtree.h> // Pretty much everything is included here
 #include <random>
+#include <stdlib.h>
 #include <algorithm>
 #include <time.h>
+#include <chrono>
+
+// Outputs error message
+void error( std::string e );
+void error( double d );
+void error( int i );
+
+// Returns current time in nanoseconds
+double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start );
 
 // Returns a random integer between min and max
 int randInt( int min, int max );

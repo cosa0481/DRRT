@@ -63,7 +63,7 @@ bool kdInsert( KDTree* tree, KDTreeNode* node );
 // at root and also its distance. It takes a suggestion for a possible
 // closest node and uses that if it is best
 bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
-                                double* nearestNodeDist,
+                                double &nearestNodeDist,
                                 std::string distanceFunction,
                                 KDTreeNode* root,
                                 Eigen::VectorXd queryPoint,
@@ -71,14 +71,14 @@ bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
                                 double suggestedClosestDist );
 
 // Returns the nearest node to the queryPoint and also its distance
-bool kdFindNearest( KDTreeNode* nearestNode, double* nearestNodeDist,
+bool kdFindNearest( KDTreeNode* nearestNode, double &nearestNodeDist,
                     KDTree* tree, Eigen::VectorXd queryPoint );
 
 // Returns the nearest node to queryPoint in the subtree starting at
 // the root and also its distance. It also takes a suggestion for a
 // possible closest node (and uses that if it is best)
 bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
-                                        double* nearestNodeDist,
+                                        double &nearestNodeDist,
                                         std::string distanceFunction,
                                         KDTreeNode* root,
                                         Eigen::VectorXd queryPoint,
@@ -87,7 +87,7 @@ bool kdFindNearestinSubtreeWithGuess( KDTreeNode* nearestNode,
 
 // Returns the nearest node to the queryPoint and also its distance
 // Instead of starting at the root, starts at guess
-bool kdFindNearestWithGuess( KDTreeNode* nearestNode, double* nearestNodeDist,
+bool kdFindNearestWithGuess( KDTreeNode* nearestNode, double &nearestNodeDist,
                               KDTree* tree, Eigen::VectorXd queryPoint, KDTreeNode* guess );
 
 /////////////////////// K Nearest ///////////////////////

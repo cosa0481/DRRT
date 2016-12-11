@@ -54,12 +54,13 @@ void saturate( Eigen::VectorXd newPoint, Eigen::VectorXd closestPoint,
             // Finally, wrpap back to the identity that is on [0 2pi]
             // Is this really wrapping?
 
-            Eigen::VectorXd minVec;
+            Eigen::Vector2d minVec;
             minVec(0) = newPoint(3);
             minVec(1) = 2*PI;
-            Eigen::VectorXd maxVec;
+            Eigen::Vector2d maxVec;
             maxVec(0) = minVec.minCoeff();
             maxVec(1) = 0.0;
+
             newPoint(3) = maxVec.maxCoeff();
         }
     }
