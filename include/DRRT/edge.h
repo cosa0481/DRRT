@@ -5,9 +5,16 @@
 #include <string>
 #include <eigen3/Eigen/Eigen>
 
+#define MAXPATHNODES 20000
+
 class KDTreeNode;
 class CSpace;
 class JListNode;
+
+/////////////////////// Error Helpers ///////////////////////
+void error( std::string e );
+void error( double d );
+void error( int i );
 
 // Edge for a Dubin's state space
 class Edge{
@@ -47,9 +54,9 @@ public:
                     // only used if time is part of the state space
 
     // Constructor
-    Edge() {}
+    Edge() : dist(-1) { trajectory.resize(MAXPATHNODES,4); }
     Edge( KDTreeNode* s, KDTreeNode* e ) : startNode(s), endNode(e)
-    {}
+    { trajectory.resize(MAXPATHNODES,4); }
 };
 
     /////////////////////// Critical Functions ///////////////////////
@@ -88,7 +95,7 @@ public:
     // Moves newPoint toward closestPoint such that each robot is no further
     // than delta. Points reperesent the cartesian product of R robots
     // Use the following version of saturate for Dubin's space
-    void saturate( Eigen::VectorXd newPoint, Eigen::VectorXd closestPoint,
+    void saturate(Eigen::Vector4d &newPoint, Eigen::VectorXd closestPoint,
                      double delta );
 
 

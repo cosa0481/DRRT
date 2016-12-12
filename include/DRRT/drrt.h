@@ -13,17 +13,13 @@
 #include <algorithm>
 #include <time.h>
 #include <chrono>
-
-// Outputs error message
-void error( std::string e );
-void error( double d );
-void error( int i );
+#include <math.h>
 
 // Returns current time in nanoseconds
 double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start );
 
-// Returns a random integer between min and max
-int randInt( int min, int max );
+// Returns a random double between min and max
+double randDouble( double min, double max );
 
 /////////////////////// Node Functions ///////////////////////
 // Functions that interact with nodes and not much else.

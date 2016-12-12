@@ -4,6 +4,7 @@
 #include <vector>
 #include <math.h>
 #include <eigen3/Eigen/Eigen>
+#include <iostream>
 
 #define PI 3.1415926536
 

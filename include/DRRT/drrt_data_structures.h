@@ -182,7 +182,7 @@ typedef struct RobotData{
         distanceFromNextRobotPoseToNextMoveTarget(0.0), moving(false),
         currentMoveInvalid(false), numRobotMovePoints(1), numLocalMovePoints(1) /*Original Julia code does not have an initial value for numLocalMovePoints*/, robotEdgeUsed(false),
         distAlongRobotEdge(0.0), timeAlongRobotEdge(0.0)
-    {    }
+    { robotLocalPath.resize(maxPathNodes,4); robotMovePath.resize(maxPathNodes,4); }
 
 } RobotData;
 

@@ -62,7 +62,7 @@ bool kdInsert( KDTree* tree, KDTreeNode* node );
 // Returns the nearest node to the queryPoint in the subtree starting
 // at root and also its distance. It takes a suggestion for a possible
 // closest node and uses that if it is best
-bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
+bool kdFindNearestInSubtree( KDTreeNode &nearestNode,
                                 double &nearestNodeDist,
                                 std::string distanceFunction,
                                 KDTreeNode* root,
@@ -71,7 +71,7 @@ bool kdFindNearestInSubtree( KDTreeNode* nearestNode,
                                 double suggestedClosestDist );
 
 // Returns the nearest node to the queryPoint and also its distance
-bool kdFindNearest( KDTreeNode* nearestNode, double &nearestNodeDist,
+bool kdFindNearest( KDTreeNode &nearestNode, double &nearestNodeDist,
                     KDTree* tree, Eigen::VectorXd queryPoint );
 
 // Returns the nearest node to queryPoint in the subtree starting at
@@ -120,24 +120,24 @@ std::vector<KDTreeNode> kdFindKNearest( KDTree* tree, int k, Eigen::VectorXd que
 /////////////////////// Within Range ///////////////////////
 
 // Adds the node to the list if it is not already there
-bool addToRangeList( JList* S, KDTreeNode* node, double key );
+bool addToRangeList( JList &S, KDTreeNode* node, double key );
 
 // Pops the range list
-void popFromRangeList( JList* S, KDTreeNode* t, double* k );
+void popFromRangeList( JList &S, KDTreeNode* t, double &k );
 
 // Empty the range list
-void emptyRangeList( JList* S );
+void emptyRangeList( JList &S );
 
 // Finds all nodes within range of the queryPoint in the subtree starting
 // at root and also their distance squared. This data is stored in nodeList
 // The nodeList may also contain nodes before this function is called
 bool kdFindWithinRangeInSubtree( std::string distanceFunction, KDTreeNode* root,
                                  double range, Eigen::VectorXd queryPoint,
-                                 JList* nodeList );
+                                 JList &nodeList );
 
 // Returns all nodes within range of queryPoint and also their distances
 // This data is contained in the JList at S
-void kdFindWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
+void kdFindWithinRange( JList &S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
 
 // Returns all nodes within range of queryPoint and also their distance.
 // They are returned in a list with elements of type KDTreeNode
@@ -145,7 +145,7 @@ void kdFindWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd qu
 // to it (e.ge, if we want to have one list containing the points that
 // are close to a couple of different points X1,..,Xn, then call this
 // for X2,...,Xn after first calling kdFindWithinRange for X1
-void kdFindMoreWithinRange( JList* S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
+void kdFindMoreWithinRange( JList &S, KDTree* tree, double range, Eigen::VectorXd queryPoint );
 
 // Inserts a new point into the tree (used only for debugging)
 void kdInsert( KDTree* tree, Eigen::VectorXd a );

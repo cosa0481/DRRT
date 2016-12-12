@@ -89,26 +89,26 @@ void JList::JlistTop( Edge* e ) {
     e = front->edge;
 }
 
-void JList::JlistTopKey( KDTreeNode* t, double* k )
+void JList::JlistTopKey( KDTreeNode* t, double &k )
 {
     if( length == 0 ) {
         // Jlist is empty
         t = new KDTreeNode();
-        *k = -1.0;
+        k = -1.0;
     }
     t = front->node;
-    *k = front->key;
+    k = front->key;
 }
 
-void JList::JlistTopKey( Edge* e, double * k )
+void JList::JlistTopKey( Edge* e, double &k )
 {
     if( length == 0 ) {
         // Jlist is empty
         e = new Edge();
-        *k = -1.0;
+        k = -1.0;
     }
     e = front->edge;
-    *k = front->key;
+    k = front->key;
 }
 
 void JList::JlistPop( KDTreeNode* t )
@@ -159,12 +159,13 @@ void JList::JlistPop( Edge* e )
     e = oldTop->edge;
 }
 
-void JList::JlistPopKey( KDTreeNode* n, double* k )
+void JList::JlistPopKey( KDTreeNode* n, double &k )
 {
+
     if( length == 0 ) {
         // Jlist is empty
         n = new KDTreeNode();
-        *k = -1.0;
+        k = -1.0;
     }
 
     JListNode* oldTop = front;
@@ -182,15 +183,15 @@ void JList::JlistPopKey( KDTreeNode* n, double* k )
     oldTop->parent = oldTop;
 
     n = oldTop->node;
-    *k = oldTop->key;
+    k = oldTop->key;
 }
 
-void JList::JlistPopKey( Edge* e, double* k )
+void JList::JlistPopKey( Edge* e, double &k )
 {
     if( length == 0 ) {
         // Jlist is empty
         e = new Edge();
-        *k = -1.0;
+        k = -1.0;
     }
 
     JListNode* oldTop = front;
@@ -208,7 +209,7 @@ void JList::JlistPopKey( Edge* e, double* k )
     oldTop->parent = oldTop;
 
     e = oldTop->edge;
-    *k = oldTop->key;
+    k = oldTop->key;
 }
 
 // Removes node from the list

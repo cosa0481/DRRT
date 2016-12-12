@@ -8,6 +8,24 @@
 
 #define PI 3.1415926536
 
+/////////////////////// Error Helpers ///////////////////////
+
+void error( std::string e )
+{
+    std::cout << e << std::endl;
+}
+
+void error( double d )
+{
+    std::cout << d << std::endl;
+}
+
+void error( int i )
+{
+    std::cout << i << std::endl;
+}
+
+
 /////////////////////// Critical Functions ///////////////////////
 
 double Edist( Eigen::VectorXd x, Eigen::VectorXd y )
@@ -25,7 +43,7 @@ double EWdist( Eigen::VectorXd x, Eigen::VectorXd y )
     return distFunc( "EuclidianDist", x.head(2), y.head(2) );
 }
 
-void saturate( Eigen::VectorXd newPoint, Eigen::VectorXd closestPoint,
+void saturate( Eigen::Vector4d &newPoint, Eigen::VectorXd closestPoint,
                double delta )
 {
     double thisDist = Edist( newPoint, closestPoint );
@@ -126,7 +144,7 @@ Eigen::VectorXd poseAtDistAlongEdge( Edge* edge, double distAlongEdge )
     double retTime = edge->startNode->position(2) + retTimeRatio*(edge->endNode->position(2) - edge->startNode->position(2));
     double retTheta = atan2 (edge->trajectory(i,1) - edge->trajectory(i-1,1), edge->trajectory(i,0) - edge->trajectory(i-1,0) );
 
-    Eigen::VectorXd vec;
+    Eigen::VectorXd vec(4);
     vec(0) = ret(0); // x-coordinate
     vec(1) = ret(1); // y-coordinate
     vec(2) = retTime;
@@ -174,8 +192,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
 
     // Calculate the center of the right-turn and left-turn circles
     // ... right-turn initial_location circle
-    Eigen::VectorXd temp;
-    Eigen::VectorXd temp2;
+    Eigen::VectorXd temp(2);
+    Eigen::VectorXd temp2(2);
     temp(0) = cos(initial_theta-(PI/2.0));
     temp(1) = sin(initial_theta-(PI/2.0));
     // ... left-turn initial location circle
@@ -192,11 +210,12 @@ void calculateTrajectory( CSpace* S, Edge* edge )
     temp(1) = sin(goal_theta+(PI/2.0));
     Eigen::VectorXd glc_center = goal_location + r_min * temp;
 
+
     // Remember the best distance and associated type of trajectory
     double bestDist = INF;
     std::string bestTrajType = "xxx";
 
-    Eigen::ArrayXd diff, temp3, t; // Arrays used for coefficient-wise operations (.operator() in Julia)
+    Eigen::ArrayXd diff, temp3(2), t; // Arrays used for coefficient-wise operations (.operator() in Julia)
     double D, R, sq, a, b, firstDist, secondDist, thirdDist;
     Eigen::VectorXd v; // temp, temp2 defined above
 
@@ -208,7 +227,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
     v = diff/D;
     R = -2.0*r_min/D;
     double rsl_length;
-    Eigen::VectorXd rsl_tangent_x, rsl_tangent_y;
+    Eigen::VectorXd rsl_tangent_x(2), rsl_tangent_y(2);
     if( std::abs(R) > 1.0 ) {
         rsl_length = INF;
     } else {
@@ -249,7 +268,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
     D = sqrt((diff*diff).sum());
     v = diff/D;
     double rsr_length;
-    Eigen::VectorXd  rsr_tangent_x, rsr_tangent_y;
+    Eigen::VectorXd  rsr_tangent_x(2), rsr_tangent_y(2);
     temp3(0) = irc_center(0);
     temp3(1) = grc_center(0);
     rsr_tangent_x = -r_min*v(1) + temp3;
@@ -280,8 +299,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
 
     // Calculate (if advantagous) the right-left-right path
     double rlr_length;
-    Eigen::ArrayXd rlr_rl_tangent;
-    Eigen::ArrayXd rlr_lr_tangent;
+    Eigen::ArrayXd rlr_rl_tangent(2), rlr_lr_tangent(2);
     rlr_rl_tangent(0) = 0;
     rlr_rl_tangent(1) = 0;
     rlr_lr_tangent(0) = 0;
@@ -321,7 +339,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
     v = diff/D;
     R = 2.0*r_min/D;
     double lsr_length;
-    Eigen::VectorXd lsr_tangent_x, lsr_tangent_y;
+    Eigen::VectorXd lsr_tangent_x(2), lsr_tangent_y(2);
     if( std::abs(R) > 1.0 ) {
         lsr_length = INF;
     } else {
@@ -359,7 +377,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
     // l-s-l requires "outer" tangent poinst, and the tangent
     // vector is parallel to the vector from irc to grc
     double lsl_length;
-    Eigen::VectorXd lsl_tangent_x, lsl_tangent_y;
+    Eigen::VectorXd lsl_tangent_x(2), lsl_tangent_y(2);
     diff = glc_center - ilc_center;
     D = sqrt( (diff*diff).sum() );
     v = diff/D;
@@ -393,7 +411,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
 
     // Calculate (if advantagous) the left-right-left path
     double lrl_length;
-    Eigen::ArrayXd lrl_rl_tangent, lrl_lr_tangent;
+    Eigen::ArrayXd lrl_rl_tangent(2), lrl_lr_tangent(2);
     lrl_rl_tangent(0) = 0;
     lrl_rl_tangent(1) = 0;
     lrl_lr_tangent(0) = 0;
@@ -433,9 +451,11 @@ void calculateTrajectory( CSpace* S, Edge* edge )
                             // (straight lines are saved as a single segment
 
     Eigen::ArrayXd phis;    // This array contains 1 element or a sequence of elements
-    Eigen::VectorXd p, p1, p2, first_path_x, first_path_y, second_path_x, second_path_y, third_path_x, third_path_y;
+    Eigen::VectorXd p(2), p1(2), p2(2), first_path_x, first_path_y, second_path_x,
+            second_path_y, third_path_x, third_path_y;
     double phi_start, phi_end, val;
     int i;
+
     // Calculate the first part of the path
     if( bestTrajType[0] == 'r' ) {
         // First part of the path is a right hand turn
@@ -455,6 +475,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
         if( phi_end > phi_start ) {
             phi_end -= 2.0*PI;
         }
+
+        phis = Eigen::VectorXd::Zero(std::ceil(std::abs(phi_end-phi_start)/delta_phi)+1);
 
         if( phi_end == phi_start ) {
             phis(0) = phi_start;
@@ -489,6 +511,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
         if( phi_end < phi_start ) {
             phi_end += 2.0*PI;
         }
+
+        phis = Eigen::VectorXd::Zero(std::ceil(std::abs(phi_end-phi_start)/delta_phi)+1);
 
         if( phi_end == phi_start ) {
             phis(0) = phi_start;
@@ -533,10 +557,14 @@ void calculateTrajectory( CSpace* S, Edge* edge )
             p2(1) = rsl_tangent_y(1);
         }
 
-        second_path_x(0) = p1(0);
-        second_path_x(1) = p2(0);
-        second_path_y(0) = p1(1);
-        second_path_y(1) = p2(1);
+        Eigen::Vector2d ptemp1(2), ptemp2(2);
+
+        ptemp1 << p1(0), p2(0);
+        second_path_x = ptemp1;
+//        second_path_x(1) = p2(0);
+        ptemp2 << p1(1), p2(1);
+        second_path_y = ptemp2;
+//        second_path_y(1) = p2(1);
     } else if( bestTrajType[1] == 'r' ) {
         // Second part of teh path is a right turn
         phi_start = atan2( lrl_lr_tangent(1)-lrl_r_circle_center(1), lrl_lr_tangent(0)-lrl_r_circle_center(0) );
@@ -545,6 +573,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
         if( phi_end > phi_start ) {
             phi_end -= 2.0*PI;
         }
+
+        phis = Eigen::VectorXd::Zero(std::ceil(std::abs(phi_end-phi_start)/delta_phi)+1);
 
         if( phi_end == phi_start ) {
             phis(0) = phi_start;
@@ -570,6 +600,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
             phi_end += 2.0*PI;
         }
 
+        phis = Eigen::VectorXd::Zero(std::ceil(std::abs(phi_end-phi_start)/delta_phi)+1);
+
         if( phi_end == phi_start ) {
             phis(0) = phi_start;
         } else {
@@ -586,6 +618,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
         second_path_x = rlr_l_circle_center(0) + r_min*phis.cos();
         second_path_y = rlr_l_circle_center(1) + r_min*phis.sin();
     }
+
 
     // Calculate the third part of the path
     if( bestTrajType[2] == 'r' ) {
@@ -606,6 +639,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
         if( phi_end > phi_start ) {
             phi_end -= 2.0*PI;
         }
+
+        phis = Eigen::VectorXd::Zero(std::ceil(std::abs(phi_end-phi_start)/delta_phi)+1);
 
         if( phi_end == phi_start ) {
             phis(0) = phi_start;
@@ -641,6 +676,8 @@ void calculateTrajectory( CSpace* S, Edge* edge )
             phi_end += 2.0*PI;
         }
 
+        phis = Eigen::VectorXd::Zero(std::ceil(std::abs(phi_end-phi_start)/delta_phi)+1);
+
         if( phi_end == phi_start ) {
             phis(0) = phi_start;
         } else {
@@ -660,6 +697,9 @@ void calculateTrajectory( CSpace* S, Edge* edge )
 
     edge->edgeType = bestTrajType;
     edge->Wdist = bestDist;    // distance that the robot moves in the workspace
+
+    int trajLength = first_path_x.size() + second_path_x.size() + third_path_x.size();
+    Eigen::VectorXd traj1(trajLength), traj2(trajLength);
 
     if( edge->Wdist == INF ) {
         edge->dist = INF;
@@ -687,33 +727,53 @@ void calculateTrajectory( CSpace* S, Edge* edge )
         edge->velocity = edge->Wdist/(edge->startNode->position(2)-edge->endNode->position(2));
 
         // Build trajectory with 0 for times
-        Eigen::VectorXd traj1, traj2, traj3;
-        traj1 << first_path_x , first_path_y , Eigen::VectorXd::Zero(first_path_x.size());
-        traj2 << second_path_x , second_path_y , Eigen::VectorXd::Zero(second_path_x.size());
-        traj3 << third_path_x , third_path_y , Eigen::VectorXd::Zero(third_path_x.size());
+        Eigen::VectorXd zeros(first_path_x.size()+second_path_x.size()+third_path_x.size());
 
-        edge->trajectory.row(0) = traj1;
-        edge->trajectory.row(1) = traj2;
-        edge->trajectory.row(2) = traj3;
+
+        traj1.block(0,0, first_path_x.size(),1) = first_path_x;
+        traj1.block(first_path_x.size(),0, second_path_x.size(),1) = second_path_x;
+        traj1.block(first_path_x.size()+second_path_x.size(),0, third_path_x.size(),1) = third_path_x;
+
+        traj2.block(0,0, first_path_y.size(),1) = first_path_y;
+        traj2.block(first_path_y.size(),0, second_path_y.size(),1) = second_path_y;
+        traj2.block(first_path_y.size()+second_path_y.size(),0, third_path_y.size(),1) = third_path_y;
+
+        zeros = Eigen::VectorXd::Zero(first_path_x.size()+second_path_x.size()+third_path_x.size());
+
+
+        edge->trajectory.block(0,0, first_path_x.size() + second_path_x.size()
+                               + third_path_x.size(),1) = traj1;
+        edge->trajectory.block(0,1, first_path_x.size() + second_path_x.size()
+                               + third_path_x.size(),1) = traj2;
+        edge->trajectory.block(0,2, first_path_x.size()+second_path_x.size()+third_path_x.size(),1) = zeros;
 
         // Now calculate times
         edge->trajectory(0,2) = edge->startNode->position(2);
         double cumulativeDist = 0.0;
         for( int j = 1; j < edge->trajectory.rows()-1; j++ ) {
-            cumulativeDist += EWdist( edge->trajectory.row(j-1).head(2), edge->trajectory.row(j).head(2) );
-            edge->trajectory(j,2) = edge->startNode->position(2) - cumulativeDist/edge->velocity;
+            cumulativeDist += EWdist( edge->trajectory.row(j-1).head(2),
+                                      edge->trajectory.row(j).head(2) );
+            edge->trajectory(j,2) = edge->startNode->position(2)
+                    - cumulativeDist/edge->velocity;
         }
-        edge->trajectory.row(edge->trajectory.rows()-1).head(3) = edge->endNode->position.head(3); // make end point exact
+        edge->trajectory.row(edge->trajectory.rows()-1).head(3)
+                = edge->endNode->position.head(3); // make end point exact
     } else {
         edge->dist = bestDist;
-        Eigen::VectorXd traj11, traj22, traj33;
-        traj11 << first_path_x, first_path_y;
-        traj22 << second_path_x, second_path_y;
-        traj33 << third_path_x, third_path_y;
 
-        edge->trajectory.row(0) = traj11;
-        edge->trajectory.row(1) = traj22;
-        edge->trajectory.row(2) = traj33;
+        traj1.block(0,0, first_path_x.size(),1) = first_path_x;
+        traj1.block(first_path_x.size(),0, second_path_x.size(),1) = second_path_x;
+        traj1.block(first_path_x.size()+second_path_x.size(),0, third_path_x.size(),1) = third_path_x;
+
+        traj2.block(0,0, first_path_y.size(),1) = first_path_y;
+        traj2.block(first_path_y.size(),0, second_path_y.size(),1) = second_path_y;
+        traj2.block(first_path_y.size()+second_path_y.size(),0, third_path_y.size(),1) = third_path_y;
+
+
+        edge->trajectory.block(0,0, first_path_x.size() + second_path_x.size()
+                               + third_path_x.size(),1) = traj1;
+        edge->trajectory.block(0,1, first_path_x.size() + second_path_x.size()
+                               + third_path_x.size(),1) = traj2;
     }
 
     edge->distOriginal = edge->dist;

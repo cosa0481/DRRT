@@ -16,18 +16,20 @@ int main( int argc, char* argv[] )
     string expName = "Debug";                   // Name for output files
 
     double changeThresh = 1.0;                  // only for RRTx
-
-    double total_time = 50.0;                   // total planning time (move after this, and keep planning
+    double total_time = 5.0;                    // total planning time (move after this,
+                                                // and keep planning
     double slice_time = 1.0/10.0;               // for saving data
-
-    double envRad = 50.0;                       // environment spans -envRad to envRad in each dimension
+    double envRad = 50.0;                       // environment spans -envRad to envRad
+                                                // in each dimension
     double robotRad = 0.5;                      // robot radius
 
     Eigen::VectorXd start(4), goal(4);
-    start << 0.0, -40.0, 0.0, PI/3.0;           // robot goes to here (start location of search tree)
-    goal << -40.0, 40.0, 0.0, -PI/3.0;          // robot comes from here (goal location of search tree)
+    start << 0.0, -40.0, 0.0, PI/3.0;           // robot goes to here
+                                                // (start location of search tree)
+    goal << -40.0, 40.0, 0.0, -PI/3.0;          // robot comes from here
+                                                // (goal location of search tree)
 
-    bool MoveRobot = false;
+    bool MoveRobot = true;
 
     int d = 4;                                  // number of dimensions [x y 0.0 theta]
     //double timeOut = INF;                     // not used?
@@ -41,12 +43,12 @@ int main( int argc, char* argv[] )
     C->robotRadius = robotRad;                  // init robot radius
     C->robotVelocity = 2.0;                     // init robot velocity
     C->minTurningRadius = 1.0;                  // init robot turning radius
-
-    C->randNode = "randNodeOrFromStack(C)";     // set up sampling function //randNodeOrFromStack( C );
-    C->pGoal = 0.01;
-
-    C->spaceHasTime = false;                    // space parameters
-    C->spaceHasTheta = true;
+    C->randNode = "randNodeOrFromStack(C)";     // set up sampling function
+                                                // randNodeOrFromStack( C );
+                                                // this is hard coded in drrt::RRTX()
+    C->pGoal = 0.01;                            // probability for not picking random node
+    C->spaceHasTime = false;                    // not using time parameter
+    C->spaceHasTheta = true;                    // using theta (yaw)
 
     error("Parameters defined\nRunning RRTx");
 
