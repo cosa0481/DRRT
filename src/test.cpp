@@ -17,16 +17,16 @@ int main( int argc, char* argv[] )
 
     double changeThresh = 1.0;                  // only for RRTx
     double total_time = 5.0;                    // total planning time (move after this,
-                                                // and keep planning
+                                                // and keep planning *50*
     double slice_time = 1.0/10.0;               // for saving data
     double envRad = 50.0;                       // environment spans -envRad to envRad
                                                 // in each dimension
     double robotRad = 0.5;                      // robot radius
 
     Eigen::VectorXd start(4), goal(4);
-    start << 0.0, -40.0, 0.0, PI/3.0;           // robot goes to here
+    start << 0.0, 0.0, 0.0, PI/3;               // robot goes to here *0,-40,0,pi/3*
                                                 // (start location of search tree)
-    goal << -40.0, 40.0, 0.0, -PI/3.0;          // robot comes from here
+    goal << 150.0, 150.0, 0.0, -PI/3 ;            // robot comes from here *-40,40,0,-pi/3*
                                                 // (goal location of search tree)
 
     bool MoveRobot = true;

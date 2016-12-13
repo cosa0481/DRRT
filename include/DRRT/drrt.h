@@ -14,6 +14,8 @@
 #include <time.h>
 #include <chrono>
 #include <math.h>
+#include <fstream>
+
 
 // Returns current time in nanoseconds
 double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start );

@@ -6,6 +6,11 @@
 
 #include <DRRT/drrt.h>
 
+int histPos = 0;
+Eigen::MatrixXd rHist(1000,4);
+int kdTreePos = 0;
+Eigen::MatrixXd kdTree(MAXPATHNODES,2);
+
 double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start )
 {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now()-start).count();
@@ -59,7 +64,7 @@ Eigen::VectorXd randPointDefault( CSpace* S )
     Eigen::VectorXd second(S->width.size());
 
     for( int i = 0; i < S->width.size(); i++ ) {
-        rand = randDouble(1,S->d);
+        rand = randDouble(0,S->d);
         first = rand * S->width(i);
         second(i) = S->lowerBounds(i) + first;
     }
@@ -1277,7 +1282,7 @@ void findNewTarget( CSpace* S, KDTree* Tree,
         searchBallRad *= 2;
         if( searchBallRad > maxSearchBallRad ) {
             // Unable to find a valid move target
-            error("Could not find valid move target, so generating one 10 away from R->robotPose");
+            //error("Could not find valid move target, so generating one 10 away from R->robotPose");
             KDTreeNode* newNode = randNodeDefault(S);
             saturate(newNode->position,R->robotPose,10);
             kdInsert(Tree,newNode);
@@ -1305,6 +1310,8 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
         if( !S->spaceHasTime ) {
             // new robot pose (R.robotPose(0) R.robotPose(1))
             std::cout << "new robot pose(w/o t):\n" << R->robotPose << std::endl;
+            rHist.row(histPos) = R->robotPose;
+            histPos++;
         } else {
             // new robot pose (R.robotPose(0) R.robotPose(1) R.robotPose(2))
             std::cout << "new robot pose(w/ t):\n" << R->robotPose << std::endl;
@@ -1582,6 +1589,10 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     double now_time = getTimeNs(startTime); //time(0)*1000000000.0; // time in nanoseconds
     bool warmUpTimeJustEnded;
     double truncElapsedTime;
+    double currentDist, prevDist;
+
+    currentDist = Edist(R.robotPose, root->position);
+    prevDist = currentDist;
 
     int i = 0;
     while( true ) {
@@ -1636,12 +1647,18 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             }
 
             // Check if robot has reached its movement goal
-            std::cout << "Distance to goal: " <<  Edist(R.robotPose, root->position) << std::endl;
-            if( Edist(R.robotPose, root->position) < 11 ) {
+            currentDist = Edist(R.robotPose, root->position);
+            std::cout << "Distance to goal: " << currentDist << " units" << std::endl;
+            if( currentDist < 1 ) {
                 error("Reached goal");
                 std::cout << root->position << std::endl;
                 break;
+            } else if( std::abs(currentDist-prevDist) > 10 ) {
+                error("Impossible move to");
+                std::cout << R.robotPose << std::endl;
+                break;
             }
+            prevDist = currentDist;
 
             // START normal graph search stuff
             // Pick a random node
@@ -1680,6 +1697,8 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             // Extend
             //error("Extending graph");
             extend( S, KD, Q, newNode, &closestNode, delta, hyperBallRad, S->moveGoal );
+            kdTree.row(kdTreePos) = newNode->position.head(2);
+            kdTreePos++;
 
             // Make graph consistent (RRT# and RRTx)
             if( searchType == "RRTx" || searchType == "RRT#" ) {
@@ -1706,4 +1725,19 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
 
     double totalTime = getTimeNs(startTime);
     std::cout << "Total time: " << totalTime/1000000000.0 << " s" << std::endl;
+
+    std::ofstream ofs;
+    ofs.open( "robotPath.txt", std::ofstream::out );
+    for( int j = 0; j < rHist.rows(); j++ ) {
+        ofs << rHist.row(j);
+        ofs << "\n";
+    }
+    ofs.close();
+
+    ofs.open("kdTree.txt", std::ofstream::out );
+    for( int k = 0; k < kdTree.rows(); k++ ) {
+        ofs << kdTree.row(k);
+        ofs << "\n";
+    }
+    ofs.close();
 }
