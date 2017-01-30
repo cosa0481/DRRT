@@ -13,12 +13,7 @@ double distFunc( std::string distanceFunction,
                  Eigen::VectorXd pointA, Eigen::VectorXd pointB)
 {
     if( distanceFunction == "R3Dist" ) {
-        return sqrt((pointA[1]-pointB[1])*(pointA[1]-pointB[1])
-                + (pointA[2]-pointB[2])*(pointA[2]-pointB[2]) ) +
-                sqrt((pointA[3]-pointB[3])*(pointA[3]-pointB[3])
-                + (pointA[4]-pointB[4])*(pointA[4]-pointB[4]) ) +
-                sqrt((pointA[5]-pointB[5])*(pointA[5]-pointB[5])
-                + (pointA[6]-pointB[6])*(pointA[6]-pointB[6]) );
+        return R3Dist(pointA,pointB);
     } else if( distanceFunction == "R3SDist" ) {
         return R3SDist(pointA,pointB);
     } else if( distanceFunction == "EuclideanDist" ) {
@@ -28,6 +23,8 @@ double distFunc( std::string distanceFunction,
         return EuclideanDist(pointA,pointB);
     } else if( distanceFunction == "KDdist" ) {
         return R3SDist(pointA,pointB);
+    } else if( distanceFunction == "S3Dist" ) {
+        return S3KDSearchDist(pointA,pointB);
     }
 
     return 0.0;
@@ -79,6 +76,7 @@ bool kdInsert( KDTree* tree, KDTreeNode* node )
         }
     }
 
+    //std::cout << "kdInsert : Just added\n" << node->position << "\n" << Edist(node->position,parent->position) << " units from\n" << parent->position << std::endl;
     node->kdParent = parent;
     node->kdParentExist = true;
     if( parent->kdSplit == tree->d-1 ) {

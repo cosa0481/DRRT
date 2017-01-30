@@ -22,16 +22,17 @@ int main( int argc, char* argv[] )
     double envRad = 50.0;                       // environment spans -envRad to envRad
                                                 // in each dimension
     double robotRad = 0.5;                      // robot radius
+    string distanceFunction = "R3SDist";        // distance function for KD-Tree
 
     Eigen::VectorXd start(4), goal(4);
-    start << 0.0, 0.0, 0.0, PI/3;               // robot goes to here *0,-40,0,pi/3*
+    start << 0.0, 0.0, 0.0, PI/4;               // robot goes to here *0,-40,0,pi/3*
                                                 // (start location of search tree)
-    goal << 150.0, 150.0, 0.0, -PI/3 ;            // robot comes from here *-40,40,0,-pi/3*
+    goal << 50.0, 50.0, 0.0, -3*PI/4 ;          // robot comes from here *-40,40,0,-pi/3*
                                                 // (goal location of search tree)
 
     bool MoveRobot = true;
 
-    int d = 4;                                  // number of dimensions [x y 0.0 theta]
+    int d = 4;                                  // number of dimensions [x y 0.0(time) theta]
     //double timeOut = INF;                     // not used?
 
     Eigen::VectorXd lowerBounds(4), upperBounds(4);
@@ -52,7 +53,7 @@ int main( int argc, char* argv[] )
 
     error("Parameters defined\nRunning RRTx");
 
-    RRTX( C, total_time, slice_time, 10.0, 100.0, changeThresh, algorithmName, MoveRobot, false, false, "" );
+    RRTX( C, total_time, slice_time, 10.0, 100.0, changeThresh, algorithmName, MoveRobot, false, false, "", distanceFunction );
 
     return 0;
 }

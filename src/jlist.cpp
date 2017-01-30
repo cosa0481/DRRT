@@ -259,6 +259,19 @@ void JList::JlistPrint()
     }
 }
 
+Eigen::Matrix<double,Eigen::Dynamic,2> JList::JlistAsMatrix()
+{
+    Eigen::Matrix<double,Eigen::Dynamic,2> matrix(length,2);
+    JListNode* ptr = front;
+    int row_count = 0;
+    while( ptr != ptr->child ) {
+        matrix.row(row_count) = ptr->node->position.head(2);
+        row_count++;
+        ptr = ptr->child;
+    }
+    return matrix;
+}
+
 void JList::JlistEmpty()
 {
     KDTreeNode* temp = new KDTreeNode();

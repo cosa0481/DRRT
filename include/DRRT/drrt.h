@@ -338,7 +338,8 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
 void RRTX( CSpace* S, double total_planning_time, double slice_time,
            double delta, double ballConstant, double changeThresh,
            std::string searchType, bool MoveRobotFlag,
-           bool saveVideoData, bool saveTree, std::string dataFile
+           bool saveVideoData, bool saveTree, std::string dataFile,
+           std::string distanceFunction
            /* "statsArgs..." ???*/ );
 
 #endif // DRRT_H

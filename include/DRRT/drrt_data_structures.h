@@ -143,7 +143,7 @@ typedef struct RobotData{
                                     // control loop
 
     KDTreeNode* nextMoveTarget;     // this is the node at the root-end of
-                                    // the edge contains nextRobotPose
+                                    // the edge containing nextRobotPose
 
     double distanceFromNextRobotPoseToNextMoveTarget;   // this holds the distance from
                                                         // nextRobotPose to nextMoveTarget

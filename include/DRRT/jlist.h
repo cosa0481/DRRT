@@ -36,8 +36,8 @@ public:
     JListNode* bound;   // bounds either side of the list
     int length;
     bool useNodes;      // flag for indicating whether this JList
-                        // is one of Edges or KDTreeNode's. True
-                        // if JList uses KDTreeNode's
+                        // is one of Edges or KDTreeNodes. True
+                        // if JList uses KDTreeNodes
 
     // Constructor
     JList( bool nodeflag ) : useNodes(nodeflag)
@@ -67,6 +67,7 @@ public:
     void JlistPopKey( Edge* e, double &k );
     bool JlistRemove( JListNode* node );
     void JlistPrint();
+    Eigen::Matrix<double, Eigen::Dynamic, 2> JlistAsMatrix();
     void JlistEmpty();
 };
 

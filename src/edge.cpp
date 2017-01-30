@@ -35,7 +35,7 @@ double Edist( Eigen::VectorXd x, Eigen::VectorXd y )
 
 double EKDdist( Eigen::VectorXd x, Eigen::VectorXd y )
 {
-    return distFunc( "EuclidianDist", x, y );
+    return distFunc( "S3KDSearchDist", x, y );
 }
 
 double EWdist( Eigen::VectorXd x, Eigen::VectorXd y )
@@ -99,7 +99,10 @@ bool validMove( CSpace* S, Edge* edge )
         // the root of the search tree, and thus the time of startNode must be
         // greater than the time of endNode
         return ((edge->startNode->position(2) > edge->endNode->position(2)) && ((S->dubinsMinVelocity <= edge->velocity) && (edge->velocity <= S->dubinsMaxVelocity)));
-    }
+    } /*else {
+        //double dist = Edist(edge->startNode->position, edge->endNode->position);
+        //return (dist <= 10);
+    }*/
     // if space does not have time then we assume that a move is always valid
     return true;
 }

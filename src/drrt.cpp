@@ -7,9 +7,11 @@
 #include <DRRT/drrt.h>
 
 int histPos = 0;
-Eigen::MatrixXd rHist(1000,4);
+Eigen::MatrixXd rHist(MAXPATHNODES,4);
 int kdTreePos = 0;
 Eigen::MatrixXd kdTree(MAXPATHNODES,2);
+int kdEdgePos = 0;
+Eigen::MatrixXd kdEdge(MAXPATHNODES,4);
 
 double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start )
 {
@@ -479,14 +481,37 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, KDTreeNode* newNode,
     } else { // Q->type == "RRTx"
         // Find all nodes within the (shrinking) hyper ball of
         // (saturated) newNode
-        JList nodeList = JList(true);
+        JList nodeList = JList(true); // true argument for using KDTreeNodes as elements
         kdFindWithinRange( nodeList, Tree, hyperBallRad, newNode->position );
+
+        //std::cout << "List of nodes within range " << hyperBallRad << ":" << std::endl;
+        Eigen::Matrix<double,Eigen::Dynamic,2> nodes = nodeList.JlistAsMatrix();
+        //std::cout << nodes << std::endl;
+        for( int i = 0; i < nodes.rows(); i++ ) {
+            Eigen::VectorXd current(4);
+            current(0) = nodes(i,0);
+            current(1) = nodes(i,1);
+            current(2) = 0;
+            current(3) = 4;
+//            if( Edist(current,newNode->position) > 11 ) {
+                std::cout << "nearNode\n" << nodes.row(i) << std::endl;
+                std::cout << "is " << Edist(current,newNode->position);
+                std::cout << " from newNode\n" << newNode->position.head(2) << std::endl;
+//            }
+        }
 
         // Try to find and link to best parent. This also saves
         // the edges from newNode to the neighbors in the field
         // "tempEdge" of the neighbors. This saves time in the
         // case that trajectory calculation is complicated.
         findBestParent( S, newNode, &nodeList, closestNode, true );
+
+        if( newNode->rrtParentUsed ) {
+            /*std::cout << "extend :\n" << newNode->position << "\nbest parent is\n"
+                  << newNode->rrtParentEdge->endNode->position << "\n"
+                  << "with distance "
+                  << Edist(newNode->position,newNode->rrtParentEdge->endNode->position) << std::endl;*/
+        }
 
         // If no parent was fonud then ignore this node
         if( !newNode->rrtParentUsed ) {
@@ -611,12 +636,20 @@ void findBestParent( CSpace* S, KDTreeNode* newNode, JList* nodeList,
     while( listItem->child != listItem ) {
         nearNode = listItem->node;
 
+        std::cout << "findBestParent : nearNode:\n" << nearNode->position << std::endl;
+        std::cout << "extends to" << std::endl;
+        std::cout << "newNode:\n" << newNode->position << std::endl;
+
         // First calculate the shortest trajectory (and its distance)
         // that gets from newNode to nearNode while obeying the
         // constraints of the state space and the dynamics
         // of the robot
         thisEdge = newEdge( newNode, nearNode );
         calculateTrajectory( S, thisEdge );
+
+        std::cout << "with edge:\n" << thisEdge->startNode->position << "\nto\n"
+                  << thisEdge->endNode->position << std::endl;
+        std::cout << "over distance: " << thisEdge->dist << std::endl;
 
         if( saveAllEdges ) {
             nearNode->tempEdge = thisEdge;
@@ -634,9 +667,13 @@ void findBestParent( CSpace* S, KDTreeNode* newNode, JList* nodeList,
         }
 
         if( newNode->rrtLMC > nearNode->rrtLMC + thisEdge->dist ) {
-            // Found a potentiall better parent
+            // Found a potential better parent
             newNode->rrtLMC = nearNode->rrtLMC + thisEdge->dist;
+            std::cout << newNode << std::endl;
             newNode->rrtParentEdge = thisEdge;
+                std::cout << "findBestParent :\n" << thisEdge->startNode->position << "\nbest rrt parent\n"
+                          << thisEdge->endNode->position << std::endl;
+                std::cout << "findBestParent : With distance: " << thisEdge->dist << std::endl;
             newNode->rrtParentUsed = true;
         }
 
@@ -931,7 +968,7 @@ bool recalculateLMCMineVTwo( Queue* Q, KDTreeNode* node,
     bool newParentFound = false;
     double neighborDist;
     KDTreeNode* rrtParent, *neighborNode;
-    Edge* rrtParentEdge, *neighborEdge;
+    Edge* parentEdge, *neighborEdge;
     JListNode* listItem, *nextItem;
 
     // Remove outdated nodes from current neighbors list
@@ -962,7 +999,7 @@ bool recalculateLMCMineVTwo( Queue* Q, KDTreeNode* node,
             // Found a better parent
             node->rrtLMC = neighborNode->rrtLMC + neighborDist;
             rrtParent = neighborNode;
-            rrtParentEdge = listItem->edge;
+            parentEdge = listItem->edge;
             newParentFound = true;
         }
 
@@ -970,7 +1007,7 @@ bool recalculateLMCMineVTwo( Queue* Q, KDTreeNode* node,
     }
 
     if( newParentFound ) { // this node found a viable parent
-        makeParentOf( rrtParent, node, rrtParentEdge, root );
+        makeParentOf( rrtParent, node, parentEdge, root );
     }
     return true;
 }
@@ -1193,6 +1230,8 @@ void addOtherTimesToRoot( CSpace* S, KDTree* Tree,
     }
 }
 
+
+// debug: gets goal node which should be too far away on first movement
 void findNewTarget( CSpace* S, KDTree* Tree,
                     RobotData* R, double hyperBallRad )
 {
@@ -1300,6 +1339,8 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
     // it moved since the last update (as well as the total path that
     // it has followed)
     if( R->moving ) {
+
+        std::cout << "Moving " << Edist(R->robotPose,R->nextRobotPose) << " units" << std::endl;
         R->robotPose = R->nextRobotPose;
         //R.robotMovePath[R.numRobotMovePoints+1:R.numRobotMovePoints+R.numLocalMovePoints,:] = R.robotLocalPath[1:R.numLocalMovePoints,:];
         for( int i = 0; i < R->numLocalMovePoints-1; i++ ) {
@@ -1359,7 +1400,7 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
     if( R->currentMoveInvalid ) {
         findNewTarget( S, Tree, R, hyperBallRad );
     } else {
-        /* Recall that moveGoal is the node whoes key is used to determine
+        /* Recall that moveGoal is the node whose key is used to determine
          * the level set of cost propogation (this should theoretically
          * be further than the robot from the root of the tree, which
          * will happen here assuming that robot moves at least one edge
@@ -1380,7 +1421,7 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
     if( !S->spaceHasTime ) {
         // Not using the time dimension, so assume speed is equal to robotVelocity
         KDTreeNode* nextNode = R->nextMoveTarget;
-
+        std::cout << "next move target (start):\n" << R->nextMoveTarget->position << std::endl;
 
         // Calculate distance from robot to the end of the current edge it is following
         double nextDist = R->robotEdge->dist - R->distAlongRobotEdge;
@@ -1397,6 +1438,7 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
                && nextNode != nextNode->rrtParentEdge->endNode ) {
             // Can go all the way to nextNode and still have some distance left to spare
 
+            std::cout << nextNode << std::endl;
             // Remember robot will move through this point
             R->numLocalMovePoints += 1;
             R->robotLocalPath.row(R->numLocalMovePoints) = nextNode->position;
@@ -1416,6 +1458,10 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
 
             // Update the next node (at the end of that trajectory)
             nextNode = R->robotEdge->endNode;
+
+            std::cout << "moveRobot : Now using Edge:\n" << R->robotEdge->startNode->position << "\nto\n"
+                      << R->robotEdge->endNode->position << std::endl;
+            std::cout << "moveRobot : With distance: " << R->robotEdge->dist << std::endl;
         }
 
         // either 1) nextDist > distRemaining
@@ -1423,15 +1469,20 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
 
         // Calculate the next pose of the robot
         if( nextDist > distRemaining ) {
+            std::cout << "moveRobot : nextDist > distRemaining -> " << nextDist << " > " << distRemaining << std::endl;
             R->distAlongRobotEdge += distRemaining;
             R->nextRobotPose = poseAtDistAlongEdge( R->robotEdge, R->distAlongRobotEdge );
         } else {
             // The next node is the end of this tree and we reach it
+            std::cout << "moveRobot : nextDist " << nextDist << std::endl;
+            std::cout << "moveRobot : About to move " << Edist(R->robotPose,nextNode->position) << std::endl;
             R->nextRobotPose = nextNode->position;
             R->distAlongRobotEdge = R->robotEdge->dist;
+            std::cout << "Reached end of tree" << std::endl;
         }
 
         R->nextMoveTarget = R->robotEdge->endNode;
+        std::cout << "next move target (end):\n" << R->nextMoveTarget->position << std::endl;
 
         // Remember last point in local path
         R->numLocalMovePoints += 1;
@@ -1487,7 +1538,8 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
 void RRTX( CSpace *S, double total_planning_time, double slice_time,
            double delta, double ballConstant, double changeThresh,
            std::string searchType, bool MoveRobotFlag,
-           bool saveVideoData, bool saveTree, std::string dataFile )
+           bool saveVideoData, bool saveTree, std::string dataFile,
+           std::string distanceFunction )
 {
     //double robotSensorRange = 20.0; // used for "sensing" obstacles (should make input)
 
@@ -1504,7 +1556,8 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
 
     // KDtree
     // Dubin's car so 4th dimension wraps at 0 = 2pi
-    KDTree* KD = new KDTree( S->d,"EuclideanDist", wraps, wrapPoints );
+    // DEFAULT DISTANCE METRIC (was "EuclideanDist")
+    KDTree* KD = new KDTree( S->d, distanceFunction, wraps, wrapPoints );
 
     Queue* Q = new Queue();
     if( searchType == "RRT" ) {
@@ -1589,10 +1642,11 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     double now_time = getTimeNs(startTime); //time(0)*1000000000.0; // time in nanoseconds
     bool warmUpTimeJustEnded;
     double truncElapsedTime;
-    double currentDist, prevDist;
+    double currentDist;
+    Eigen::Vector4d prevPose;
 
     currentDist = Edist(R.robotPose, root->position);
-    prevDist = currentDist;
+    prevPose = R.robotPose;
 
     int i = 0;
     while( true ) {
@@ -1624,6 +1678,8 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             sliceCounter += 1;
             truncElapsedTime = floor(S->timeElapsed*1000.0)/1000.0;
 
+            //error("before moveRobot");
+
             // Move robot if the robot is allowed to move,
             // otherwise planning is finished so break
             /* Changed elapsedTime[checkPtr] to S->timeElapsed since I believe they are the same at this point */
@@ -1637,54 +1693,63 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
                 }
             }
 
+           // error("before reduceInconsistency");
+
             // Make graph consistent (RRT# and RRTx)
             if( searchType == "RRTx" || searchType == "RRT#" ) {
                 //error("Reducing inconsistencies");
-                reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
+                //reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
                 if( S->moveGoal->rrtLMC != oldrrtLMC ) {
                     oldrrtLMC = S->moveGoal->rrtLMC;
                 }
             }
 
             // Check if robot has reached its movement goal
+            //error("before Edist");
             currentDist = Edist(R.robotPose, root->position);
             std::cout << "Distance to goal: " << currentDist << " units" << std::endl;
-            if( currentDist < 1 ) {
+            if( currentDist < 5 ) {
                 error("Reached goal");
                 std::cout << root->position << std::endl;
                 break;
-            } else if( std::abs(currentDist-prevDist) > 10 ) {
-                error("Impossible move to");
-                std::cout << R.robotPose << std::endl;
+            } else if( Edist(R.robotPose,prevPose) > 10 ) {
+                error("Impossible move");
                 break;
             }
-            prevDist = currentDist;
+            prevPose = R.robotPose;
 
             // START normal graph search stuff
             // Pick a random node
             //error("Getting random node");
-            KDTreeNode* newNode = randNodeOrFromStack( S );
-
-            // Happens when we explicitly sample the goal every so often
-            if( newNode->kdInTree ) {
-                // Nodes will be updated automatically as
-                // information gets propogated to it
-                continue;
-            }
-
-            // Find closest old node to the new node
+            KDTreeNode* newNode = new KDTreeNode();
             KDTreeNode closestNode = KDTreeNode();
             double closestDist = INF;
-            //error("Finding nearest node in KD tree");
-            kdFindNearest( closestNode, closestDist, KD, newNode->position );
+            //double testDist = std::abs(newNode->position(3) - closestNode.position(3)); //Edist(newNode->position,closestNode.position);
+            //while( testDist > PI/2 ) {
+                newNode = randNodeOrFromStack( S );
 
-            // Saturate
-            if( closestDist > delta && newNode != S->goalNode ) {
-                //error("Saturating node");
-                saturate( newNode->position, closestNode.position, delta );
-            } else {
-                //error("No saturation required");
-            }
+                // Happens when we explicitly sample the goal every so often
+                while( newNode->kdInTree ) {
+                    // Nodes will be updated automatically as
+                    // information gets propogated to it
+                    //newNode = randNodeOrFromStack( S );
+                    continue;
+                }
+
+                // Find closest old node to the new node
+                //error("Finding nearest node in KD tree");
+                kdFindNearest( closestNode, closestDist, KD, newNode->position );
+
+                // Saturate
+                if( closestDist > delta && newNode != S->goalNode ) {
+                    //error("Saturating node");
+                    saturate( newNode->position, closestNode.position, delta );
+                    //std::cout << "Saturated dist: " << Edist(newNode->position,closestNode.position) << std::endl;
+                } else {
+                    //error("No saturation required");
+                }
+                //testDist = std::abs(newNode->position(3) - closestNode.position(3)); //Edist(newNode->position,closestNode.position);
+           // }
 
             /*** ASSUMING NO OBSTACLES FOR NOW ***/
             // Check for collisions vs obstacles
@@ -1703,7 +1768,7 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             // Make graph consistent (RRT# and RRTx)
             if( searchType == "RRTx" || searchType == "RRT#" ) {
                 //error("Reducing inconsistencies");
-                reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
+                //reduceInconsistency(Q, S->moveGoal, robotRads, root, hyperBallRad );
                 if( S->moveGoal->rrtLMC != oldrrtLMC ) {
                     oldrrtLMC = S->moveGoal->rrtLMC;
                 }
