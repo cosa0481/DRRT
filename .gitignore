@@ -1,1 +1,4 @@
 debug*
+*.fig
+*.mat
+*.m
