@@ -141,7 +141,6 @@ bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
     while( true ) {
         // Now check if there could plossibly be any closer nodes on the other
         // side of the parent. If not then check grandparent etc.
-//        std::cout << "parent\n" << parent->position << std::endl;
         double parentHyperPlaneDist = queryPoint(parent->kdSplit) - parent->position(parent->kdSplit);
 
         if( parentHyperPlaneDist > *currentClosestDist ) {
@@ -151,8 +150,7 @@ bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
             if( parent == root ) {
                 // The parent is the root and we are done
                 *nearestNode = *currentClosestNode;
-                nearestNodeDist = currentClosestDist;
-//                std::cout << "returningBegin\n" << nearestNode->position << std::endl;
+                *nearestNodeDist = *currentClosestDist;
                 return true;
             }
 
@@ -183,11 +181,9 @@ bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
             std::shared_ptr<KDTreeNode> Rnode
                     = std::make_shared<KDTreeNode>();
             std::shared_ptr<double> Rdist = std::make_shared<double>(0);
-//            std::cout << "SendingInRight\n" << Rnode->position << std::endl;
             kdFindNearestInSubtree( Rnode, Rdist, distanceFunction,
                                     parent->kdChildR, queryPoint,
                                     currentClosestNode, *currentClosestDist );
-//            std::cout << "ReturnedRight\n" << Rnode->position << std::endl;
             if( *Rdist < *currentClosestDist ) {
                 currentClosestNode = Rnode;
                 currentClosestDist = Rdist;
@@ -203,25 +199,20 @@ bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
             std::shared_ptr<KDTreeNode> Lnode
                     = std::make_shared<KDTreeNode>();
             std::shared_ptr<double> Ldist = std::make_shared<double>(0);
-//            std::cout << "SendingInLeft\n" << Lnode->position << std::endl;
             kdFindNearestInSubtree( Lnode, Ldist, distanceFunction,
                                     parent->kdChildL, queryPoint,
                                     currentClosestNode, *currentClosestDist );
-//            std::cout << "ReturnedLeft\n" << Lnode->position << std::endl;
             if( *Ldist < *currentClosestDist ) {
                 currentClosestNode = Lnode;
                 currentClosestDist = Ldist;
             }
         }
 
-//        std::cout << "currentClosestNode\n" << currentClosestNode->position << std::endl;
-
 
         if( parent == root ) {
             // The parent is the root and we are done
             *nearestNode = *currentClosestNode;
-            nearestNodeDist = std::make_shared<double>(*currentClosestDist);
-//            std::cout << "returningEnd\n" << nearestNode->position << std::endl;
+            *nearestNodeDist = *currentClosestDist;
             return true;
         }
         parent = parent->kdParent;
@@ -274,7 +265,7 @@ bool kdFindNearest(std::shared_ptr<KDTreeNode> nearestNode,
         }
     }
     *nearestNode = *Lnode;
-    nearestNodeDist = Ldist;
+    *nearestNodeDist = *Ldist;
     return true;
 }
 
