@@ -159,13 +159,14 @@ void JList::JlistPop( Edge* e )
     e = oldTop->edge;
 }
 
-void JList::JlistPopKey( std::shared_ptr<KDTreeNode> n, double &k )
+void JList::JlistPopKey( std::shared_ptr<KDTreeNode> n,
+                         std::shared_ptr<double> k)
 {
 
     if( length == 0 ) {
         // Jlist is empty
         n = std::make_shared<KDTreeNode>();
-        k = -1.0;
+        *k = -1.0;
     }
 
     JListNode* oldTop = front;
@@ -183,15 +184,15 @@ void JList::JlistPopKey( std::shared_ptr<KDTreeNode> n, double &k )
     oldTop->parent = oldTop;
 
     n = oldTop->node;
-    k = oldTop->key;
+    *k = oldTop->key;
 }
 
-void JList::JlistPopKey( Edge* e, double &k )
+void JList::JlistPopKey(Edge* e, std::shared_ptr<double> k)
 {
     if( length == 0 ) {
         // Jlist is empty
         e = new Edge();
-        k = -1.0;
+        *k = -1.0;
     }
 
     JListNode* oldTop = front;
@@ -209,7 +210,7 @@ void JList::JlistPopKey( Edge* e, double &k )
     oldTop->parent = oldTop;
 
     e = oldTop->edge;
-    k = oldTop->key;
+    *k = oldTop->key;
 }
 
 // Removes node from the list

@@ -63,8 +63,8 @@ public:
     void JlistTopKey( Edge* e, double &k );
     void JlistPop( std::shared_ptr<KDTreeNode> t );
     void JlistPop( Edge* e );
-    void JlistPopKey( std::shared_ptr<KDTreeNode> n, double &k );
-    void JlistPopKey( Edge* e, double &k );
+    void JlistPopKey(std::shared_ptr<KDTreeNode> n, std::shared_ptr<double> k);
+    void JlistPopKey(Edge* e, std::shared_ptr<double> k);
     bool JlistRemove( JListNode* node );
     void JlistPrint();
     Eigen::Matrix<double, Eigen::Dynamic, 2> JlistAsMatrix();

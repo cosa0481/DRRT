@@ -299,9 +299,10 @@ bool explicitEdgeCheck( CSpace* S, Edge* edge )
 
 /////////////////////// RRT Functions ///////////////////////
 
-bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newNode,
-                std::shared_ptr<KDTreeNode> closestNode, double delta,
-                double hyperBallRad, std::shared_ptr<KDTreeNode> moveGoal )
+bool extend(CSpace* S, KDTree* Tree, Queue* Q,
+            std::shared_ptr<KDTreeNode> newNode,
+            std::shared_ptr<KDTreeNode> closestNode, double delta,
+            double hyperBallRad, std::shared_ptr<KDTreeNode> moveGoal )
 {
     if( Q->type == "RRT" ) {
         // First calculate the shortest trajectory (and its distance) that
@@ -326,11 +327,11 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
         return kdInsert( Tree, newNode );
     } else if( Q->type == "RRT*" ) {
         // Find all nodes within the (shrinking hyperball of (saturated) newNode
-        JList nodeList = JList(true);
+        std::shared_ptr<JList> nodeList = std::make_shared<JList>(true);
         kdFindWithinRange( nodeList, Tree, hyperBallRad, newNode->position );
 
         // Try to find and link to best parent
-        findBestParent( S, newNode, &nodeList, closestNode, true);
+        findBestParent( S, newNode, nodeList, closestNode, true);
         if( !newNode->rrtParentUsed ) {
             emptyRangeList( nodeList ); // clean up
             return false;
@@ -350,10 +351,10 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
         }
 
         // Now rewire neighbors that should use newNode as their parent
-        JListNode* listItem = nodeList.front;
+        JListNode* listItem = nodeList->front;
         std::shared_ptr<KDTreeNode> nearNode;
         Edge* thisEdge;
-        for( int i = 0; i < nodeList.length; i++ ) {
+        for( int i = 0; i < nodeList->length; i++ ) {
             nearNode = listItem->node;
 
             // Watch out for cycles
@@ -387,14 +388,14 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
     } else if( Q->type == "RRT#" ) {
         // Find all nodes within the (shrinking) hyperball of
         // (saturated) newNode
-        JList nodeList = JList(true);
+        std::shared_ptr<JList> nodeList = std::make_shared<JList>(true);
         kdFindWithinRange(nodeList, Tree, hyperBallRad, newNode->position );
 
         // Try to find and link to best parent, this also saves the
         // edges from newNode to the neighbors in the field "tempEdge"
         // of the neighbors. This saves time in the case that
         // trajectory calculation is complicated.
-        findBestParent( S, newNode, &nodeList, closestNode, true );
+        findBestParent( S, newNode, nodeList, closestNode, true );
 
         // If no parent was found then ignore this node
         if( !newNode->rrtParentUsed ) {
@@ -408,7 +409,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
         // First pass, make edges between newNode and all of its valid
         // neighbors. Note that the edges have been stored in "tempEdge"
         // field of the neighbors
-        JListNode* listItem = nodeList.front;
+        JListNode* listItem = nodeList->front;
         std::shared_ptr<KDTreeNode> nearNode;
         while( listItem != listItem->child ) {
             nearNode = listItem->node;
@@ -427,7 +428,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
         // Second pass, make edges (if possible) between all valid nodes in
         // D-ball and newNode, also rewire neighbors that should use
         // newNode as their parent
-        listItem = nodeList.front;
+        listItem = nodeList->front;
         Edge* thisEdge;
         while( listItem != listItem->child ) {
             nearNode = listItem->node;
@@ -481,14 +482,14 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
     } else { // Q->type == "RRTx"
         // Find all nodes within the (shrinking) hyper ball of
         // (saturated) newNode
-        JList nodeList = JList(true); // true argument for using KDTreeNodes as elements
+        std::shared_ptr<JList> nodeList = std::make_shared<JList>(true); // true argument for using KDTreeNodes as elements
         kdFindWithinRange( nodeList, Tree, hyperBallRad, newNode->position );
 
         // Try to find and link to best parent. This also saves
         // the edges from newNode to the neighbors in the field
         // "tempEdge" of the neighbors. This saves time in the
         // case that trajectory calculation is complicated.
-        findBestParent( S, newNode, &nodeList, closestNode, true );
+        findBestParent( S, newNode, nodeList, closestNode, true );
 
         // If no parent was fonud then ignore this node
         if( !newNode->rrtParentUsed ) {
@@ -502,11 +503,11 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
          * is used to help keep track of successors and not for movement.
          */
         std::shared_ptr<KDTreeNode> parentNode
-                = newNode.get()->rrtParentEdge->endNode;
+                = newNode->rrtParentEdge->endNode;
         Edge* backEdge = newEdge( parentNode, newNode );
         backEdge->dist = INF;
-        parentNode.get()->SuccessorList->JlistPush( backEdge, INF );
-        newNode.get()->successorListItemInParent
+        parentNode->SuccessorList->JlistPush( backEdge, INF );
+        newNode->successorListItemInParent
                 = parentNode.get()->SuccessorList->front;
 
         // Insert the new node into the KDTree
@@ -517,11 +518,11 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
         // and rewire neighbors that would do better to use newNode as
         // their parent. Note that the edges -from- newNode -to- its
         // neighbors have been stored in "tempEdge" field of the neighbors
-        JListNode* listItem = nodeList.front;
+        JListNode* listItem = nodeList->front;
         std::shared_ptr<KDTreeNode> nearNode;
         Edge* thisEdge;
         double oldLMC;
-        for( int i = 0; i < nodeList.length; i++ ) {
+        for( int i = 0; i < nodeList->length; i++ ) {
             nearNode = listItem->node;
 
             // If edge from newNode to nearNode was valid
@@ -597,7 +598,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
 /////////////////////// RRT* Functions ///////////////////////
 
 void findBestParent(CSpace* S, std::shared_ptr<KDTreeNode> newNode,
-                    JList* nodeList, std::shared_ptr<KDTreeNode> closestNode,
+                    std::shared_ptr<JList> nodeList, std::shared_ptr<KDTreeNode> closestNode,
                     bool saveAllEdges)
 {
     // If the list is empty
@@ -1218,7 +1219,7 @@ void findNewTarget( CSpace* S, KDTree* Tree,
 
     double maxSearchBallRad = Edist(S->lowerBounds, S->upperBounds);
     searchBallRad = std::min( searchBallRad, maxSearchBallRad );
-    JList L = JList(true);
+    std::shared_ptr<JList> L = std::make_shared<JList>(true);
     kdFindWithinRange( L, Tree, searchBallRad, R->robotPose );
 
     std::shared_ptr<KDTreeNode> dummyRobotNode
@@ -1234,7 +1235,7 @@ void findNewTarget( CSpace* S, KDTree* Tree,
         bestDistToGoal = INF;
         bestNeighbor = std::make_shared<KDTreeNode>();
 
-        JListNode* ptr = L.front;
+        JListNode* ptr = L->front;
         Edge* thisEdge;
         double distToGoal;
         while( ptr != ptr->child ) {
@@ -1542,7 +1543,7 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
         Q->Q = new BinaryHeap(false);
         // Obstacle successor stack
         // true >> uses KDTreeNode's
-        Q->OS = new JList(true);
+        Q->OS = std::make_shared<JList>(true);
         Q->S = S;
         Q->changeThresh = changeThresh;
         Q->type = searchType;
@@ -1554,7 +1555,7 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     // stores a stack of points that we desire
     // to insert in the future (used when an
     // obstacle is removed) true >> uses KDTreeNodes
-    S->sampleStack = new JList(true);
+    S->sampleStack = std::make_shared<JList>(true);
 
     S->delta = delta;
 

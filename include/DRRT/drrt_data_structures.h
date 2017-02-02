@@ -57,7 +57,7 @@ public:
 
     // This jlist must "hold" MatrixXd's ?
     // So use the JListNode->node->position when using this stack
-    JList* sampleStack;                 // points to sample in the future
+    std::shared_ptr<JList> sampleStack;                 // points to sample in the future
 
     float hypervolume;                  // hypervolume of the space
     float delta;                        // RRT parameter delta
@@ -85,7 +85,7 @@ typedef struct Queue{
     std::string type;
     CSpace* S;
     BinaryHeap* Q;      // normal queue (sorted based on cost from goal)
-    JList* OS;          // obstacle successor stack
+    std::shared_ptr<JList> OS;          // obstacle successor stack
     float changeThresh; // threshold of local changes that we care about
 
 } Queue;

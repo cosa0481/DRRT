@@ -159,7 +159,7 @@ bool extend( CSpace* S, KDTree* Tree, Queue* Q, std::shared_ptr<KDTreeNode> newN
  * then it saves a copy of each edge in each node (to avoid work duplication
  * in RRT# and RRTx)
  */
-void findBestParent( CSpace* S, std::shared_ptr<KDTreeNode> newNode, JList* nodeList,
+void findBestParent( CSpace* S, std::shared_ptr<KDTreeNode> newNode, std::shared_ptr<JList> nodeList,
                      std::shared_ptr<KDTreeNode> closestNode, bool saveAllEdges );
 
 // Takes care of inserting a new node in RRT*
@@ -310,7 +310,7 @@ void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
 // be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
-/*JList* findPointsInConflictWithObstacle( CSpace* S, KDTree* Tree,
+/*std::shared_ptr<JList> findPointsInConflictWithObstacle( CSpace* S, KDTree* Tree,
                                          Obstacle* O, std::shared_ptr<KDTreeNode> root );*/
 
 // This adds the obstacle (checks for edge conflicts with the obstactle

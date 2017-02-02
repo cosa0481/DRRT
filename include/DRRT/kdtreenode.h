@@ -39,9 +39,9 @@ public:
     double rrtTreeCost;         // the cost to get to the root through the tree
 
     // RRT#
-    JList* rrtNeighborsOut;     // edges in the graph that can be reached
+    std::shared_ptr<JList> rrtNeighborsOut;     // edges in the graph that can be reached
                                 // from this node
-    JList* rrtNeighborsIn;      // edges in the graph that reach this node
+    std::shared_ptr<JList> rrtNeighborsIn;      // edges in the graph that reach this node
 
     int priorityQueueIndex;     // index in the queue
     bool inPriorityQueue;       // flag for in the queue
@@ -52,10 +52,10 @@ public:
                             // calculating the same trajectory multiple times
 
     // RRTx (his idea)
-    JList* SuccessorList; // edges to nodes that use this node as their parent
-    JList* InitialNeighborListOut; // edges to nodes in the original ball
+    std::shared_ptr<JList> SuccessorList; // edges to nodes that use this node as their parent
+    std::shared_ptr<JList> InitialNeighborListOut; // edges to nodes in the original ball
                                    // that can be reached bfrom this node
-    JList* InitialNeighborListIn;  // edges to nodes in the original ball
+    std::shared_ptr<JList> InitialNeighborListIn;  // edges to nodes in the original ball
                                    // that can reach this node
 
     bool inOSQueue;     // flag for in the OS queue
