@@ -33,11 +33,11 @@ public:
     float pGoal;                        // the probabality that the goal is sampled
     std::string randNode;               // the sampling function to use (takes a CSpace)
 
-    // These will be KDTreeNode*s and float cspaces can be represented by
-    // using the dist fiel: KDTreeNode*->dist
-    KDTreeNode* goalNode;               // the goal node
-    KDTreeNode* root;                   // the root node
-    KDTreeNode* moveGoal;               // the current movegoal (robot position) node
+    // These will be std::shared_ptr<KDTreeNode>s and float cspaces can be represented by
+    // using the dist fiel: std::shared_ptr<KDTreeNode>->dist
+    std::shared_ptr<KDTreeNode> goalNode;               // the goal node
+    std::shared_ptr<KDTreeNode> root;                   // the root node
+    std::shared_ptr<KDTreeNode> moveGoal;               // the current movegoal (robot position) node
 
     int itsUntilSample;                 // a count down to sample a particular point
     Eigen::VectorXd itsSamplePoint;     // sample this when itsUntilSample == 0
@@ -108,7 +108,7 @@ typedef struct rrtXQueue : Queue{} rrtXQueue;
 // neighbor edges easier given that each node stores all of its
 // neighbor edges in three different places
 typedef struct RRTNodeNeighborIterator{
-    KDTreeNode* thisNode;   // the node who's neighbors
+    std::shared_ptr<KDTreeNode> thisNode;   // the node who's neighbors
                             // we are iterating through
 
     int listFlag;           // flag with the following values:
@@ -122,7 +122,7 @@ typedef struct RRTNodeNeighborIterator{
                             // iterating through
 
     // Constructor
-    RRTNodeNeighborIterator( KDTreeNode* node ):
+    RRTNodeNeighborIterator( std::shared_ptr<KDTreeNode> node ):
         thisNode(node), listFlag(0)
     {}
 
@@ -142,7 +142,7 @@ typedef struct RobotData{
                                     // be at the end of the current
                                     // control loop
 
-    KDTreeNode* nextMoveTarget;     // this is the node at the root-end of
+    std::shared_ptr<KDTreeNode> nextMoveTarget;     // this is the node at the root-end of
                                     // the edge containing nextRobotPose
 
     double distanceFromNextRobotPoseToNextMoveTarget;   // this holds the distance from
@@ -177,7 +177,7 @@ typedef struct RobotData{
                                 // robotEdge (i.e. next time slice)
 
     // Constructor
-    RobotData( Eigen::VectorXd rP, KDTreeNode* nMT, int maxPathNodes ) :
+    RobotData( Eigen::VectorXd rP, std::shared_ptr<KDTreeNode> nMT, int maxPathNodes ) :
         robotPose(rP), nextRobotPose(rP), nextMoveTarget(nMT),
         distanceFromNextRobotPoseToNextMoveTarget(0.0), moving(false),
         currentMoveInvalid(false), numRobotMovePoints(1), numLocalMovePoints(1) /*Original Julia code does not have an initial value for numLocalMovePoints*/, robotEdgeUsed(false),

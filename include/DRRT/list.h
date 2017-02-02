@@ -14,12 +14,12 @@
 // associated with data)
 class ListNode {
 public:
-    KDTreeNode* tnode;
+    std::shared_ptr<KDTreeNode> tnode;
     ListNode* child;
     double key = 0.0;
 
     // Constructors
-    ListNode(KDTreeNode* n) : tnode(n) {}
+    ListNode(std::shared_ptr<KDTreeNode> n) : tnode(n) {}
     ListNode(){}
 };
 
@@ -38,12 +38,12 @@ public:
         length = 0;
     }
 
-    void listPush( KDTreeNode* tnode );
-    void listPush( KDTreeNode* tnode, double key );
-    KDTreeNode* listTop();
-    void listTopKey( KDTreeNode* n, double* k );
-    KDTreeNode* listPop();
-    void listPopKey( KDTreeNode* n, double* k );
+    void listPush( std::shared_ptr<KDTreeNode> tnode );
+    void listPush( std::shared_ptr<KDTreeNode> tnode, double key );
+    std::shared_ptr<KDTreeNode> listTop();
+    void listTopKey( std::shared_ptr<KDTreeNode> n, double* k );
+    std::shared_ptr<KDTreeNode> listPop();
+    void listPopKey( std::shared_ptr<KDTreeNode> n, double* k );
     void listEmpty();
     void listPrint();
 

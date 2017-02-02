@@ -17,17 +17,17 @@ class KDTree;
  * not return the original point.
  */
 typedef struct ghostPointIterator {
-    KDTree* kdTree;                     // the kd tree that this is being used with
-    Eigen::VectorXd queryPoint;      // the actual point that all the ghost are "identical" to DATA
-    Eigen::VectorXi wrapDimFlags;      // wrapDimFlags indicates the current permutation
-    int ghostTreeDepth;                 // pointer to the current depth of the "ghost tree".
-                                        //      Note that this "tree" is only a theoretical construct
-                                        //      that determines the order in which the ghosts are
-                                        //      returned. It should not be confused with the kdtree.
+    KDTree* kdTree;                // the kd tree that this is being used with
+    Eigen::VectorXd queryPoint;    // the actual point that all the ghost are "identical" to DATA
+    Eigen::VectorXi wrapDimFlags;  // the current permutation
+    int ghostTreeDepth;   // pointer to the current depth of the "ghost tree"
+                 //      Note that this "tree" is only a theoretical construct
+                 //      that determines the order in which the ghosts are
+                 //      returned. It should not be confused with the kdtree.
     Eigen::VectorXd currentGhost;    // the current ghost that we are returning
-    Eigen::VectorXd closestUnwrappedPoint;   // the closest point in the normal space to the
-                                                // currentGhost. Dist between this and ghost can
-                                                // can be used as heuristic to skip unhelpful ghosts
+    Eigen::VectorXd closestUnwrappedPoint;  // the closest point in the normal
+                 // space to the currentGhost. Dist between this and ghost can
+                 // can be used as heuristic to skip unhelpful ghosts
 
     // Constructor
     ghostPointIterator( KDTree* t, Eigen::VectorXd qP);
@@ -35,6 +35,7 @@ typedef struct ghostPointIterator {
 
 // This returns the next ghost point, not that it starts
 // at the first -ghost- and does not return the original point DATA
-Eigen::VectorXd getNextGhostPoint( ghostPointIterator* G, double bestDist );
+Eigen::VectorXd getNextGhostPoint(std::shared_ptr<ghostPointIterator> G,
+                                  double bestDist);
 
 #endif // GHOSTPOINT_H

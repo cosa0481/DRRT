@@ -6,7 +6,7 @@
 #include <DRRT/jlist.h>
 #include <DRRT/kdtreenode.h>
 
-void JList::JlistPush( KDTreeNode* t )
+void JList::JlistPush( std::shared_ptr<KDTreeNode> t )
 {
     JListNode* newNode = new JListNode( t );
     newNode->parent = front->parent;
@@ -38,7 +38,7 @@ void JList::JlistPush( Edge* e )
     length += 1;
 }
 
-void JList::JlistPush( KDTreeNode* t, double k )
+void JList::JlistPush( std::shared_ptr<KDTreeNode> t, double k )
 {
     JListNode* newNode = new JListNode( t );
     newNode->parent = front->parent;
@@ -72,11 +72,11 @@ void JList::JlistPush( Edge* e, double k )
     length += 1;
 }
 
-void JList::JlistTop( KDTreeNode* t )
+void JList::JlistTop( std::shared_ptr<KDTreeNode> t )
 {
     if( length == 0 ) {
         // Jlist is empty
-        t = new KDTreeNode();
+        t = std::make_shared<KDTreeNode>();
     }
     t = front->node;
 }
@@ -89,11 +89,11 @@ void JList::JlistTop( Edge* e ) {
     e = front->edge;
 }
 
-void JList::JlistTopKey( KDTreeNode* t, double &k )
+void JList::JlistTopKey( std::shared_ptr<KDTreeNode> t, double &k )
 {
     if( length == 0 ) {
         // Jlist is empty
-        t = new KDTreeNode();
+        t = std::make_shared<KDTreeNode>();
         k = -1.0;
     }
     t = front->node;
@@ -111,11 +111,11 @@ void JList::JlistTopKey( Edge* e, double &k )
     k = front->key;
 }
 
-void JList::JlistPop( KDTreeNode* t )
+void JList::JlistPop( std::shared_ptr<KDTreeNode> t )
 {
     if( length == 0 ) {
         // Jlist is empty
-        t = new KDTreeNode();
+        t = std::make_shared<KDTreeNode>();
     }
 
     JListNode* oldTop = front;
@@ -159,12 +159,12 @@ void JList::JlistPop( Edge* e )
     e = oldTop->edge;
 }
 
-void JList::JlistPopKey( KDTreeNode* n, double &k )
+void JList::JlistPopKey( std::shared_ptr<KDTreeNode> n, double &k )
 {
 
     if( length == 0 ) {
         // Jlist is empty
-        n = new KDTreeNode();
+        n = std::make_shared<KDTreeNode>();
         k = -1.0;
     }
 
@@ -274,7 +274,8 @@ Eigen::Matrix<double,Eigen::Dynamic,2> JList::JlistAsMatrix()
 
 void JList::JlistEmpty()
 {
-    KDTreeNode* temp = new KDTreeNode();
+    std::shared_ptr<KDTreeNode> temp
+            = std::make_shared<KDTreeNode>();
     JlistPop(temp);
     while( temp->dist != -1.0 ) JlistPop(temp);
 }
@@ -284,10 +285,10 @@ int main()
 {
     JList L = JList();
 
-    KDTreeNode* a = new KDTreeNode(1);
-    KDTreeNode* b = new KDTreeNode(2);
-    KDTreeNode* c = new KDTreeNode(3);
-    KDTreeNode* d = new KDTreeNode(4);
+    std::shared_ptr<KDTreeNode> a = new KDTreeNode(1);
+    std::shared_ptr<KDTreeNode> b = new KDTreeNode(2);
+    std::shared_ptr<KDTreeNode> c = new KDTreeNode(3);
+    std::shared_ptr<KDTreeNode> d = new KDTreeNode(4);
 
     std::cout << "Pushing three nodes onto list" << std::endl;
     L.JlistPush(a);

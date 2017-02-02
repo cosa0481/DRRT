@@ -28,58 +28,53 @@ void error( int i )
 
 /////////////////////// Critical Functions ///////////////////////
 
-double Edist( Eigen::VectorXd x, Eigen::VectorXd y )
-{
-    return distFunc( "R3SDist", x, y );
-}
+double Edist(Eigen::VectorXd x, Eigen::VectorXd y)
+{return distFunc("R3SDist", x, y);}
 
-double EKDdist( Eigen::VectorXd x, Eigen::VectorXd y )
-{
-    return distFunc( "S3KDSearchDist", x, y );
-}
+double EKDdist(Eigen::VectorXd x, Eigen::VectorXd y)
+{return distFunc("S3KDSearchDist", x, y);}
 
-double EWdist( Eigen::VectorXd x, Eigen::VectorXd y )
-{
-    return distFunc( "EuclidianDist", x.head(2), y.head(2) );
-}
+double EWdist(Eigen::VectorXd x, Eigen::VectorXd y)
+{return distFunc("EuclidianDist", x.head(2), y.head(2));}
 
-void saturate( Eigen::Vector4d &newPoint, Eigen::VectorXd closestPoint,
-               double delta )
+void saturate(std::shared_ptr<Eigen::Vector4d> nP,
+              Eigen::Vector4d cP,
+              double delta)
 {
-    double thisDist = Edist( newPoint, closestPoint );
+    double thisDist = Edist( (*nP), cP );
     if( thisDist > delta ) {
         // First scale non-theta dimensions
-        newPoint.head(3) = closestPoint.head(3) +
-                ( newPoint.head(3) - closestPoint.head(3) ) * delta / thisDist;
+        ((*nP)).head(3) = cP.head(3) +
+                ( (*nP).head(3) - cP.head(3) ) * delta / thisDist;
 
         // Saturate theta in the short of the two directions that it can go
-        if( std::abs( newPoint(3) - closestPoint(3) ) < PI ) {
+        if( std::abs( (*nP)(3) - cP(3) ) < PI ) {
             // Saturate in the normal way
-            newPoint(3) = closestPoint(3) +
-                    (newPoint(3) - closestPoint(3)) * delta / thisDist;
+            (*nP)(3) = cP(3) +
+                    ((*nP)(3) - cP(3)) * delta / thisDist;
         } else {
             // Saturate in the opposite way
-            if( newPoint(3) < PI ) {
-                newPoint(3) = newPoint(3) + 2*PI;
+            if( (*nP)(3) < PI ) {
+                (*nP)(3) = (*nP)(3) + 2*PI;
             } else {
-                newPoint(3) = newPoint(3) - 2*PI;
+                (*nP)(3) = (*nP)(3) - 2*PI;
             }
 
             // Now saturate
-            newPoint(3) = closestPoint(3) +
-                    (newPoint(3) - closestPoint(3)) * delta / thisDist;
+            (*nP)(3) = cP(3) +
+                    ((*nP)(3) - cP(3)) * delta / thisDist;
 
-            // Finally, wrpap back to the identity that is on [0 2pi]
+            // Finally, wrap back to the identity that is on [0 2pi]
             // Is this really wrapping?
 
             Eigen::Vector2d minVec;
-            minVec(0) = newPoint(3);
+            minVec(0) = (*nP)(3);
             minVec(1) = 2*PI;
             Eigen::Vector2d maxVec;
             maxVec(0) = minVec.minCoeff();
             maxVec(1) = 0.0;
 
-            newPoint(3) = maxVec.maxCoeff();
+            (*nP)(3) = maxVec.maxCoeff();
         }
     }
 }
@@ -87,7 +82,7 @@ void saturate( Eigen::Vector4d &newPoint, Eigen::VectorXd closestPoint,
 
 /////////////////////// Edge Functions ///////////////////////
 
-Edge* newEdge( KDTreeNode* startNode, KDTreeNode* endNode )
+Edge* newEdge( std::shared_ptr<KDTreeNode> startNode, std::shared_ptr<KDTreeNode> endNode )
 {
     return new Edge( startNode, endNode );
 }

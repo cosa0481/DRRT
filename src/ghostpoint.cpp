@@ -12,14 +12,16 @@ ghostPointIterator::ghostPointIterator( KDTree* t, Eigen::VectorXd qP):
    }
 
 
-Eigen::VectorXd getNextGhostPoint( ghostPointIterator* G, double bestDist )
+Eigen::VectorXd getNextGhostPoint( std::shared_ptr<ghostPointIterator> G,
+                                   double bestDist )
 {
     // Will return out when done
     while( true ) {
         // Go up tree until we find a wrapDimFlags[ghostTreeDepth] == 0
         // (this indicates that we need to try permutations where ghost
         // is wrapped around KDTree.wraps[ghostTreeDepth])
-        while( G->ghostTreeDepth > 0 && G->wrapDimFlags[G->ghostTreeDepth-1] != 0 ) {
+        while( G->ghostTreeDepth > 0
+               && G->wrapDimFlags[G->ghostTreeDepth-1] != 0 ) {
             G->ghostTreeDepth -= 1;
         }
 
@@ -55,8 +57,10 @@ Eigen::VectorXd getNextGhostPoint( ghostPointIterator* G, double bestDist )
         while( G->ghostTreeDepth < G->kdTree->numWraps ) {
             G->ghostTreeDepth += 1;
             G->wrapDimFlags[G->ghostTreeDepth-1] = 0;
-            G->currentGhost[G->kdTree->wraps[G->ghostTreeDepth-1]] = G->queryPoint[G->kdTree->wraps[G->ghostTreeDepth-1]];
-            G->closestUnwrappedPoint[G->kdTree->wraps[G->ghostTreeDepth-1]] = G->currentGhost[G->kdTree->wraps[G->ghostTreeDepth-1]];
+            G->currentGhost[G->kdTree->wraps[G->ghostTreeDepth-1]]
+                    = G->queryPoint[G->kdTree->wraps[G->ghostTreeDepth-1]];
+            G->closestUnwrappedPoint[G->kdTree->wraps[G->ghostTreeDepth-1]]
+                    = G->currentGhost[G->kdTree->wraps[G->ghostTreeDepth-1]];
         }
 
         // Check if closest point in unpwrapped space is further than

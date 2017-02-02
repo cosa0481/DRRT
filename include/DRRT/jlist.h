@@ -18,13 +18,13 @@ class JListNode{
 public:
     JListNode* child;
     JListNode* parent;
-    KDTreeNode* node;
+    std::shared_ptr<KDTreeNode> node;
     Edge* edge;
     double key = 0.0;
 
     // Corstructor
     JListNode() : key(-1.0) {}
-    JListNode(KDTreeNode* t) : node(t) {}
+    JListNode(std::shared_ptr<KDTreeNode> t) : node(t) {}
     JListNode(Edge* e) : edge(e) {}
 };
 
@@ -53,17 +53,17 @@ public:
     }
 
     // Functions
-    void JlistPush( KDTreeNode* t );
+    void JlistPush( std::shared_ptr<KDTreeNode> t );
     void JlistPush( Edge* e );
-    void JlistPush( KDTreeNode* t, double k );
+    void JlistPush( std::shared_ptr<KDTreeNode> t, double k );
     void JlistPush( Edge* e, double k );
-    void JlistTop( KDTreeNode* t );
+    void JlistTop( std::shared_ptr<KDTreeNode> t );
     void JlistTop( Edge* e );
-    void JlistTopKey( KDTreeNode* n, double &k );
+    void JlistTopKey( std::shared_ptr<KDTreeNode> n, double &k );
     void JlistTopKey( Edge* e, double &k );
-    void JlistPop( KDTreeNode* t );
+    void JlistPop( std::shared_ptr<KDTreeNode> t );
     void JlistPop( Edge* e );
-    void JlistPopKey( KDTreeNode* n, double &k );
+    void JlistPopKey( std::shared_ptr<KDTreeNode> n, double &k );
     void JlistPopKey( Edge* e, double &k );
     bool JlistRemove( JListNode* node );
     void JlistPrint();

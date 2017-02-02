@@ -5,7 +5,7 @@
 
 #include <DRRT/list.h>
 
-void List::listPush( KDTreeNode* tnode )
+void List::listPush( std::shared_ptr<KDTreeNode> tnode )
 {
     ListNode* newNode = new ListNode( tnode );
     newNode->child = front;
@@ -13,7 +13,7 @@ void List::listPush( KDTreeNode* tnode )
     length += 1;
 }
 
-void List::listPush( KDTreeNode* tnode, double key )
+void List::listPush( std::shared_ptr<KDTreeNode> tnode, double key )
 {
     ListNode* newNode = new ListNode( tnode );
     newNode->child = front;
@@ -22,31 +22,31 @@ void List::listPush( KDTreeNode* tnode, double key )
     length += 1;
 }
 
-KDTreeNode* List::listTop()
+std::shared_ptr<KDTreeNode> List::listTop()
 {
     if( front == front->child ) {
         // List is empty
-        return new KDTreeNode(-1);
+        return std::make_shared<KDTreeNode>(-1);
     }
     return front->tnode;
 }
 
-void List::listTopKey( KDTreeNode* n, double* k )
+void List::listTopKey( std::shared_ptr<KDTreeNode> n, double* k )
 {
     if( front == front->child ) {
         // List is empty
-        n = new KDTreeNode(-1);
+        n = std::make_shared<KDTreeNode>(-1);
         *k = -1;
     }
     n = front->tnode;
     *k = front->key;
 }
 
-KDTreeNode* List::listPop()
+std::shared_ptr<KDTreeNode> List::listPop()
 {
     if( front == front->child ) {
         // List is empty
-        return new KDTreeNode(-1);
+        return std::make_shared<KDTreeNode>(-1);
     }
     ListNode* oldTop = front;
     front = front->child;
@@ -54,11 +54,11 @@ KDTreeNode* List::listPop()
     return oldTop->tnode;
 }
 
-void List::listPopKey( KDTreeNode* n, double* k )
+void List::listPopKey( std::shared_ptr<KDTreeNode> n, double* k )
 {
     if( front == front->child ) {
         // List is empty
-        n = new KDTreeNode(-1);
+        n = std::make_shared<KDTreeNode>(-1);
         *k = -1;
     }
     ListNode* oldTop = front;
@@ -112,9 +112,9 @@ int main()
 {
     List L = List();
 
-    KDTreeNode* a = new KDTreeNode(1);
-    KDTreeNode* b = new KDTreeNode(2);
-    KDTreeNode* c = new KDTreeNode(3);
+    std::shared_ptr<KDTreeNode> a = new KDTreeNode(1);
+    std::shared_ptr<KDTreeNode> b = new KDTreeNode(2);
+    std::shared_ptr<KDTreeNode> c = new KDTreeNode(3);
 
     L.listPush(a,1);
     L.listPush(b,2);
