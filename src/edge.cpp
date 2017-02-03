@@ -207,18 +207,18 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
     temp(0) = cos(initial_theta-(PI/2.0));
     temp(1) = sin(initial_theta-(PI/2.0));
     // ... left-turn initial location circle
-    Eigen::VectorXd irc_center = initial_location + r_min * temp;
+    Eigen::Vector2d irc_center = initial_location + r_min * temp;
     temp(0) = cos(initial_theta+(PI/2.0));
     temp(1) = sin(initial_theta+(PI/2.0));
     // ... right-turn goal_location circle
-    Eigen::VectorXd ilc_center = initial_location + r_min * temp;
+    Eigen::Vector2d ilc_center = initial_location + r_min * temp;
     temp(0) = cos(goal_theta-(PI/2.0));
     temp(1) = sin(goal_theta-(PI/2.0));
     // ...left_turn goal_location circle
-    Eigen::VectorXd grc_center = goal_location + r_min * temp;
+    Eigen::Vector2d grc_center = goal_location + r_min * temp;
     temp(0) = cos(goal_theta+(PI/2.0));
     temp(1) = sin(goal_theta+(PI/2.0));
-    Eigen::VectorXd glc_center = goal_location + r_min * temp;
+    Eigen::Vector2d glc_center = goal_location + r_min * temp;
 
 
     // Remember the best distance and associated type of trajectory
@@ -239,7 +239,7 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
     v = diff/D;
     R = -2.0*r_min/D;
     double rsl_length;
-    Eigen::VectorXd rsl_tangent_x(2), rsl_tangent_y(2);
+    Eigen::Vector2d rsl_tangent_x, rsl_tangent_y;
     if( std::abs(R) > 1.0 ) {
         rsl_length = INF;
     } else {
@@ -280,7 +280,7 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
     D = sqrt((diff*diff).sum());
     v = diff/D;
     double rsr_length;
-    Eigen::VectorXd  rsr_tangent_x(2), rsr_tangent_y(2);
+    Eigen::Vector2d  rsr_tangent_x, rsr_tangent_y;
     temp3(0) = irc_center(0);
     temp3(1) = grc_center(0);
     rsr_tangent_x = -r_min*v(1) + temp3;
@@ -311,14 +311,14 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
 
     // Calculate (if advantagous) the right-left-right path
     double rlr_length;
-    Eigen::ArrayXd rlr_rl_tangent(2), rlr_lr_tangent(2);
+    Eigen::Array2d rlr_rl_tangent, rlr_lr_tangent;
     rlr_rl_tangent(0) = 0;
     rlr_rl_tangent(1) = 0;
     rlr_lr_tangent(0) = 0;
     rlr_lr_tangent(1) = 0;
 
     // D was last set by the rsr calculation
-    Eigen::VectorXd rlr_l_circle_center;
+    Eigen::Vector2d rlr_l_circle_center;
     if( D < 4.0*r_min ) {
         // Start by finding the center of the "left" circle
         double theta = -acos(D/(4*r_min)) + atan2(v(1),v(0));
@@ -354,7 +354,7 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
     v = diff/D;
     R = 2.0*r_min/D;
     double lsr_length;
-    Eigen::VectorXd lsr_tangent_x(2), lsr_tangent_y(2);
+    Eigen::Vector2d lsr_tangent_x, lsr_tangent_y;
     if( std::abs(R) > 1.0 ) {
         lsr_length = INF;
     } else {
@@ -362,9 +362,9 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
         a = R*v(0) + v(1)*sq;
         b = R*v(1) - v(0)*sq;
         lsr_tangent_x(0) = ilc_center(0) + a*r_min;
-        lsr_tangent_x(1) = grc_center(0) + a*r_min;
+        lsr_tangent_x(1) = grc_center(0) - a*r_min;
         lsr_tangent_y(0) = ilc_center(1) + b*r_min;
-        lsr_tangent_y(1) = grc_center(1) + b*r_min;
+        lsr_tangent_y(1) = grc_center(1) - b*r_min;
 
         temp(0) = lsr_tangent_x(0);
         temp(1) = lsr_tangent_y(0);
@@ -392,7 +392,7 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
     // l-s-l requires "outer" tangent poinst, and the tangent
     // vector is parallel to the vector from irc to grc
     double lsl_length;
-    Eigen::VectorXd lsl_tangent_x(2), lsl_tangent_y(2);
+    Eigen::Vector2d lsl_tangent_x, lsl_tangent_y;
     diff = glc_center - ilc_center;
     D = sqrt( (diff*diff).sum() );
     v = diff/D;
@@ -426,14 +426,14 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
 
     // Calculate (if advantagous) the left-right-left path
     double lrl_length;
-    Eigen::ArrayXd lrl_rl_tangent(2), lrl_lr_tangent(2);
+    Eigen::Array2d lrl_rl_tangent, lrl_lr_tangent;
     lrl_rl_tangent(0) = 0;
     lrl_rl_tangent(1) = 0;
     lrl_lr_tangent(0) = 0;
     lrl_lr_tangent(1) = 0;
 
     // D was last set by the lsl calculation
-    Eigen::VectorXd lrl_r_circle_center;
+    Eigen::Vector2d lrl_r_circle_center;
     if( D < 4.0*r_min ) {
         // Start by finding the center of the "left" circle
         double theta = -acos(D/(4*r_min)) + atan2(v(1),v(0));
@@ -470,8 +470,10 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
                             // (straight lines are saved as a single segment
 
     Eigen::ArrayXd phis;    // This array contains 1 element or a sequence of elements
-    Eigen::VectorXd p(2), p1(2), p2(2), first_path_x, first_path_y, second_path_x,
-            second_path_y, third_path_x, third_path_y;
+    Eigen::Vector2d p, p1, p2;
+    Eigen::VectorXd first_path_x, first_path_y,
+                    second_path_x, second_path_y,
+                    third_path_x, third_path_y;
     double phi_start, phi_end, val;
     int i;
 
@@ -580,7 +582,7 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
             p2(1) = rsl_tangent_y(1);
         }
 
-        Eigen::Vector2d ptemp1(2), ptemp2(2);
+        Eigen::Vector2d ptemp1, ptemp2;
 
         ptemp1 << p1(0), p2(0);
         second_path_x = ptemp1;
