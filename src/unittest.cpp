@@ -1,8 +1,10 @@
-/* test.cpp
+/* unittest.cpp
  * Corin Sandford
  * Fall 2016
  * This file is made into an executable: 'test'
- * Used to test high level things in the library
+ * Used to test basic functionality
+ * Should create dense graph and then display optimal path to goal
+ * **Should be straight line** !!
  */
 
 #include <DRRT/drrt.h>
@@ -11,12 +13,11 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    error("Begin");
     string algorithmName = "RRTx";       // "RRT", "RRT*", "RRT#", or "RRTx"
     string expName = "Debug";            // Name for output files
 
     double changeThresh = 1.0;           // only for RRTx
-    double total_time = 5.0;             // total planning time (move after
+    double total_time = 100.0;           // total planning time (move after
                                          // this, and keep planning *50*
     double goal_threshold = 0.5;         // threshold at which the robot has
                                          // reached the goal
