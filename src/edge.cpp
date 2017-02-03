@@ -82,12 +82,12 @@ void saturate(std::shared_ptr<Eigen::Vector4d> nP,
 
 /////////////////////// Edge Functions ///////////////////////
 
-Edge* newEdge( std::shared_ptr<KDTreeNode> startNode, std::shared_ptr<KDTreeNode> endNode )
+std::shared_ptr<Edge> newEdge( std::shared_ptr<KDTreeNode> startNode, std::shared_ptr<KDTreeNode> endNode )
 {
-    return new Edge( startNode, endNode );
+    return std::make_shared<Edge>( startNode, endNode );
 }
 
-bool validMove( CSpace* S, Edge* edge )
+bool validMove( CSpace* S, std::shared_ptr<Edge> edge )
 {
     if( S->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
@@ -102,7 +102,7 @@ bool validMove( CSpace* S, Edge* edge )
     return true;
 }
 
-Eigen::VectorXd poseAtDistAlongEdge( Edge* edge, double distAlongEdge )
+Eigen::VectorXd poseAtDistAlongEdge( std::shared_ptr<Edge> edge, double distAlongEdge )
 {
     double distRemaining = distAlongEdge;
     if( edge->trajectory.rows() < 2 || edge->dist <= distAlongEdge ) {
@@ -151,7 +151,7 @@ Eigen::VectorXd poseAtDistAlongEdge( Edge* edge, double distAlongEdge )
     return vec;
 }
 
-Eigen::VectorXd poseAtTimeAlongEdge( Edge* edge, double timeAlongEdge )
+Eigen::VectorXd poseAtTimeAlongEdge( std::shared_ptr<Edge> edge, double timeAlongEdge )
 {
     if( edge->trajectory.rows() < 2 || (edge->startNode->position(2) - edge->endNode->position(2)) <= timeAlongEdge ) {
         return edge->endNode->position;
@@ -179,7 +179,7 @@ Eigen::VectorXd poseAtTimeAlongEdge( Edge* edge, double timeAlongEdge )
     return vec;
 }
 
-void calculateTrajectory( CSpace* S, Edge* edge )
+void calculateTrajectory( CSpace* S, std::shared_ptr<Edge> edge )
 {
     double r_min = S->minTurningRadius;
 
@@ -777,7 +777,7 @@ void calculateTrajectory( CSpace* S, Edge* edge )
     edge->distOriginal = edge->dist;
 }
 
-void calculateHoverTrajectory( CSpace* S, Edge* edge )
+void calculateHoverTrajectory( CSpace* S, std::shared_ptr<Edge> edge )
 {
     edge->edgeType = "xxx";
     edge->Wdist = 0.0;
@@ -796,4 +796,4 @@ void calculateHoverTrajectory( CSpace* S, Edge* edge )
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//bool explicitEdgeCheck( CSpace* S, Edge* edge, Obstacle* obstacle ){}
+//bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge, Obstacle* obstacle ){}

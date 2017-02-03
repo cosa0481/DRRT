@@ -136,7 +136,7 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind );
 // Checks if the edge is in collision with any obstacles in the C-space
 // Returns true if there the edge is in collision
 // MISSING IMPLEMENTATION OF EXPLICITEDGECHECK(CSpace,KDTreeNode,KDTreeNode)
-bool explicitEdgeCheck( CSpace* S, Edge* edge );
+bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge );
 
 
 /////////////////////// RRT Functions ///////////////////////
@@ -187,20 +187,20 @@ std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q
 
 // Links an edge -from- node -to- newNeighbor
 // Edge should already be populated correctly.
-void makeNeighborOf( std::shared_ptr<KDTreeNode> newNeighbor, std::shared_ptr<KDTreeNode> node, Edge* edge );
+void makeNeighborOf( std::shared_ptr<KDTreeNode> newNeighbor, std::shared_ptr<KDTreeNode> node, std::shared_ptr<Edge> edge );
 
 // Links an "initial" "out" edge -from- node -to newNeighbor
 // Edge should already be populated correctly.
 // This is actually only used for -RRTx- but is included here because
 // of its similarity to the function above.
-void makeInitialOutNeighborOf( std::shared_ptr<KDTreeNode> newNeighbor, std::shared_ptr<KDTreeNode> node, Edge* edge );
+void makeInitialOutNeighborOf( std::shared_ptr<KDTreeNode> newNeighbor, std::shared_ptr<KDTreeNode> node, std::shared_ptr<Edge> edge );
 
 // Links an "initial" "in" edge -from- node -to- newNeighbor
 // (i.e. the edge is only stored on the recieving node and not on the sending node)
 // Edge should already be populated correctly.
 // This is actually only used for -RRTx- but is included here because
 // of its similarity to the functions above.
-void makeInitialInNeighborOf( std::shared_ptr<KDTreeNode> newNeighbor, std::shared_ptr<KDTreeNode> node, Edge* edge );
+void makeInitialInNeighborOf( std::shared_ptr<KDTreeNode> newNeighbor, std::shared_ptr<KDTreeNode> node, std::shared_ptr<Edge> edge );
 
 // Recalculates LMC based on neighbors that this node can reach
 // Note the first argument in unused but necessary for the multiple
@@ -255,7 +255,7 @@ std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q 
 
 // Makes newParent the parent of node via the edge
 void makeParentOf( std::shared_ptr<KDTreeNode> newParent, std::shared_ptr<KDTreeNode> node,
-                   Edge* edge, std::shared_ptr<KDTreeNode> root );
+                   std::shared_ptr<Edge> edge, std::shared_ptr<KDTreeNode> root );
 
 // Recalculates LMC based on neighbors
 // Returns true if successful

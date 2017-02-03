@@ -163,7 +163,7 @@ typedef struct RobotData{
                                         // nextRobotPose (not including the former)
     float numLocalMovePoints;           // the number of points in robotLocalPath
 
-    Edge* robotEdge;    // this is the edge that contains the trajectory that the
+    std::shared_ptr<Edge> robotEdge;    // this is the edge that contains the trajectory that the
                         // robot is currently following
 
     bool robotEdgeUsed; // true if robotEdge is populated;

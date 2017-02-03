@@ -33,7 +33,7 @@ public:
 
     // RRT
     bool rrtParentUsed;         // flag for if this node has a parent
-    Edge* rrtParentEdge;        // edge to the node that is this node's parent
+    std::shared_ptr<Edge> rrtParentEdge;        // edge to the node that is this node's parent
 
     // RRT*
     double rrtTreeCost;         // the cost to get to the root through the tree
@@ -48,7 +48,7 @@ public:
 
     double rrtLMC;              // locally minimum cost (1-step look ahead)
     double rrtH;        // the heuristic estimate of the distance to the goal
-    Edge* tempEdge;         // this is a temporary storage location to avoid
+    std::shared_ptr<Edge> tempEdge;         // this is a temporary storage location to avoid
                             // calculating the same trajectory multiple times
 
     // RRTx (his idea)
