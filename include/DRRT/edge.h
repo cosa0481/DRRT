@@ -5,7 +5,7 @@
 #include <string>
 #include <eigen3/Eigen/Eigen>
 
-#define MAXPATHNODES 20000
+#define MAXPATHNODES 100000
 
 class KDTreeNode;
 class CSpace;

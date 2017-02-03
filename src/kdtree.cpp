@@ -302,7 +302,7 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
         }
     }
 
-    double newDist = distFunc( distanceFunction, queryPoint, parent->position );
+    double newDist = distFunc(distanceFunction, queryPoint, parent->position);
     if( newDist < *currentClosestDist ) {
         currentClosestNode = parent;
         currentClosestDist = std::make_shared<double>(newDist);
@@ -313,7 +313,8 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
         // Now check if there could plossibly be any closer nodes on the other
         // side of the parent. If not then check grandparent etc.
 
-        double parentHyperPlaneDist = queryPoint(parent->kdSplit) - parent->position(parent->kdSplit);
+        double parentHyperPlaneDist = queryPoint(parent->kdSplit)
+                - parent->position(parent->kdSplit);
 
         if( parentHyperPlaneDist > *currentClosestDist ) {
             // Then there could not be any closer nodes on the other side of
@@ -344,7 +345,8 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
         }
 
         // Now check on the other side of the parent
-        if( (queryPoint(parent->kdSplit) < parent->position(parent->kdSplit)) && parent->kdChildRExist ) {
+        if( (queryPoint(parent->kdSplit) < parent->position(parent->kdSplit))
+                && parent->kdChildRExist ) {
             // queryPoint is on the left side of the parent, so we need to
             // look at the right side of it (if it exists)
 
@@ -361,7 +363,8 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
                 currentClosestDist = Rdist;
             }
         }
-        else if( (parent->position(parent->kdSplit) <= queryPoint(parent->kdSplit)) && parent->kdChildLExist ) {
+        else if( (parent->position(parent->kdSplit)
+                  <= queryPoint(parent->kdSplit)) && parent->kdChildLExist ) {
             // queryPoint is on the right side of the parent, so we need to
             // look at the left side of it (if it exists)
 
@@ -369,7 +372,9 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
             std::shared_ptr<KDTreeNode> Lnode
                     = std::make_shared<KDTreeNode>();
             std::shared_ptr<double> Ldist = 0;
-            kdFindNearestInSubtree( Lnode, Ldist, distanceFunction, parent->kdChildL, queryPoint, currentClosestNode, *currentClosestDist );
+            kdFindNearestInSubtree( Lnode, Ldist, distanceFunction,
+                                    parent->kdChildL, queryPoint,
+                                    currentClosestNode, *currentClosestDist );
             if( *Ldist < *currentClosestDist ) {
                 currentClosestNode = Lnode;
                 currentClosestDist = Ldist;
@@ -379,7 +384,8 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
         if( parent == root ) {
             // The parent is the root and we are done
             // Need to do one last check vs the root
-            double thisDist = distFunc( distanceFunction, queryPoint, parent->position );
+            double thisDist = distFunc( distanceFunction, queryPoint,
+                                        parent->position );
             if( thisDist < *currentClosestDist ) {
                 nearestNode = parent;
                 nearestNodeDist = std::make_shared<double>(thisDist);
@@ -399,23 +405,25 @@ bool kdFindNearestWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
                              KDTree* tree, Eigen::VectorXd queryPoint,
                              std::shared_ptr<KDTreeNode> guess )
 {
-    double distToGuess = distFunc( tree->distanceFunction, queryPoint, guess->position );
+    double distToGuess = distFunc( tree->distanceFunction, queryPoint,
+                                   guess->position );
     if( guess == tree->root ) {
-        kdFindNearestInSubtree( nearestNode, nearestNodeDist, tree->distanceFunction, tree->root, queryPoint, tree->root, distToGuess );
+        kdFindNearestInSubtree( nearestNode, nearestNodeDist,
+                                tree->distanceFunction, tree->root,
+                                queryPoint, tree->root, distToGuess );
         return true;
     }
 
     std::shared_ptr<KDTreeNode> Lnode = std::make_shared<KDTreeNode>();
     std::shared_ptr<double> Ldist = 0;
-    kdFindNearestinSubtreeWithGuess( Lnode, Ldist, tree->distanceFunction,
-                                     tree->root, queryPoint, guess,
-                                     distToGuess );
+    kdFindNearestinSubtreeWithGuess(Lnode, Ldist, tree->distanceFunction,
+                                    tree->root, queryPoint, guess,
+                                    distToGuess);
 
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
         std::shared_ptr<ghostPointIterator> pointIterator
-                = std::make_shared<ghostPointIterator>
-                (ghostPointIterator( tree, queryPoint ));
+                = std::make_shared<ghostPointIterator>(tree, queryPoint);
         Eigen::VectorXd thisGhostPoint;
         while( true ) {
             thisGhostPoint = getNextGhostPoint( pointIterator, *Ldist );
@@ -424,14 +432,15 @@ bool kdFindNearestWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
 
             // Now see if any points in the space are closer to this ghost
             double distGhostToGuess = distFunc(tree->distanceFunction,
-                                               thisGhostPoint, guess->position);
+                                               thisGhostPoint,
+                                               guess->position);
             std::shared_ptr<KDTreeNode> thisLnode
                     = std::make_shared<KDTreeNode>();
             std::shared_ptr<double> thisLdist = 0;
             kdFindNearestinSubtreeWithGuess( thisLnode, thisLdist,
                                              tree->distanceFunction,
-                                             tree->root, thisGhostPoint, guess,
-                                             distGhostToGuess );
+                                             tree->root, thisGhostPoint,
+                                             guess, distGhostToGuess );
 
             if( *thisLdist < *Ldist ) {
                 // Found a closer point
@@ -448,7 +457,8 @@ bool kdFindNearestWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
 /////////////////////// K Nearest ///////////////////////
 std::shared_ptr<KDTreeNode> addToKNNHeap(BinaryHeap* H,
                                          std::shared_ptr<KDTreeNode> node,
-                                         double key, int k)
+                                         double key,
+                                         int k)
 {
     std::vector<std::shared_ptr<KDTreeNode>> heap = H->getHeap();
     if( node.get()->inHeap ) {
@@ -474,13 +484,15 @@ std::shared_ptr<KDTreeNode> addToKNNHeap(BinaryHeap* H,
 bool kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
                              std::shared_ptr<double> farthestNodeDist,
                              std::string distanceFunction,
-                             std::shared_ptr<KDTreeNode> root, int k,
+                             std::shared_ptr<KDTreeNode> root,
+                             int k,
                              Eigen::VectorXd queryPoint,
                              BinaryHeap* nearestHeap)
 {
     // Walk down the tree as if the node would be inserted
     std::shared_ptr<KDTreeNode> parent = root;
-    std::shared_ptr<KDTreeNode> currentWorstClosestNode = nearestHeap->topHeapB();
+    std::shared_ptr<KDTreeNode> currentWorstClosestNode
+            = nearestHeap->topHeapB();
     std::shared_ptr<double> currentWorstClosestDist
             = std::make_shared<double>(currentWorstClosestNode->dist);
     while( true ) {
@@ -505,7 +517,8 @@ bool kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
 
     double newDist = distFunc(distanceFunction, queryPoint, parent->position);
     if( newDist < *currentWorstClosestDist ) {
-        currentWorstClosestNode = addToKNNHeap(nearestHeap, parent, newDist, k);
+        currentWorstClosestNode = addToKNNHeap(nearestHeap, parent,
+                                               newDist, k);
         *currentWorstClosestDist = currentWorstClosestNode->dist;
     }
 
@@ -519,8 +532,8 @@ bool kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
                 - parent->position(parent->kdSplit);
 
         if( parentHyperPlaneDist > *currentWorstClosestDist ) {
-            // Then there could not be any closer nodes on the other side of the parent
-            // (and the parent itself is also too far away)
+            // Then there could not be any closer nodes on the other side
+            // of the parent (and the parent itself is also too far away)
             if( parent == root ) {
                 // The parent is te root and we are done
                 *farthestNode = *currentWorstClosestNode;
@@ -539,7 +552,8 @@ bool kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
         if( !parent->inHeap ) {
             newDist = distFunc(distanceFunction, queryPoint, parent->position);
             if( newDist < *currentWorstClosestDist ) {
-                currentWorstClosestNode = addToKNNHeap( nearestHeap, parent, newDist, k );
+                currentWorstClosestNode = addToKNNHeap( nearestHeap, parent,
+                                                        newDist, k );
                 *currentWorstClosestDist = currentWorstClosestNode->dist;
             }
         }
@@ -672,7 +686,7 @@ bool kdFindWithinRangeInSubtree(std::string distanceFunction,
         }
     }
 
-    double newDist = distFunc( distanceFunction, queryPoint, parent->position );
+    double newDist = distFunc(distanceFunction, queryPoint, parent->position);
     if( newDist < range ) {
         addToRangeList( nodeList, parent, newDist );
     }
@@ -682,7 +696,8 @@ bool kdFindWithinRangeInSubtree(std::string distanceFunction,
         // Now check if there could possibly be any nodes on the other
         // side of the parent within range, if not then check grandparent etc.
 
-        double parentHyperPlaneDist = queryPoint(parent->kdSplit) - parent->position(parent->kdSplit);
+        double parentHyperPlaneDist = queryPoint(parent->kdSplit)
+                - parent->position(parent->kdSplit);
 
         if( parentHyperPlaneDist > range ) {
             // Then there could not be any closer nodes within range on the other
@@ -699,24 +714,28 @@ bool kdFindWithinRangeInSubtree(std::string distanceFunction,
         // If we are here, then there could be a closer node on the other side
         // of the parent (including the parent itself) that is within range
 
-        // First check the parent itself (if it is not already one of the closest
-        // nodes)
+        // First check the parent itself (if it is not already one
+        // of the closest nodes)
         if( !parent->inHeap ) { // inHeap is a misnomer since this is a list
-            newDist = distFunc( distanceFunction, queryPoint, parent->position );
+            newDist = distFunc(distanceFunction, queryPoint, parent->position);
             if( newDist < range ) {
                 addToRangeList( nodeList, parent, newDist );
             }
         }
 
         // Now check on the other side of the parent
-        if( queryPoint(parent->kdSplit) < parent->position(parent->kdSplit) && parent->kdChildRExist ) {
+        if( queryPoint(parent->kdSplit) < parent->position(parent->kdSplit)
+                && parent->kdChildRExist ) {
             // The queryPoint is on the left side of the porent, so we need to
             // look at the right side of it (if it exists)
-            kdFindWithinRangeInSubtree(distanceFunction, parent->kdChildR, range, queryPoint, nodeList );
-        } else if( parent->position(parent->kdSplit) <= queryPoint(parent->kdSplit) && parent->kdChildLExist ) {
+            kdFindWithinRangeInSubtree(distanceFunction, parent->kdChildR,
+                                       range, queryPoint, nodeList );
+        } else if( parent->position(parent->kdSplit)
+                   <= queryPoint(parent->kdSplit) && parent->kdChildLExist ) {
             // The queryPoint is on the right side of the parent, so we need to
             // look at the left side of it (if it exists)
-            kdFindWithinRangeInSubtree( distanceFunction, parent->kdChildL, range, queryPoint, nodeList );
+            kdFindWithinRangeInSubtree( distanceFunction, parent->kdChildL,
+                                        range, queryPoint, nodeList );
         }
 
         if( parent == root ) {
@@ -732,13 +751,15 @@ void kdFindWithinRange(std::shared_ptr<JList> S, KDTree* tree,
                        double range, Eigen::VectorXd queryPoint)
 {
     // Insert root node in list if it is within range
-    double distToRoot = distFunc( tree->distanceFunction, queryPoint, tree->root->position );
+    double distToRoot = distFunc( tree->distanceFunction, queryPoint,
+                                  tree->root->position );
     if( distToRoot <= range ) {
         addToRangeList( S, tree->root, distToRoot );
     }
 
     // Find nodes within range
-    kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, queryPoint, S );
+    kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root,
+                                range, queryPoint, S );
 
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
@@ -747,11 +768,13 @@ void kdFindWithinRange(std::shared_ptr<JList> S, KDTree* tree,
                 = std::make_shared<ghostPointIterator>
                 (tree, queryPoint);
         while( true ) {
-            Eigen::VectorXd thisGhostPoint = getNextGhostPoint( pointIterator, range );
+            Eigen::VectorXd thisGhostPoint
+                    = getNextGhostPoint( pointIterator, range );
             if( thisGhostPoint.isZero(0) ) break;
 
             // Now see if any points in the space are closer to this ghost
-            kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, thisGhostPoint, S );
+            kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root,
+                                        range, thisGhostPoint, S );
         }
     }
 }
@@ -760,19 +783,20 @@ void kdFindMoreWithinRange(std::shared_ptr<JList> L, KDTree* tree,
                            double range, Eigen::VectorXd queryPoint)
 {
     // Insert root node in list if it is within range
-    double distToRoot = distFunc( tree->distanceFunction, queryPoint, tree->root->position );
+    double distToRoot = distFunc( tree->distanceFunction, queryPoint,
+                                  tree->root->position );
     if( distToRoot <= range ) {
         addToRangeList( L, tree->root, distToRoot );
     }
 
     // Find nodes within range
-    kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, queryPoint, L );
+    kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range,
+                                queryPoint, L );
 
     if( tree->numWraps > 0 ) {
         // If dimensions wrap around, need to search vs. identities (ghosts)
         std::shared_ptr<ghostPointIterator> pointIterator
-                = std::make_shared<ghostPointIterator>
-                (tree, queryPoint);
+                = std::make_shared<ghostPointIterator>(tree, queryPoint);
         Eigen::VectorXd thisGhostPoint;
         while( true ) {
             thisGhostPoint = getNextGhostPoint( pointIterator, range );
@@ -781,7 +805,8 @@ void kdFindMoreWithinRange(std::shared_ptr<JList> L, KDTree* tree,
             }
 
             // Now see if any points in the space are closer to this ghost
-            kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root, range, thisGhostPoint, L );
+            kdFindWithinRangeInSubtree( tree->distanceFunction, tree->root,
+                                        range, thisGhostPoint, L );
         }
     }
 
