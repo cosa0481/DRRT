@@ -117,7 +117,7 @@ typedef struct RRTNodeNeighborIterator{
                             //  2: original neighbors
                             //  3: current neighbors
 
-    JListNode* listItem;    // a pointer to the position in the
+    std::shared_ptr<JListNode> listItem;    // a pointer to the position in the
                             // current neighbor list we are
                             // iterating through
 

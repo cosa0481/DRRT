@@ -32,10 +32,10 @@ public:
                          // need to recalculate if this edge is removed and
                          // then added again
 
-    JListNode* listItemInStartNode;   // pointer to this edge's location
+    std::shared_ptr<JListNode> listItemInStartNode;   // pointer to this edge's location
                                       // in startNode
 
-    JListNode* listItemInEndNode;     // pointer to this edge's location
+    std::shared_ptr<JListNode> listItemInEndNode;     // pointer to this edge's location
                                       // in endNode
 
     double Wdist;   // this contains the distance that the robot must travel

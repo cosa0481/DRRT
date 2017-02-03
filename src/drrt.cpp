@@ -159,7 +159,7 @@ bool checkNeighborsForEdgeProblems( CSpace* S, std::shared_ptr<KDTreeNode> thisN
 //        }
     }
 
-    JListNode* listItem = thisNode->rrtNeighborsOut->front;
+    std::shared_ptr<JListNode> listItem = thisNode->rrtNeighborsOut->front;
     std::shared_ptr<KDTreeNode> neighborNode;
     while( listItem != listItem->child ) {
         neighborNode = listItem->node;
@@ -287,7 +287,7 @@ bool explicitEdgeCheck( CSpace* S, Edge* edge )
     // If ignoring obstacles
     if( S->inWarmupTime ) return false;
 
-//    JListNode* obstacleListNode = S->obstacles.front;
+//    std::shared_ptr<JListNode> obstacleListNode = S->obstacles.front;
 //    for( int i = 0; i < obstacles.length; i++ ) {
 //        if( explicitEdgeCheck( S, edge, obstacleListNode->node) ) { // obstacleListNode.data ( also maybe should be explicitNodeCheck? )
 //            return true;
@@ -351,7 +351,7 @@ bool extend(CSpace* S, KDTree* Tree, Queue* Q,
         }
 
         // Now rewire neighbors that should use newNode as their parent
-        JListNode* listItem = nodeList->front;
+        std::shared_ptr<JListNode> listItem = nodeList->front;
         std::shared_ptr<KDTreeNode> nearNode;
         Edge* thisEdge;
         for( int i = 0; i < nodeList->length; i++ ) {
@@ -409,7 +409,7 @@ bool extend(CSpace* S, KDTree* Tree, Queue* Q,
         // First pass, make edges between newNode and all of its valid
         // neighbors. Note that the edges have been stored in "tempEdge"
         // field of the neighbors
-        JListNode* listItem = nodeList->front;
+        std::shared_ptr<JListNode> listItem = nodeList->front;
         std::shared_ptr<KDTreeNode> nearNode;
         while( listItem != listItem->child ) {
             nearNode = listItem->node;
@@ -518,7 +518,7 @@ bool extend(CSpace* S, KDTree* Tree, Queue* Q,
         // and rewire neighbors that would do better to use newNode as
         // their parent. Note that the edges -from- newNode -to- its
         // neighbors have been stored in "tempEdge" field of the neighbors
-        JListNode* listItem = nodeList->front;
+        std::shared_ptr<JListNode> listItem = nodeList->front;
         std::shared_ptr<KDTreeNode> nearNode;
         Edge* thisEdge;
         double oldLMC;
@@ -614,7 +614,7 @@ void findBestParent(CSpace* S, std::shared_ptr<KDTreeNode> newNode,
     newNode->rrtParentUsed = false;
 
     // Find best parent (or if one even exists)
-    JListNode* listItem = nodeList->front;
+    std::shared_ptr<JListNode> listItem = nodeList->front;
     std::shared_ptr<KDTreeNode> nearNode;
     Edge* thisEdge;
     while( listItem->child != listItem ) {
@@ -668,7 +668,7 @@ bool checkHeapForEdgeProblems( Queue* Q )
 void resetNeighborIterator( RRTNodeNeighborIterator* It )
 {It->listFlag = 0;}
 
-JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
+std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
 {
     if( typeid(*Q) == typeid(rrtSharpQueue) ) {
         if( It->listFlag == 0 ) {
@@ -679,14 +679,14 @@ JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
         }
         if( It->listItem == It->listItem->child ) {
             // Done with all neighbors
-            return new JListNode();
+            return std::make_shared<JListNode>();
         }
         return It->listItem;
     }
-    return new JListNode();
+    return std::make_shared<JListNode>();
 }
 
-JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
+std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
 {
     if( typeid(*Q) == typeid(rrtSharpQueue) ) {
         if( It->listFlag == 0 ) {
@@ -697,11 +697,11 @@ JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
         }
         if( It->listItem == It->listItem->child ) {
             // Done with all neighbors
-            return new JListNode();
+            return std::make_shared<JListNode>();
         }
         return It->listItem;
     }
-    return new JListNode();
+    return std::make_shared<JListNode>();
 }
 
 void makeNeighborOf(std::shared_ptr<KDTreeNode> newNeighbor,
@@ -731,7 +731,7 @@ bool recalculateLMC(Queue* Q, std::shared_ptr<KDTreeNode> node,
 
     //double oldrrtLMC = node->rrtLMC;
 
-    JListNode* listItem = node->rrtNeighborsOut->front;
+    std::shared_ptr<JListNode> listItem = node->rrtNeighborsOut->front;
     Edge* neighborEdge;
     std::shared_ptr<KDTreeNode> neighborNode;
     double neighborDist;
@@ -773,8 +773,8 @@ void reduceInconsistency(Queue* Q, std::shared_ptr<KDTreeNode> goalNode,
     if( Q->type == "RRT#" ) {
 
         std::shared_ptr<KDTreeNode> thisNode, neighborNode;
-        JListNode* listItem;
-        while( Q->Q->indexOfLast > 0 && (Q->Q->lessQ((Q->Q->topHeap()),goalNode)
+        std::shared_ptr<JListNode> listItem;
+        while( Q->Q->indexOfLast>0 && (Q->Q->lessQ((Q->Q->topHeap()),goalNode)
                                          || goalNode->rrtLMC == INF
                                          || goalNode->rrtTreeCost == INF
                                          || Q->Q->markedQ(goalNode)) ) {
@@ -792,15 +792,18 @@ void reduceInconsistency(Queue* Q, std::shared_ptr<KDTreeNode> goalNode,
         }
     } else { // Q->type == "RRTx";
         std::shared_ptr<KDTreeNode> thisNode;
-        while( Q->Q->indexOfLast > 0 &&
-               (Q->Q->lessQ((Q->Q->topHeap()), goalNode) ||
-                goalNode->rrtLMC == INF || goalNode->rrtTreeCost == INF ||
-                Q->Q->markedQ(goalNode) ) ) {
+        while( Q->Q->indexOfLast > 0
+               && (Q->Q->lessQ((Q->Q->topHeap()), goalNode)
+                   || goalNode->rrtLMC == INF
+                   || goalNode->rrtTreeCost == INF
+                   || Q->Q->markedQ(goalNode) ) ) {
             thisNode = Q->Q->popHeap();
 
             // Update neighbors of thisNode if it has changed more than change thresh
             if( thisNode->rrtTreeCost - thisNode->rrtLMC > Q->changeThresh ) {
+                error("inside");
                 recalculateLMCMineVTwo( Q, thisNode, root, hyperBallRad );
+                error("inside1");
                 rewire( Q, thisNode, root, hyperBallRad, Q->changeThresh );
             }
             thisNode->rrtTreeCost = thisNode->rrtLMC;
@@ -848,11 +851,13 @@ bool verifyInOSQueue( Queue* Q, std::shared_ptr<KDTreeNode> node )
     return true;
 }
 
-void cullCurrentNeighbors( std::shared_ptr<KDTreeNode> node, double hyperBallRad )
+void cullCurrentNeighbors( std::shared_ptr<KDTreeNode> node,
+                           double hyperBallRad )
 {
     // Remove outgoing edges from node that are now too long
-    JListNode* listItem = node->rrtNeighborsOut->front;
-    JListNode* nextItem, neighborNode;
+    std::shared_ptr<JListNode> listItem = node->rrtNeighborsOut->front;
+    std::shared_ptr<JListNode> nextItem;
+    std::shared_ptr<KDTreeNode> neighborNode;
     Edge* neighborEdge;
     while( listItem != listItem->child ) {
         nextItem = listItem->child; // since we may remove listItem from the list
@@ -866,7 +871,7 @@ void cullCurrentNeighbors( std::shared_ptr<KDTreeNode> node, double hyperBallRad
     }
 }
 
-JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q )
+std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q )
 {
     if( It->listFlag == 0 ) {
         It->listItem = It->thisNode->InitialNeighborListOut->front;
@@ -880,14 +885,14 @@ JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q )
             It->listItem = It->thisNode->rrtNeighborsOut->front;
         } else {
             // Done with all neighbors
-            return new JListNode();
+            return std::make_shared<JListNode>();
         }
         It->listFlag += 1;
     }
     return It->listItem;
 }
 
-JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q )
+std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q )
 {
     if( It->listFlag == 0 ) {
         It->listItem = It->thisNode->InitialNeighborListIn->front;
@@ -901,7 +906,7 @@ JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q )
             It->listItem = It->thisNode->rrtNeighborsIn->front;
         } else {
             // Done with all neighbors
-            return new JListNode();
+            return std::make_shared<JListNode>();
         }
         It->listFlag += 1;
     }
@@ -930,8 +935,9 @@ void makeParentOf( std::shared_ptr<KDTreeNode> newParent, std::shared_ptr<KDTree
     node->successorListItemInParent = newParent->SuccessorList->front;
 }
 
-bool recalculateLMCMineVTwo( Queue* Q, std::shared_ptr<KDTreeNode> node,
-                             std::shared_ptr<KDTreeNode> root, double hyperBallRad )
+bool recalculateLMCMineVTwo(Queue* Q, std::shared_ptr<KDTreeNode> node,
+                            std::shared_ptr<KDTreeNode> root,
+                            double hyperBallRad)
 {
     if( node == root ) {
         return false;
@@ -940,14 +946,15 @@ bool recalculateLMCMineVTwo( Queue* Q, std::shared_ptr<KDTreeNode> node,
     bool newParentFound = false;
     double neighborDist;
     std::shared_ptr<KDTreeNode> rrtParent, neighborNode;
-    Edge* parentEdge, *neighborEdge;
-    JListNode* listItem, *nextItem;
+    Edge *parentEdge, *neighborEdge;
+    std::shared_ptr<JListNode> listItem, nextItem;
 
     // Remove outdated nodes from current neighbors list
     cullCurrentNeighbors( node, hyperBallRad );
 
     // Get an iterator for this node's neighbors
-    RRTNodeNeighborIterator* thisNodeOutNeighbors = new RRTNodeNeighborIterator(node);
+    RRTNodeNeighborIterator* thisNodeOutNeighbors
+            = new RRTNodeNeighborIterator(node);
 
     // Set the iterator to the first neighbor
     listItem = nextOutNeighbor( thisNodeOutNeighbors, Q );
@@ -1001,7 +1008,7 @@ bool rewire( Queue* Q, std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTreeN
 
     // Get an iterator for this node's neighbors and iterate through list
     RRTNodeNeighborIterator* thisNodeInNeighbors = new RRTNodeNeighborIterator(node);
-    JListNode* listItem = nextInNeighbor( thisNodeInNeighbors, Q );
+    std::shared_ptr<JListNode> listItem = nextInNeighbor( thisNodeInNeighbors, Q );
     std::shared_ptr<KDTreeNode> neighborNode;
     Edge* neighborEdge;
     double deltaCostNeighbor;
@@ -1050,9 +1057,9 @@ bool propogateDescendants( Queue* Q, RobotData* R )
     // First pass, accumulate all such nodes in a single list, and mark
     // them as belonging in that list, we'll just use the OS stack we've
     // been using adding nodes to the front while moving from back to front
-    JListNode* OS_list_item = Q->OS->back;
+    std::shared_ptr<JListNode> OS_list_item = Q->OS->back;
     std::shared_ptr<KDTreeNode> thisNode, successorNode;
-    JListNode* SuccessorList_item;
+    std::shared_ptr<JListNode> SuccessorList_item;
     while( OS_list_item != OS_list_item->parent ) {
         thisNode = OS_list_item->node;
 
@@ -1072,7 +1079,7 @@ bool propogateDescendants( Queue* Q, RobotData* R )
     // Not going back to front makes Q adjustments slightly faster,
     // since nodes near the front tend to have higher costs
     OS_list_item = Q->OS->back;
-    JListNode* listItem;
+    std::shared_ptr<JListNode> listItem;
     std::shared_ptr<KDTreeNode> neighborNode;
     while( OS_list_item != OS_list_item->parent ) {
         thisNode = OS_list_item->node;
@@ -1235,7 +1242,7 @@ void findNewTarget( CSpace* S, KDTree* Tree,
         bestDistToGoal = INF;
         bestNeighbor = std::make_shared<KDTreeNode>();
 
-        JListNode* ptr = L->front;
+        std::shared_ptr<JListNode> ptr = L->front;
         Edge* thisEdge;
         double distToGoal;
         while( ptr != ptr->child ) {
@@ -1582,10 +1589,10 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     S->goalNode = goal;
     S->root = root;
 
-    S->moveGoal = goal;     // this will store a node at least as far from
-                            // the root as the robot. During movement its key
-                            // is used to limit propogation beyond the region
-                            // we care about
+    S->moveGoal = goal; // this will store a node at least as far from
+                        // the root as the robot. During movement its key
+                        // is used to limit propogation beyond the region
+                        // we care about
 
     S->moveGoal->isMoveGoal = true;
 
@@ -1735,9 +1742,11 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
             kdTreePos++;
 
             // Make graph consistent (RRT# and RRTx)
-            if( searchType == "RRTx" || searchType == "RRT#" ) {    
+            if( searchType == "RRTx" || searchType == "RRT#" ) {
+                error("here");
                 reduceInconsistency(Q, S->moveGoal, robotRads,
                                     root, hyperBallRad);
+                error("here1");
                 if( S->moveGoal.get()->rrtLMC != oldrrtLMC ) {
                     oldrrtLMC = S->moveGoal.get()->rrtLMC;
                 }

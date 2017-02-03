@@ -61,7 +61,7 @@ public:
     bool inOSQueue;     // flag for in the OS queue
     bool isMoveGoal;    // true if this is move goal (robot pose)
 
-    JListNode* successorListItemInParent; // pointer to the list node in
+    std::shared_ptr<JListNode> successorListItemInParent; // pointer to the list node in
                                           // the parent's successor list that
                                           // holds parent's edge to this node
 

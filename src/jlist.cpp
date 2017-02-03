@@ -8,7 +8,7 @@
 
 void JList::JlistPush( std::shared_ptr<KDTreeNode> t )
 {
-    JListNode* newNode = new JListNode( t );
+    std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( t );
     newNode->parent = front->parent;
     newNode->child = front;
 
@@ -24,7 +24,7 @@ void JList::JlistPush( std::shared_ptr<KDTreeNode> t )
 
 void JList::JlistPush( Edge* e )
 {
-    JListNode* newNode = new JListNode( e );
+    std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( e );
     newNode->parent = front->parent;
     newNode->child = front;
 
@@ -40,7 +40,7 @@ void JList::JlistPush( Edge* e )
 
 void JList::JlistPush( std::shared_ptr<KDTreeNode> t, double k )
 {
-    JListNode* newNode = new JListNode( t );
+    std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( t );
     newNode->parent = front->parent;
     newNode->child = front;
 
@@ -57,7 +57,7 @@ void JList::JlistPush( std::shared_ptr<KDTreeNode> t, double k )
 
 void JList::JlistPush( Edge* e, double k )
 {
-    JListNode* newNode = new JListNode( e );
+    std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( e );
     newNode->parent = front->parent;
     newNode->child = front;
 
@@ -118,7 +118,7 @@ void JList::JlistPop( std::shared_ptr<KDTreeNode> t )
         t = std::make_shared<KDTreeNode>();
     }
 
-    JListNode* oldTop = front;
+    std::shared_ptr<JListNode> oldTop = front;
     if( length > 1 ) {
         front->child->parent = front->parent;
         front = front->child;
@@ -142,7 +142,7 @@ void JList::JlistPop( Edge* e )
         e = new Edge();
     }
 
-    JListNode* oldTop = front;
+    std::shared_ptr<JListNode> oldTop = front;
     if( length > 1 ) {
         front->child->parent = front->parent;
         front = front->child;
@@ -169,7 +169,7 @@ void JList::JlistPopKey( std::shared_ptr<KDTreeNode> n,
         *k = -1.0;
     }
 
-    JListNode* oldTop = front;
+    std::shared_ptr<JListNode> oldTop = front;
     if( length > 1 ) {
         front->child->parent = front->parent;
         front = front->child;
@@ -195,7 +195,7 @@ void JList::JlistPopKey(Edge* e, std::shared_ptr<double> k)
         *k = -1.0;
     }
 
-    JListNode* oldTop = front;
+    std::shared_ptr<JListNode> oldTop = front;
     if( length > 1 ) {
         front->child->parent = front->parent;
         front = front->child;
@@ -214,7 +214,7 @@ void JList::JlistPopKey(Edge* e, std::shared_ptr<double> k)
 }
 
 // Removes node from the list
-bool JList::JlistRemove( JListNode* node )
+bool JList::JlistRemove( std::shared_ptr<JListNode> node )
 {
     if( length == 0 ) {
         // Node not in Jlist
@@ -228,8 +228,8 @@ bool JList::JlistRemove( JListNode* node )
         back = node->parent;
     }
 
-    JListNode* nextNode = node->child;
-    JListNode* previousNode = node->parent;
+    std::shared_ptr<JListNode> nextNode = node->child;
+    std::shared_ptr<JListNode> previousNode = node->parent;
 
     if( length > 1 && previousNode != previousNode->child ) {
         previousNode->child = nextNode;
@@ -253,7 +253,7 @@ bool JList::JlistRemove( JListNode* node )
 
 void JList::JlistPrint()
 {
-    JListNode* ptr = front;
+    std::shared_ptr<JListNode> ptr = front;
     while( ptr != ptr->child ) {
         std::cout << ptr->node->dist << std::endl;
         ptr = ptr->child;
@@ -263,7 +263,7 @@ void JList::JlistPrint()
 Eigen::Matrix<double,Eigen::Dynamic,2> JList::JlistAsMatrix()
 {
     Eigen::Matrix<double,Eigen::Dynamic,2> matrix(length,2);
-    JListNode* ptr = front;
+    std::shared_ptr<JListNode> ptr = front;
     int row_count = 0;
     while( ptr != ptr->child ) {
         matrix.row(row_count) = ptr->node->position.head(2);
@@ -316,7 +316,7 @@ int main()
     L.JlistPush(b);
     L.JlistPush(a);
 
-    JListNode* cc = L.front;
+    std::shared_ptr<JListNode> cc = L.front;
 
     std::cout << "Printing list" << std::endl;
     L.JlistPrint();

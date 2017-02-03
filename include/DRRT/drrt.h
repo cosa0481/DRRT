@@ -179,11 +179,11 @@ void resetNeighborIterator( RRTNodeNeighborIterator* It );
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q );
+std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q );
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q );
+std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q );
 
 // Links an edge -from- node -to- newNeighbor
 // Edge should already be populated correctly.
@@ -246,12 +246,12 @@ void cullCurrentNeighbors( std::shared_ptr<KDTreeNode> node, double hyperBallRad
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
-JListNode* nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q );
+std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q );
 
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
-JListNode* nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q );
+std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q );
 
 // Makes newParent the parent of node via the edge
 void makeParentOf( std::shared_ptr<KDTreeNode> newParent, std::shared_ptr<KDTreeNode> node,

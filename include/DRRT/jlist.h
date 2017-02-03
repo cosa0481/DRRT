@@ -16,8 +16,8 @@ class KDTreeNode;
 // with data)
 class JListNode{
 public:
-    JListNode* child;
-    JListNode* parent;
+    std::shared_ptr<JListNode> child;
+    std::shared_ptr<JListNode> parent;
     std::shared_ptr<KDTreeNode> node;
     Edge* edge;
     double key = 0.0;
@@ -31,9 +31,9 @@ public:
 // A simple JList
 class JList{
 public:
-    JListNode* front;
-    JListNode* back;
-    JListNode* bound;   // bounds either side of the list
+    std::shared_ptr<JListNode> front;
+    std::shared_ptr<JListNode> back;
+    std::shared_ptr<JListNode> bound;   // bounds either side of the list
     int length;
     bool useNodes;      // flag for indicating whether this JList
                         // is one of Edges or KDTreeNodes. True
@@ -42,7 +42,7 @@ public:
     // Constructor
     JList( bool nodeflag ) : useNodes(nodeflag)
     {
-        JListNode* endNode = new JListNode();
+        std::shared_ptr<JListNode> endNode = std::make_shared<JListNode>();
         endNode->child = endNode;
         endNode->parent = endNode;
 
@@ -65,7 +65,7 @@ public:
     void JlistPop( Edge* e );
     void JlistPopKey(std::shared_ptr<KDTreeNode> n, std::shared_ptr<double> k);
     void JlistPopKey(Edge* e, std::shared_ptr<double> k);
-    bool JlistRemove( JListNode* node );
+    bool JlistRemove( std::shared_ptr<JListNode> node );
     void JlistPrint();
     Eigen::Matrix<double, Eigen::Dynamic, 2> JlistAsMatrix();
     void JlistEmpty();
