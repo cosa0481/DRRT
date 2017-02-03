@@ -1,7 +1,7 @@
 #include <DRRT/ghostPoint.h>
 #include <DRRT/kdtree.h>
 
-ghostPointIterator::ghostPointIterator( KDTree* t, Eigen::VectorXd qP):
+ghostPointIterator::ghostPointIterator( std::shared_ptr<KDTree> t, Eigen::VectorXd qP):
        kdTree(t), queryPoint(qP),
        ghostTreeDepth(t->numWraps),
        currentGhost(qP),

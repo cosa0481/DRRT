@@ -97,7 +97,7 @@ std::shared_ptr<KDTreeNode> randNodeOrFromStack( CSpace* S );
 std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( CSpace* S );
 
 // Returns random point from within the obstacle -collision-
-//std::shared_ptr<KDTreeNode> randomSampleObs( CSpace S, KDTree* KD, Obstacle* O );
+//std::shared_ptr<KDTreeNode> randomSampleObs( CSpace S, std::shared_ptr<KDTree> KD, Obstacle* O );
 
 // Adds obstacle to the C-Space -collision-
 //void addObsToCSpace( CSpace C, Obstacle* O );
@@ -145,7 +145,7 @@ bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge );
 
 // Takes care of inserting a new node in RRT
 // Returns true if successful
-bool extend( CSpace* S, KDTree* Tree, std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> newNode,
+bool extend( CSpace* S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> newNode,
              std::shared_ptr<KDTreeNode> closestNode, double delta,
              double hyperBallRad, std::shared_ptr<KDTreeNode> moveGoal );
 
@@ -175,15 +175,15 @@ void findBestParent( CSpace* S, std::shared_ptr<KDTreeNode> newNode, std::shared
 bool checkHeapForEdgeProblems( std::shared_ptr<Queue> Q );
 
 // Resets the neighbor iterator
-void resetNeighborIterator( RRTNodeNeighborIterator* It );
+void resetNeighborIterator( std::shared_ptr<RRTNodeNeighborIterator> It );
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, std::shared_ptr<Queue> Q );
+std::shared_ptr<JListNode> nextOutNeighbor( std::shared_ptr<RRTNodeNeighborIterator> It, std::shared_ptr<Queue> Q );
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, std::shared_ptr<Queue> Q );
+std::shared_ptr<JListNode> nextInNeighbor( std::shared_ptr<RRTNodeNeighborIterator> It, std::shared_ptr<Queue> Q );
 
 // Links an edge -from- node -to- newNeighbor
 // Edge should already be populated correctly.
@@ -246,12 +246,12 @@ void cullCurrentNeighbors( std::shared_ptr<KDTreeNode> node, double hyperBallRad
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
-std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue Q );
+std::shared_ptr<JListNode> nextOutNeighbor( std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q );
 
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
-std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue Q );
+std::shared_ptr<JListNode> nextInNeighbor( std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q );
 
 // Makes newParent the parent of node via the edge
 void makeParentOf( std::shared_ptr<KDTreeNode> newParent, std::shared_ptr<KDTreeNode> node,
@@ -289,13 +289,13 @@ bool propogateDescendants( std::shared_ptr<Queue> Q, RobotData* R );
  * This helps the robot to reach the goal location as quickly as
  * possible instead of burning time
  */
-void addOtherTimesToRoot( CSpace* S, KDTree* Tree,
+void addOtherTimesToRoot( CSpace* S, std::shared_ptr<KDTree> Tree,
                           std::shared_ptr<KDTreeNode> goal, std::shared_ptr<KDTreeNode> root,
                           std::string searchType );
 
 // Attempts to find a new move target for the robot, places
 // it into RobotData (used when the old target has become invalid)
-void findNewTarget( CSpace* S, KDTree* Tree,
+void findNewTarget( CSpace* S, std::shared_ptr<KDTree> Tree,
                     RobotData* R, double hyperBallRad );
 
 /* Move robot the distance that it would move in slice_time time
@@ -304,23 +304,23 @@ void findNewTarget( CSpace* S, KDTree* Tree,
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot( CSpace* S, std::shared_ptr<Queue> Q, KDTree* Tree, double slice_time,
+void moveRobot( CSpace* S, std::shared_ptr<Queue> Q, std::shared_ptr<KDTree> Tree, double slice_time,
                 std::shared_ptr<KDTreeNode> root, double hyperBallRad, RobotData* R );
 
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
 // be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
-/*std::shared_ptr<JList> findPointsInConflictWithObstacle( CSpace* S, KDTree* Tree,
+/*std::shared_ptr<JList> findPointsInConflictWithObstacle( CSpace* S, std::shared_ptr<KDTree> Tree,
                                          Obstacle* O, std::shared_ptr<KDTreeNode> root );*/
 
 // This adds the obstacle (checks for edge conflicts with the obstactle
 // and then puts the affected nodes into the appropriate heaps -collision-
-/*void addNewObstacle( CSpace* S, KDTree* Tree, std::shared_ptr<Queue> Q, Obstacle* O,
+/*void addNewObstacle( CSpace* S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q, Obstacle* O,
                      std::shared_ptr<KDTreeNode> root, int fileCounter, RobotData* R );*/
 
 // This removes the obstacle (checks for edge conflicts with the obstacle
 // and then puts the affected nodes into the appropriate heaps)
-/*void removeObstacle( CSpace* S, KDTree* Tree, std::shared_ptr<Queue> Q, Obstacle* O,
+/*void removeObstacle( CSpace* S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q, Obstacle* O,
                      std::shared_ptr<KDTreeNode> root, double hyperBallRad,
                      double timeElapsed, std::shared_ptr<KDTreeNode> moveGoal );*/
 

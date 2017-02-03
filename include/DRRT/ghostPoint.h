@@ -17,7 +17,7 @@ class KDTree;
  * not return the original point.
  */
 typedef struct ghostPointIterator {
-    KDTree* kdTree;                // the kd tree that this is being used with
+    std::shared_ptr<KDTree> kdTree;                // the kd tree that this is being used with
     Eigen::VectorXd queryPoint;    // the actual point that all the ghost are "identical" to DATA
     Eigen::VectorXi wrapDimFlags;  // the current permutation
     int ghostTreeDepth;   // pointer to the current depth of the "ghost tree"
@@ -30,7 +30,7 @@ typedef struct ghostPointIterator {
                  // can be used as heuristic to skip unhelpful ghosts
 
     // Constructor
-    ghostPointIterator( KDTree* t, Eigen::VectorXd qP);
+    ghostPointIterator( std::shared_ptr<KDTree> t, Eigen::VectorXd qP);
 } ghostPointIterator;
 
 // This returns the next ghost point, not that it starts

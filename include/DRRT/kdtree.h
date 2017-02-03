@@ -52,10 +52,10 @@ public:
 double distFunc( std::string distanceFunction,
                  Eigen::VectorXd pointA, Eigen::VectorXd pointB);
 
-void KDTreeInit( KDTree* K, int d, std::string distanceFunction );
+void KDTreeInit( std::shared_ptr<KDTree> K, int d, std::string distanceFunction );
 
 // Inserts a new node into the tree
-bool kdInsert( KDTree* tree, std::shared_ptr<KDTreeNode> node );
+bool kdInsert( std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node );
 
 /////////////////////// Nearest ///////////////////////
 
@@ -72,7 +72,7 @@ bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
 
 // Returns the nearest node to the queryPoint and also its distance
 bool kdFindNearest(std::shared_ptr<KDTreeNode> nearestNode,
-                   std::shared_ptr<double> nearestNodeDist, KDTree* tree,
+                   std::shared_ptr<double> nearestNodeDist, std::shared_ptr<KDTree> tree,
                    Eigen::VectorXd queryPoint);
 
 // Returns the nearest node to queryPoint in the subtree starting at
@@ -90,7 +90,7 @@ bool kdFindNearestinSubtreeWithGuess(std::shared_ptr<KDTreeNode> nearestNode,
 // Instead of starting at the root, starts at guess
 bool kdFindNearestWithGuess(std::shared_ptr<KDTreeNode> nearestNode,
                             std::shared_ptr<double> nearestNodeDist,
-                            KDTree* tree, Eigen::VectorXd queryPoint,
+                            std::shared_ptr<KDTree> tree, Eigen::VectorXd queryPoint,
                             std::shared_ptr<KDTreeNode> guess);
 
 /////////////////////// K Nearest ///////////////////////
@@ -123,7 +123,7 @@ bool kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
 
 // Returns the K nearest nodes to queryPoint and olso their distances
 // Note that they are not sorted but are in reverse heap order
-std::vector<std::shared_ptr<KDTreeNode>> kdFindKNearest(KDTree* tree, int k,
+std::vector<std::shared_ptr<KDTreeNode>> kdFindKNearest(std::shared_ptr<KDTree> tree, int k,
                                                Eigen::VectorXd queryPoint);
 
 /////////////////////// Within Range ///////////////////////
@@ -149,7 +149,7 @@ bool kdFindWithinRangeInSubtree(std::string distanceFunction,
 
 // Returns all nodes within range of queryPoint and also their distances
 // This data is contained in the JList at S
-void kdFindWithinRange(std::shared_ptr<JList> S, KDTree* tree, double range,
+void kdFindWithinRange(std::shared_ptr<JList> S, std::shared_ptr<KDTree> tree, double range,
                        Eigen::VectorXd queryPoint);
 
 // Returns all nodes within range of queryPoint and also their distance.
@@ -158,10 +158,10 @@ void kdFindWithinRange(std::shared_ptr<JList> S, KDTree* tree, double range,
 // to it (e.ge, if we want to have one list containing the points that
 // are close to a couple of different points X1,..,Xn, then call this
 // for X2,...,Xn after first calling kdFindWithinRange for X1
-void kdFindMoreWithinRange(std::shared_ptr<JList> S, KDTree* tree,
+void kdFindMoreWithinRange(std::shared_ptr<JList> S, std::shared_ptr<KDTree> tree,
                            double range, Eigen::VectorXd queryPoint);
 
 // Inserts a new point into the tree (used only for debugging)
-void kdInsert(KDTree* tree, Eigen::VectorXd a);
+void kdInsert(std::shared_ptr<KDTree> tree, Eigen::VectorXd a);
 
 #endif // KDTREE_H

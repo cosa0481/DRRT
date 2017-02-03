@@ -30,14 +30,14 @@ double distFunc( std::string distanceFunction,
     return 0.0;
 }
 
-void KDTreeInit( KDTree* K, int d, std::string distanceFunction )
+void KDTreeInit( std::shared_ptr<KDTree> K, int d, std::string distanceFunction )
 {
     K->d = d;
     K->distanceFunction = distanceFunction;
     K->treeSize = 0;
 }
 
-bool kdInsert( KDTree* tree, std::shared_ptr<KDTreeNode> node )
+bool kdInsert( std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node )
 {
     if( node.get()->kdInTree ) return false;
     node.get()->kdInTree = true;
@@ -221,7 +221,7 @@ bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
 
 bool kdFindNearest(std::shared_ptr<KDTreeNode> nearestNode,
                    std::shared_ptr<double> nearestNodeDist,
-                   KDTree* tree,
+                   std::shared_ptr<KDTree> tree,
                    Eigen::VectorXd queryPoint)
 {
     // Initial search (only search if the space does not wrap around)
@@ -402,7 +402,7 @@ bool kdFindNearestinSubtreeWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
 
 bool kdFindNearestWithGuess( std::shared_ptr<KDTreeNode> nearestNode,
                              std::shared_ptr<double> nearestNodeDist,
-                             KDTree* tree, Eigen::VectorXd queryPoint,
+                             std::shared_ptr<KDTree> tree, Eigen::VectorXd queryPoint,
                              std::shared_ptr<KDTreeNode> guess )
 {
     double distToGuess = distFunc( tree->distanceFunction, queryPoint,
@@ -747,7 +747,7 @@ bool kdFindWithinRangeInSubtree(std::string distanceFunction,
     }
 }
 
-void kdFindWithinRange(std::shared_ptr<JList> S, KDTree* tree,
+void kdFindWithinRange(std::shared_ptr<JList> S, std::shared_ptr<KDTree> tree,
                        double range, Eigen::VectorXd queryPoint)
 {
     // Insert root node in list if it is within range
@@ -779,7 +779,7 @@ void kdFindWithinRange(std::shared_ptr<JList> S, KDTree* tree,
     }
 }
 
-void kdFindMoreWithinRange(std::shared_ptr<JList> L, KDTree* tree,
+void kdFindMoreWithinRange(std::shared_ptr<JList> L, std::shared_ptr<KDTree> tree,
                            double range, Eigen::VectorXd queryPoint)
 {
     // Insert root node in list if it is within range
@@ -812,7 +812,7 @@ void kdFindMoreWithinRange(std::shared_ptr<JList> L, KDTree* tree,
 
 }
 
-void kdInsert( KDTree* tree, Eigen::VectorXd a )
+void kdInsert( std::shared_ptr<KDTree> tree, Eigen::VectorXd a )
 {
     std::shared_ptr<KDTreeNode> N = std::make_shared<KDTreeNode>();
     N->position = a;
