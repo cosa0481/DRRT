@@ -111,7 +111,7 @@ public:
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge
     // Dubin's edge version
-    bool validMove(CSpace* S, std::shared_ptr<Edge> edge);
+    bool validMove(std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge);
 
     /* Returns the pose of a robot that is located dist along the edge
      * Note that 'dist' and 'far' are with respect to whatever type of
@@ -129,11 +129,11 @@ public:
      * velocity and minimum turning radius. At the very least this function
      * should populate the dist field of edge
      */
-    void calculateTrajectory(CSpace* S, std::shared_ptr<Edge> edge);
+    void calculateTrajectory(std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge);
 
     // This calculates a trajectory of what the robot is supposed to do
     // when it is hovering "in place". Dubin's edge version
-    void calculateHoverTrajectory(CSpace* S, std::shared_ptr<Edge> edge);
+    void calculateHoverTrajectory(std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge);
 
 
     ///////////////////// Collision Checking Functions /////////////////////
@@ -143,6 +143,6 @@ public:
     // Checks if the edge is in collision with a particular obstacle
     // Returns true if in collision
     // Dubin's edge version
-    //bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge, Obstacle* obstacle );
+    //bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle );
 
 #endif // EDGE_H

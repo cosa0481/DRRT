@@ -59,7 +59,7 @@ double extractPathLength( std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTr
 
 /////////////////////// C-Space Functions ///////////////////////
 
-Eigen::VectorXd randPointDefault( CSpace* S )
+Eigen::VectorXd randPointDefault( std::shared_ptr<CSpace> S )
 {
     double rand;
     double first;
@@ -73,13 +73,13 @@ Eigen::VectorXd randPointDefault( CSpace* S )
     return second;
 }
 
-std::shared_ptr<KDTreeNode> randNodeDefault( CSpace* S )
+std::shared_ptr<KDTreeNode> randNodeDefault( std::shared_ptr<CSpace> S )
 {
     Eigen::VectorXd point = randPointDefault( S );
     return std::make_shared<KDTreeNode>(point);
 }
 
-std::shared_ptr<KDTreeNode> randNodeOrGoal( CSpace* S )
+std::shared_ptr<KDTreeNode> randNodeOrGoal( std::shared_ptr<CSpace> S )
 {
     double r = (double)rand()/(RAND_MAX);
     if( r > S->pGoal ) {
@@ -89,7 +89,7 @@ std::shared_ptr<KDTreeNode> randNodeOrGoal( CSpace* S )
     }
 }
 
-std::shared_ptr<KDTreeNode> randNodeIts( CSpace* S )
+std::shared_ptr<KDTreeNode> randNodeIts( std::shared_ptr<CSpace> S )
 {
     if( S->itsUntilSample == 0 ) {
         S->itsUntilSample -= 1;
@@ -99,7 +99,7 @@ std::shared_ptr<KDTreeNode> randNodeIts( CSpace* S )
     return randNodeOrGoal( S );
 }
 
-std::shared_ptr<KDTreeNode> randNodeTime( CSpace* S )
+std::shared_ptr<KDTreeNode> randNodeTime( std::shared_ptr<CSpace> S )
 {
     if( S->waitTime != INF && S->timeElapsed >= S->waitTime ) {
         S->waitTime = INF;
@@ -108,10 +108,10 @@ std::shared_ptr<KDTreeNode> randNodeTime( CSpace* S )
     return randNodeOrGoal( S );
 }
 
-//std::shared_ptr<KDTreeNode> randNodeTimeWithObstacleRemove( CSpace* S ){}
-//std::shared_ptr<KDTreeNode> randNodeItsWithObstacleRemove( CSpace* S ){}
+//std::shared_ptr<KDTreeNode> randNodeTimeWithObstacleRemove( std::shared_ptr<CSpace> S ){}
+//std::shared_ptr<KDTreeNode> randNodeItsWithObstacleRemove( std::shared_ptr<CSpace> S ){}
 
-std::shared_ptr<KDTreeNode> randNodeOrFromStack( CSpace* S )
+std::shared_ptr<KDTreeNode> randNodeOrFromStack( std::shared_ptr<CSpace> S )
 {
     if( S->sampleStack->length > 0 ) {
         // Using the sampleStack so KDTreeNode->position is popped
@@ -123,7 +123,7 @@ std::shared_ptr<KDTreeNode> randNodeOrFromStack( CSpace* S )
     }
 }
 
-std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( CSpace* S )
+std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( std::shared_ptr<CSpace> S )
 {
     if( S->sampleStack->length > 0 ) {
         // Using the sampleStack so KDTreeNode->position is popped
@@ -151,7 +151,7 @@ std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( CSpace* S )
     }
 }
 
-bool checkNeighborsForEdgeProblems( CSpace* S, std::shared_ptr<KDTreeNode> thisNode )
+bool checkNeighborsForEdgeProblems( std::shared_ptr<CSpace> S, std::shared_ptr<KDTreeNode> thisNode )
 {
     if( thisNode->rrtParentUsed ) {
 //        if( explicitEdgeCheck( S, thisNode, thisNode->rrtParentEdge->endNode ) ) {
@@ -282,7 +282,7 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind )
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge )
+bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
 {
     // If ignoring obstacles
     if( S->inWarmupTime ) return false;
@@ -299,7 +299,7 @@ bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge )
 
 /////////////////////// RRT Functions ///////////////////////
 
-bool extend(CSpace* S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q,
+bool extend(std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q,
             std::shared_ptr<KDTreeNode> newNode,
             std::shared_ptr<KDTreeNode> closestNode, double delta,
             double hyperBallRad, std::shared_ptr<KDTreeNode> moveGoal )
@@ -597,7 +597,7 @@ bool extend(CSpace* S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q,
 
 /////////////////////// RRT* Functions ///////////////////////
 
-void findBestParent(CSpace* S, std::shared_ptr<KDTreeNode> newNode,
+void findBestParent(std::shared_ptr<CSpace> S, std::shared_ptr<KDTreeNode> newNode,
                     std::shared_ptr<JList> nodeList, std::shared_ptr<KDTreeNode> closestNode,
                     bool saveAllEdges)
 {
@@ -1158,7 +1158,7 @@ bool propogateDescendants( std::shared_ptr<Queue> Q, RobotData* R )
     return true;
 }
 
-void addOtherTimesToRoot( CSpace* S, std::shared_ptr<KDTree> Tree,
+void addOtherTimesToRoot( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree,
                           std::shared_ptr<KDTreeNode> goal, std::shared_ptr<KDTreeNode> root,
                           std::string searchType )
 {
@@ -1224,7 +1224,7 @@ void addOtherTimesToRoot( CSpace* S, std::shared_ptr<KDTree> Tree,
 
 
 // debug: gets goal node which should be too far away on first movement
-void findNewTarget( CSpace* S, std::shared_ptr<KDTree> Tree,
+void findNewTarget( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree,
                     RobotData* R, double hyperBallRad )
 {
     R->robotEdgeUsed = false;
@@ -1326,7 +1326,7 @@ void findNewTarget( CSpace* S, std::shared_ptr<KDTree> Tree,
     emptyRangeList(L); // cleanup
 }
 
-void moveRobot( CSpace* S, std::shared_ptr<Queue> Q, std::shared_ptr<KDTree> Tree, double slice_time,
+void moveRobot( std::shared_ptr<CSpace> S, std::shared_ptr<Queue> Q, std::shared_ptr<KDTree> Tree, double slice_time,
                 std::shared_ptr<KDTreeNode> root, double hyperBallRad, RobotData* R )
 {
     // Start by updating the location of the robot based on how
@@ -1518,9 +1518,9 @@ void moveRobot( CSpace* S, std::shared_ptr<Queue> Q, std::shared_ptr<KDTree> Tre
 }
 
 /////////////////////// main (despite the name) ///////////////////////
-void RRTX( CSpace *S, double total_planning_time, double slice_time,
-           double delta, double ballConstant, double changeThresh,
-           std::string searchType, bool MoveRobotFlag,
+void RRTX( std::shared_ptr<CSpace> S, double total_planning_time,
+           double slice_time, double delta, double ballConstant,
+           double changeThresh, std::string searchType, bool MoveRobotFlag,
            bool saveVideoData, bool saveTree, std::string dataFile,
            std::string distanceFunction, double goal_threshold )
 {
@@ -1801,6 +1801,6 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     }
     ofs.close();
 
-    std::cout << "Data written to build/kdTree.txt and build/robotPath.txt"
+    std::cout << "Data written to debug/kdTree.txt and debug/robotPath.txt"
               << std::endl;
 }

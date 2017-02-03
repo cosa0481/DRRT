@@ -43,8 +43,10 @@ int main(int argc, char* argv[])
     lowerBounds << -envRad, -envRad, 0.0, 0.0;
     upperBounds << envRad, envRad, 0.0, 2*PI;
 
-    CSpace* C = new CSpace(d, /*-1.0,*/ lowerBounds, upperBounds,
-                           start, goal);
+    std::shared_ptr<CSpace> C = std::make_shared<CSpace>(d,
+                                                         lowerBounds,
+                                                         upperBounds,
+                                                         start, goal);
 
     C->robotRadius = robotRad;               // init robot radius
     C->robotVelocity = 10.0;                 // init robot velocity

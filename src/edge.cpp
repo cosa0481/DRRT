@@ -87,7 +87,7 @@ std::shared_ptr<Edge> newEdge( std::shared_ptr<KDTreeNode> startNode, std::share
     return std::make_shared<Edge>( startNode, endNode );
 }
 
-bool validMove( CSpace* S, std::shared_ptr<Edge> edge )
+bool validMove( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
 {
     if( S->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
@@ -179,7 +179,7 @@ Eigen::VectorXd poseAtTimeAlongEdge( std::shared_ptr<Edge> edge, double timeAlon
     return vec;
 }
 
-void calculateTrajectory( CSpace* S, std::shared_ptr<Edge> edge )
+void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
 {
     double r_min = S->minTurningRadius;
 
@@ -777,7 +777,7 @@ void calculateTrajectory( CSpace* S, std::shared_ptr<Edge> edge )
     edge->distOriginal = edge->dist;
 }
 
-void calculateHoverTrajectory( CSpace* S, std::shared_ptr<Edge> edge )
+void calculateHoverTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
 {
     edge->edgeType = "xxx";
     edge->Wdist = 0.0;
@@ -796,4 +796,4 @@ void calculateHoverTrajectory( CSpace* S, std::shared_ptr<Edge> edge )
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge, Obstacle* obstacle ){}
+//bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle ){}
