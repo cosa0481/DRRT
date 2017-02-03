@@ -299,7 +299,7 @@ bool explicitEdgeCheck( CSpace* S, std::shared_ptr<Edge> edge )
 
 /////////////////////// RRT Functions ///////////////////////
 
-bool extend(CSpace* S, KDTree* Tree, Queue* Q,
+bool extend(CSpace* S, KDTree* Tree, std::shared_ptr<Queue> Q,
             std::shared_ptr<KDTreeNode> newNode,
             std::shared_ptr<KDTreeNode> closestNode, double delta,
             double hyperBallRad, std::shared_ptr<KDTreeNode> moveGoal )
@@ -655,7 +655,7 @@ void findBestParent(CSpace* S, std::shared_ptr<KDTreeNode> newNode,
 
 
 /////////////////////// RRT# Functions ///////////////////////
-bool checkHeapForEdgeProblems( Queue* Q )
+bool checkHeapForEdgeProblems( std::shared_ptr<Queue> Q )
 {
     std::shared_ptr<KDTreeNode> node;
     for( int i = 0; i < Q->Q->indexOfLast; i++ ) {
@@ -668,7 +668,7 @@ bool checkHeapForEdgeProblems( Queue* Q )
 void resetNeighborIterator( RRTNodeNeighborIterator* It )
 {It->listFlag = 0;}
 
-std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
+std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, std::shared_ptr<Queue> Q )
 {
     if( typeid(*Q) == typeid(rrtSharpQueue) ) {
         if( It->listFlag == 0 ) {
@@ -686,7 +686,7 @@ std::shared_ptr<JListNode> nextOutNeighbor( RRTNodeNeighborIterator* It, Queue* 
     return std::make_shared<JListNode>();
 }
 
-std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, Queue* Q )
+std::shared_ptr<JListNode> nextInNeighbor( RRTNodeNeighborIterator* It, std::shared_ptr<Queue> Q )
 {
     if( typeid(*Q) == typeid(rrtSharpQueue) ) {
         if( It->listFlag == 0 ) {
@@ -722,7 +722,7 @@ void makeInitialInNeighborOf(std::shared_ptr<KDTreeNode> newNeighbor,
                              std::shared_ptr<KDTreeNode> node, std::shared_ptr<Edge> edge)
 {node->InitialNeighborListIn->JlistPush( edge );}
 
-bool recalculateLMC(Queue* Q, std::shared_ptr<KDTreeNode> node,
+bool recalculateLMC(std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node,
                     std::shared_ptr<KDTreeNode> root)
 {
     if( node == root ) {
@@ -753,7 +753,7 @@ bool recalculateLMC(Queue* Q, std::shared_ptr<KDTreeNode> node,
     return true;
 }
 
-void updateQueue( Queue* Q, std::shared_ptr<KDTreeNode> newNode,
+void updateQueue( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> newNode,
                   std::shared_ptr<KDTreeNode> root, double hyperBallRad )
 {
     recalculateLMC( Q, newNode, root ); // internally ignores root
@@ -766,7 +766,7 @@ void updateQueue( Queue* Q, std::shared_ptr<KDTreeNode> newNode,
      }
 }
 
-void reduceInconsistency(Queue* Q, std::shared_ptr<KDTreeNode> goalNode,
+void reduceInconsistency(std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> goalNode,
                          double robotRad, std::shared_ptr<KDTreeNode> root,
                          double hyperBallRad)
 {
@@ -829,7 +829,7 @@ bool markedOS( std::shared_ptr<KDTreeNode> node )
     return node.get()->inOSQueue;
 }
 
-bool verifyInQueue( Queue* Q, std::shared_ptr<KDTreeNode> node )
+bool verifyInQueue( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node )
 {
     if( Q->Q->markedQ(node) ) {
        return Q->Q->updateHeap(node);  // should these return this?
@@ -838,7 +838,7 @@ bool verifyInQueue( Queue* Q, std::shared_ptr<KDTreeNode> node )
     }
 }
 
-bool verifyInOSQueue( Queue* Q, std::shared_ptr<KDTreeNode> node )
+bool verifyInOSQueue( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node )
 {
     if( Q->Q->markedQ(node) ) {
         Q->Q->updateHeap(node);
@@ -935,7 +935,7 @@ void makeParentOf( std::shared_ptr<KDTreeNode> newParent, std::shared_ptr<KDTree
     node->successorListItemInParent = newParent->SuccessorList->front;
 }
 
-bool recalculateLMCMineVTwo(Queue* Q, std::shared_ptr<KDTreeNode> node,
+bool recalculateLMCMineVTwo(std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node,
                             std::shared_ptr<KDTreeNode> root,
                             double hyperBallRad)
 {
@@ -991,7 +991,7 @@ bool recalculateLMCMineVTwo(Queue* Q, std::shared_ptr<KDTreeNode> node,
     return true;
 }
 
-bool rewire( Queue* Q, std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTreeNode> root,
+bool rewire( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTreeNode> root,
              double hyperBallRad, double changeThresh )
 {
     // Only explicitly propogate changes if they are large enough
@@ -1048,7 +1048,7 @@ bool rewire( Queue* Q, std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTreeN
     return true;
 }
 
-bool propogateDescendants( Queue* Q, RobotData* R )
+bool propogateDescendants( std::shared_ptr<Queue> Q, RobotData* R )
 {
     if( Q->OS->length <= 0 ) {
         return false;
@@ -1313,7 +1313,7 @@ void findNewTarget( CSpace* S, KDTree* Tree,
     emptyRangeList(L); // cleanup
 }
 
-void moveRobot( CSpace* S, Queue* Q, KDTree* Tree, double slice_time,
+void moveRobot( CSpace* S, std::shared_ptr<Queue> Q, KDTree* Tree, double slice_time,
                 std::shared_ptr<KDTreeNode> root, double hyperBallRad, RobotData* R )
 {
     // Start by updating the location of the robot based on how
@@ -1531,7 +1531,7 @@ void RRTX( CSpace *S, double total_planning_time, double slice_time,
     KDTree* KD = new KDTree(S->d, distanceFunction, wraps, wrapPoints);
 
     /// QUEUE
-    Queue* Q = new Queue();
+    std::shared_ptr<Queue> Q = std::make_shared<Queue>();
     if( searchType == "RRT" ) {
         Q->S = S;
         Q->type = searchType;
