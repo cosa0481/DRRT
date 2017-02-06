@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
     string distanceFunction = "R3SDist"; // distance function for KD-Tree
 
     Eigen::VectorXd start(4), goal(4);
-    start << 0.0,0.0,0.0,PI/4;           // robot goes to *0,-40,0,pi/3*
+    start << 0.0,0.0,0.0,-3*PI/4;           // robot goes to *0,-40,0,pi/3*
                                          // (start location of search tree)
     goal << 50.0,50.0,0.0,-3*PI/4 ;      // robot comes from *-40,40,0,-pi/3*
                                          // (goal location of search tree)

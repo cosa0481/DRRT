@@ -77,7 +77,7 @@ bool kdInsert( std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node )
         }
     }
 
-    //std::cout << "kdInsert : Just added\n" << node->position << "\n" << Edist(node->position,parent->position) << " units from\n" << parent->position << std::endl;
+    //std::cout << "kdInsert : Just added\n" << node->position << "\n" << Edge::Edist(node->position,parent->position) << " units from\n" << parent->position << std::endl;
     node->kdParent = parent;
     node->kdParentExist = true;
     if( parent->kdSplit == tree->d-1 ) {
