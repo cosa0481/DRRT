@@ -80,7 +80,7 @@ public:
      * and without time, since time == 0 in the latter case, but
      * still exists as a dimension in points
      */
-    static double EKDdist(Eigen::VectorXd x, Eigen::VectorXd y);
+    //static double EKDdist(Eigen::VectorXd x, Eigen::VectorXd y);
 
     /* Returns the workspace distance between two points, this should
      * obey the triangle inequality. e.g. in the current version of this

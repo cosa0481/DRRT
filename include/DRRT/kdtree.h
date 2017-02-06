@@ -24,16 +24,16 @@
 // A KD-Tree data structure that stores nodes of type T
 class KDTree {
 public:
-    int d;                          // the number of dimensions in the space (5)
-    std::string distanceFunction;   // distance function to use: f(poseA, poseB)
-    int treeSize;                   // the number of nodes in the KD-Tree
+    int d;                      // the number of dimensions in the space (5)
+    std::string distanceFunction;// distance function to use: f(poseA, poseB)
+    int treeSize;              // the number of nodes in the KD-Tree
 
-    int numWraps;                   // the total number of dimensions that wrap
-    Eigen::VectorXi wraps;          // a vector of length d containing a list of all the
-                                    // dimensions that wrapAround
-    Eigen::VectorXd wrapPoints;     // space is assumed to start at 0 and end at
-                                    // wrapPoints[i] along dimension wraps[i]
-    std::shared_ptr<KDTreeNode> root;               // the root node
+    int numWraps;              // the total number of dimensions that wrap
+    Eigen::VectorXi wraps; // a vector of length d containing a list of
+                           // all the dimensions that wrapAround
+    Eigen::VectorXd wrapPoints; // space is assumed to start at 0 and end at
+                                // wrapPoints[i] along dimension wraps[i]
+    std::shared_ptr<KDTreeNode> root;   // the root node
 
     // Constructors
     KDTree( int _d, std::string _distanceFunction,
@@ -41,8 +41,8 @@ public:
             d(_d), distanceFunction(_distanceFunction), treeSize(0),
             numWraps(_wraps.size()), wraps(_wraps), wrapPoints(_wrapPoints)
     {}
-    KDTree( int _d, std::string _distanceFunction ) :
-            d(_d), distanceFunction(_distanceFunction), treeSize(0), numWraps(0)
+    KDTree(int _d, std::string _distanceFunction) :
+           d(_d), distanceFunction(_distanceFunction), treeSize(0), numWraps(0)
     {}
     KDTree() : d(0), distanceFunction("none"), treeSize(0), numWraps(0)
     {}
@@ -51,8 +51,6 @@ public:
 // Returns the distance between pointA and pointB using distanceFunction
 double distFunc( std::string distanceFunction,
                  Eigen::VectorXd pointA, Eigen::VectorXd pointB);
-
-void KDTreeInit( std::shared_ptr<KDTree> K, int d, std::string distanceFunction );
 
 // Inserts a new node into the tree
 bool kdInsert( std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node );

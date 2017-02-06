@@ -30,14 +30,7 @@ double distFunc( std::string distanceFunction,
     return 0.0;
 }
 
-void KDTreeInit( std::shared_ptr<KDTree> K, int d, std::string distanceFunction )
-{
-    K->d = d;
-    K->distanceFunction = distanceFunction;
-    K->treeSize = 0;
-}
-
-bool kdInsert( std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node )
+bool kdInsert(std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node)
 {
     if( node.get()->kdInTree ) return false;
     node.get()->kdInTree = true;
@@ -77,7 +70,6 @@ bool kdInsert( std::shared_ptr<KDTree> tree, std::shared_ptr<KDTreeNode> node )
         }
     }
 
-    //std::cout << "kdInsert : Just added\n" << node->position << "\n" << Edge::Edist(node->position,parent->position) << " units from\n" << parent->position << std::endl;
     node->kdParent = parent;
     node->kdParentExist = true;
     if( parent->kdSplit == tree->d-1 ) {

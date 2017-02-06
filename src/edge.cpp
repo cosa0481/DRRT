@@ -31,8 +31,8 @@ void error( int i )
 double Edge::Edist(Eigen::VectorXd x, Eigen::VectorXd y)
 {return distFunc("R3SDist", x, y);}
 
-double Edge::EKDdist(Eigen::VectorXd x, Eigen::VectorXd y)
-{return distFunc("S3KDSearchDist", x, y);}
+//double Edge::EKDdist(Eigen::VectorXd x, Eigen::VectorXd y)
+//{return distFunc("S3KDSearchDist", x, y);}
 
 double Edge::EWdist(Eigen::VectorXd x, Eigen::VectorXd y)
 {return distFunc("EuclidianDist", x.head(2), y.head(2));}
