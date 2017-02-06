@@ -60,9 +60,19 @@ int main(int argc, char* argv[])
 
     error("Parameters defined\nRunning RRTx");
 
-    RRTX(C, total_time, slice_time, 10.0, 100.0, changeThresh,
-         algorithmName, MoveRobot, false, false, "", distanceFunction,
-         goal_threshold);
+    RRTX(C,
+         total_time,        // total_planning_time
+         slice_time,        // slice_time
+         10.0,              // delta (max dist between two nodes)
+         100.0,             // ballConstant
+         changeThresh,      // graph change threshold
+         algorithmName,     // algorithmName
+         MoveRobot,         // Is the robot moving now
+         false,             // saveVideo? not used
+         false,             // save kd-tree? not used
+         "",                // dataFile? not used
+         distanceFunction,  // distance function to use in the algorithm
+         goal_threshold);   // distance to goal node to consider 'done'
 
     return 0;
 }

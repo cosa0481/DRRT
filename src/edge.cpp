@@ -38,8 +38,8 @@ double EWdist(Eigen::VectorXd x, Eigen::VectorXd y)
 {return distFunc("EuclidianDist", x.head(2), y.head(2));}
 
 void saturate(std::shared_ptr<Eigen::Vector4d> nP,
-              Eigen::Vector4d cP,
-              double delta)
+                    Eigen::Vector4d cP,
+                    double delta)
 {
     double thisDist = Edist( (*nP), cP );
     if( thisDist > delta ) {
@@ -82,11 +82,11 @@ void saturate(std::shared_ptr<Eigen::Vector4d> nP,
 
 /////////////////////// Edge Functions ///////////////////////
 
-std::shared_ptr<Edge> newEdge( std::shared_ptr<KDTreeNode> startNode,
-                               std::shared_ptr<KDTreeNode> endNode )
-{return std::make_shared<Edge>( startNode, endNode );}
+std::shared_ptr<Edge> newEdge(std::shared_ptr<KDTreeNode> startNode,
+                                    std::shared_ptr<KDTreeNode> endNode)
+{ return std::make_shared<Edge>( startNode, endNode ); }
 
-bool validMove( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
+bool validMove(std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge)
 {
     if( S->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
@@ -100,8 +100,8 @@ bool validMove( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
     return true;
 }
 
-Eigen::VectorXd poseAtDistAlongEdge( std::shared_ptr<Edge> edge,
-                                     double distAlongEdge )
+Eigen::VectorXd poseAtDistAlongEdge(std::shared_ptr<Edge> edge,
+                                          double distAlongEdge)
 {
     double distRemaining = distAlongEdge;
     if( edge->trajectory.rows() < 2 || edge->dist <= distAlongEdge ) {
@@ -156,7 +156,8 @@ Eigen::VectorXd poseAtDistAlongEdge( std::shared_ptr<Edge> edge,
     return vec;
 }
 
-Eigen::VectorXd poseAtTimeAlongEdge( std::shared_ptr<Edge> edge, double timeAlongEdge )
+Eigen::VectorXd poseAtTimeAlongEdge(std::shared_ptr<Edge> edge,
+                                          double timeAlongEdge)
 {
     if( edge->trajectory.rows() < 2 || (edge->startNode->position(2)
                                         - edge->endNode->position(2))
@@ -191,7 +192,8 @@ Eigen::VectorXd poseAtTimeAlongEdge( std::shared_ptr<Edge> edge, double timeAlon
     return vec;
 }
 
-void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
+void calculateTrajectory(std::shared_ptr<CSpace> S,
+                               std::shared_ptr<Edge> edge)
 {
     double r_min = S->minTurningRadius;
 
@@ -833,7 +835,8 @@ void calculateTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge 
     edge->distOriginal = edge->dist;
 }
 
-void calculateHoverTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
+void calculateHoverTrajectory(std::shared_ptr<CSpace> S,
+                                    std::shared_ptr<Edge> edge)
 {
     edge->edgeType = "xxx";
     edge->Wdist = 0.0;
@@ -852,4 +855,4 @@ void calculateHoverTrajectory( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> 
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle ){}
+//bool Edge::explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle ){}
