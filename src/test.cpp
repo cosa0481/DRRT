@@ -3,15 +3,28 @@
  * Fall 2016
  * This file is made into an executable: 'test'
  * Used to test high level things in the library
+ * To define distance function just implement :
+ *      'double distanceFunction(Eigen::VectorXd x, Eigen::VectorXd y)'
+ * above the main function
  */
 
 #include <DRRT/drrt.h>
 
 using namespace std;
 
+double distanceFunction( Eigen::VectorXd x, Eigen::VectorXd y )
+{
+    Eigen::ArrayXd temp = x.head(2) - y.head(2);
+    temp = temp*temp;
+    return sqrt( temp.sum()
+                 + pow( std::min( std::abs(x(3)-y(3)),
+                                  std::min(x(3),y(3)) + 2.0*PI
+                                  - std::max(x(3),y(3)) ), 2 ) );
+}
+
 int main(int argc, char* argv[])
 {
-    error("Begin");
+    std::cout << "Begin" << std::endl;
     string algorithmName = "RRTx";       // "RRT", "RRT*", "RRT#", or "RRTx"
     string expName = "Debug";            // Name for output files
 
@@ -24,7 +37,8 @@ int main(int argc, char* argv[])
     double envRad = 50.0;                // environment spans -envRad
                                          // to envRad in each dimension
     double robotRad = 0.5;               // robot radius
-    string distanceFunction = "R3SDist"; // distance function for KD-Tree
+    double(*distFunc)(Eigen::VectorXd a, Eigen::VectorXd b)
+            = distanceFunction; // distance function for KD-Tree
 
     Eigen::VectorXd start(4), goal(4);
     start << 0.0,0.0,0.0,-3*PI/4;           // robot goes to *0,-40,0,pi/3*
@@ -58,7 +72,7 @@ int main(int argc, char* argv[])
     C->spaceHasTime = false;                 // not using time parameter
     C->spaceHasTheta = true;                 // using theta (yaw)
 
-    error("Parameters defined\nRunning RRTx");
+    std::cout << "Parameters defined\nRunning RRTx" << std::endl;
 
     RRTX(C,
          total_time,        // total_planning_time
@@ -68,10 +82,7 @@ int main(int argc, char* argv[])
          changeThresh,      // graph change threshold
          algorithmName,     // algorithmName
          MoveRobot,         // Is the robot moving now
-         false,             // saveVideo? not used
-         false,             // save kd-tree? not used
-         "",                // dataFile? not used
-         distanceFunction,  // distance function to use in the algorithm
+         distFunc,          // distance function to use in the algorithm
          goal_threshold);   // distance to goal node to consider 'done'
 
     return 0;
