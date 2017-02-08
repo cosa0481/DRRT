@@ -272,7 +272,8 @@ bool recalculateLMCMineVTwo( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNod
 // This is the (non-initial) rewire function used by RRTx that is
 // responsible for propogating changes through the graph
 // Returns true if successful
-bool rewire( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTreeNode> root,
+bool rewire( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node,
+             std::shared_ptr<KDTreeNode> root,
              double hyperBallRad, double changeThresh );
 
 // Propogates cost information through the graph
@@ -282,7 +283,8 @@ bool rewire( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node, std::sh
 // of the nodes in Q.OS stack (that have higher cost). This also takes
 // the robot to remember if node the robot was moving at is one of the
 // nodes that has become an orphan. Returns true if successful.
-bool propogateDescendants( std::shared_ptr<Queue> Q, RobotData* R );
+bool propogateDescendants( std::shared_ptr<Queue> Q,
+                           std::shared_ptr<RobotData> R );
 
 /* If C-Space has a time dimension, add a sequence of descendents
  * to the root, where each great^n-grandchild is at the same
@@ -300,7 +302,7 @@ void addOtherTimesToRoot( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tre
 // Attempts to find a new move target for the robot, places
 // it into RobotData (used when the old target has become invalid)
 void findNewTarget( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree,
-                    RobotData* R, double hyperBallRad );
+                    std::shared_ptr<RobotData> R, double hyperBallRad );
 
 /* Move robot the distance that it would move in slice_time time
  * if time is not a dimension of the C-Space, then a contant velocity
@@ -308,8 +310,10 @@ void findNewTarget( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree,
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot( std::shared_ptr<CSpace> S, std::shared_ptr<Queue> Q, std::shared_ptr<KDTree> Tree, double slice_time,
-                std::shared_ptr<KDTreeNode> root, double hyperBallRad, RobotData* R );
+void moveRobot( std::shared_ptr<CSpace> S, std::shared_ptr<Queue> Q,
+                std::shared_ptr<KDTree> Tree, double slice_time,
+                std::shared_ptr<KDTreeNode> root, double hyperBallRad,
+                std::shared_ptr<RobotData> R );
 
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
@@ -339,11 +343,11 @@ void moveRobot( std::shared_ptr<CSpace> S, std::shared_ptr<Queue> Q, std::shared
 // S is the CSpace, the algorithm runs until either N nodes have been
 // sampled or TimeOut seconds pass, delta is the saturation distance,
 // ballConstant is the ball constant
-void RRTX(std::shared_ptr<CSpace> S, double total_planning_time,
-          double slice_time, double delta, double ballConstant,
-          double changeThresh, std::string searchType, bool MoveRobotFlag,
-          double(*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b),
-          double goal_threshold
-           /* "statsArgs..." ???*/);
+//void RRTX(std::shared_ptr<CSpace> S, double total_planning_time,
+//          double slice_time, double delta, double ballConstant,
+//          double changeThresh, std::string searchType, bool MoveRobotFlag,
+//          double(*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b),
+//          double goal_threshold
+//           /* "statsArgs..." ???*/);
 
 #endif // DRRT_H

@@ -70,9 +70,6 @@ target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 add_executable( test src/test.cpp ${HDRS} )
 target_link_libraries( test ${LIBRARY_NAME} )
 
-add_executable( unitTest src/unittest.cpp ${HDRS} )
-target_link_libraries( unitTest ${LIBRARY_NAME} )
-
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}
 #    LIB_NAME ${LIBRARY_NAME}
