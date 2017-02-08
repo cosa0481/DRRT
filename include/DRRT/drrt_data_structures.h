@@ -4,7 +4,7 @@
 #include <DRRT/list.h>
 #include <DRRT/heap.h>
 #include <DRRT/edge.h>
-//#include <DRRT/dubinsedge.h>
+#include <DRRT/dubinsedge.h> // Include specific implementation of edge here
 
 class CSpace{
 public:
