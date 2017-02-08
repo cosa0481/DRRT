@@ -6,7 +6,9 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-#include <DRRT/kdtreenode.h>
+#include <vector>
+#include <iostream>
+#include <DRRT/KDTreeNode.h>
 
 // A binary heap data structure
 class BinaryHeap {

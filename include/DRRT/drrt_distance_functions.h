@@ -6,6 +6,28 @@
 #include <eigen3/Eigen/Eigen>
 #include <iostream>
 
+#define PI 3.1415926536
+
+// Returns the Euclidian distance
+double EuclideanDist( Eigen::VectorXd x, Eigen::VectorXd y );
+
+double R3Dist( Eigen::VectorXd x, Eigen::VectorXd y );
+
+// Returns the 'straight-line' distance in a space containing [X Y Time Theta]
+// where theta exists on [0 2pi] and wraps around, i.e. 0 == 2pi
+double R3SDist( Eigen::VectorXd x, Eigen::VectorXd y );
+
+// Returns the (SE3==S3?) distance
+// Distance in a 3-dimensional space that wraps in all 3 dimensions
+// Note if uising this distance, then the dist function actually used
+// for kd-tree search should be the dimensional euclidian metric since
+// wrapping is dealt with using ghost points (the next function)
+// Note that 1.0 in the following function means that the length of each
+// dimension is 1.0
+double S3Dist( Eigen::VectorXd x, Eigen::VectorXd y );
+
+double S3KDSearchDist( Eigen::VectorXd x, Eigen::VectorXd y );
+
 /* Returns the distance between two points in the projection of a Dubin's space
  * that contains [X Y T] depending on if time is being used or not.
  * This is useful for calculating the distance between two points that are close

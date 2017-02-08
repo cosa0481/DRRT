@@ -1,19 +1,19 @@
 #include <DRRT/ghostPoint.h>
 #include <DRRT/kdtree.h>
 
-ghostPointIterator::ghostPointIterator(KDTree *t, Eigen::VectorXd qP)
-    :   kdTree(t), queryPoint(qP),
-        ghostTreeDepth(t->numWraps),
-        currentGhost(qP),
-        closestUnwrappedPoint(qP)
+ghostPointIterator::ghostPointIterator( std::shared_ptr<KDTree> t, Eigen::VectorXd qP):
+       kdTree(t), queryPoint(qP),
+       ghostTreeDepth(t->numWraps),
+       currentGhost(qP),
+       closestUnwrappedPoint(qP)
    {
        Eigen::VectorXi zeros(t->numWraps);
        wrapDimFlags = zeros;
    }
 
 
-Eigen::VectorXd getNextGhostPoint(std::shared_ptr<ghostPointIterator> G,
-                                  double bestDist)
+Eigen::VectorXd getNextGhostPoint( std::shared_ptr<ghostPointIterator> G,
+                                   double bestDist )
 {
     // Will return out when done
     while( true ) {
@@ -65,8 +65,10 @@ Eigen::VectorXd getNextGhostPoint(std::shared_ptr<ghostPointIterator> G,
 
         // Check if closest point in unpwrapped space is further than
         // best distance
-        if( G->kdTree->distanceFunction(G->closestUnwrappedPoint,
-                                        G->currentGhost) > bestDist ) {
+        if( distFunc(G->kdTree->distanceFunction,
+                     G->closestUnwrappedPoint,
+                     G->currentGhost
+                     ) > bestDist ) {
             continue;
         }
         return G->currentGhost;

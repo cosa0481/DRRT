@@ -1,15 +1,20 @@
 #ifndef EDGE_H
 #define EDGE_H
 
-#include <DRRT/kdtreenode.h> // PI defined here
+#include <vector>
+#include <string>
+#include <eigen3/Eigen/Eigen>
 
-// Infinity value for distance
-#define INF 1000000000000
 #define MAXPATHNODES 100000
-#define DELTA 10
 
+class KDTreeNode;
 class CSpace;
-class KDTree;
+class JListNode;
+
+/////////////////////// Error Helpers ///////////////////////
+void error( std::string e );
+void error( double d );
+void error( int i );
 
 // Edge for a Dubin's state space
 class Edge{
@@ -62,7 +67,7 @@ public:
     // in the C-Space
     // Should obey the triangle inequality
     // Use the following version of dist for Dubins space [X Y Theta Time]
-    //virtual double Edist(Eigen::VectorXd x, Eigen::VectorXd y)=0;
+    static double Edist(Eigen::VectorXd x, Eigen::VectorXd y);
 
     /* This returns the distance that is used internally in the
      * kd-tree (see notes there). The kd-implementation handles
@@ -86,50 +91,53 @@ public:
      * Use the following version of Wdist for Euclidian space and Dubin's
      * space
      */
-    //virtual double EWdist(Eigen::VectorXd x, Eigen::VectorXd y)=0;
+    static double EWdist(Eigen::VectorXd x, Eigen::VectorXd y);
 
     // Moves newPoint toward closestPoint such that each robot is no further
     // than delta. Points reperesent the cartesian product of R robots
     // Use the following version of Edge::saturate for Dubin's space
-//    virtual void saturate(std::shared_ptr<Eigen::Vector4d> newPoint,
-//                         Eigen::Vector4d closestPoint,
-//                         double delta )=0;
+    static void saturate(std::shared_ptr<Eigen::Vector4d> newPoint,
+                         Eigen::Vector4d closestPoint,
+                         double delta );
 
 
     /////////////////////// Edge Functions ///////////////////////
 
     // Allocates a new edge
-    // This must be implemented by all edge types!!
     static std::shared_ptr<Edge> newEdge(std::shared_ptr<KDTreeNode> startNode,
                                          std::shared_ptr<KDTreeNode> endNode);
 
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge
     // Dubin's edge version
-    virtual bool validMove(std::shared_ptr<CSpace> S)=0;
+    static bool validMove(std::shared_ptr<CSpace> S,
+                          std::shared_ptr<Edge> edge);
 
     /* Returns the pose of a robot that is located dist along the edge
      * Note that 'dist' and 'far' are with respect to whatever type of
-     * distance is stored in Edge->dist
+     * distance is stored in edge->dist
      * Dubin's edge version (COULD BE MADE MORE EFFICIENT)
      */
-    virtual Eigen::VectorXd poseAtDistAlongEdge(double distAlongEdge)=0;
+    static Eigen::VectorXd poseAtDistAlongEdge(std::shared_ptr<Edge> edge,
+                                               double distAlongEdge);
 
     // Returns the pose of a robot that is located time along the edge
     // Dubin's edge version (could be made more efficient)
-    virtual Eigen::VectorXd poseAtTimeAlongEdge(double timeAlongEdge)=0;
+    static Eigen::VectorXd poseAtTimeAlongEdge(std::shared_ptr<Edge> edge,
+                                               double timeAlongEdge);
 
     /* Dubin's version, figures out which one of the 6 possibilities is the
      * shortest (ignoring obstacles) subject to the robot's (constant)
      * velocity and minimum turning radius. At the very least this function
      * should populate the dist field of edge
      */
-    virtual void calculateTrajectory(std::shared_ptr<CSpace> S,
-                                     std::shared_ptr<KDTree> Tree)=0;
+    static void calculateTrajectory(std::shared_ptr<CSpace> S,
+                                    std::shared_ptr<Edge> edge);
 
     // This calculates a trajectory of what the robot is supposed to do
     // when it is hovering "in place". Dubin's edge version
-    virtual void calculateHoverTrajectory(std::shared_ptr<CSpace> S)=0;
+    static void calculateHoverTrajectory(std::shared_ptr<CSpace> S,
+                                         std::shared_ptr<Edge> edge);
 
 
     ///////////////////// Collision Checking Functions /////////////////////
@@ -139,7 +147,7 @@ public:
     // Checks if the edge is in collision with a particular obstacle
     // Returns true if in collision
     // Dubin's edge version
-    //virtual bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle );
+    //bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle );
 
 };
 

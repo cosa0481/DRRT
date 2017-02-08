@@ -30,14 +30,14 @@ double randDouble( double min, double max );
 
 // Returns Distance between two nodes (e.g., in the C-space)
 // Should obey the triangle inequality
-//double distance(std::shared_ptr<KDTreeNode> x, std::shared_ptr<KDTreeNode> y);
+double distance( std::shared_ptr<KDTreeNode> x, std::shared_ptr<KDTreeNode> y );
 
 /* Returns distance between two nodes (e.g., in the workspace)
  * Should obey the triangle inequality.
  * Note that it is assumed that the first two dimensions of
  * the C-space are position in the workspace
  */
-//double Wdist( std::shared_ptr<KDTreeNode> x, std::shared_ptr<KDTreeNode> y );
+double Wdist( std::shared_ptr<KDTreeNode> x, std::shared_ptr<KDTreeNode> y );
 
 // Returns true if nodeA certifies nodeB (only used in Alg. A)
 //bool certifierOf( std::shared_ptr<KDTreeNode> nodeA, std::shared_ptr<KDTreeNode> nodeB );
@@ -159,12 +159,8 @@ bool extend( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree, std::share
  * then it saves a copy of each edge in each node (to avoid work duplication
  * in RRT# and RRTx)
  */
-void findBestParent(std::shared_ptr<CSpace> S,
-                    std::shared_ptr<KDTree> Tree,
-                    std::shared_ptr<KDTreeNode> newNode,
-                    std::shared_ptr<JList> nodeList,
-                    std::shared_ptr<KDTreeNode> closestNode,
-                    bool saveAllEdges );
+void findBestParent( std::shared_ptr<CSpace> S, std::shared_ptr<KDTreeNode> newNode, std::shared_ptr<JList> nodeList,
+                     std::shared_ptr<KDTreeNode> closestNode, bool saveAllEdges );
 
 // Takes care of inserting a new node in RRT*
 // Uses above implementation of extend with Q = rrtStarQueue
@@ -339,11 +335,11 @@ void moveRobot( std::shared_ptr<CSpace> S, std::shared_ptr<Queue> Q, std::shared
 // S is the CSpace, the algorithm runs until either N nodes have been
 // sampled or TimeOut seconds pass, delta is the saturation distance,
 // ballConstant is the ball constant
-void RRTX(std::shared_ptr<CSpace> S, double total_planning_time,
-          double slice_time, double delta, double ballConstant,
-          double changeThresh, std::string searchType, bool MoveRobotFlag,
-          double(*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b),
-          double goal_threshold
+void RRTX(std::shared_ptr<CSpace> S, double total_planning_time, double slice_time,
+           double delta, double ballConstant, double changeThresh,
+           std::string searchType, bool MoveRobotFlag,
+           bool saveVideoData, bool saveTree, std::string dataFile,
+           std::string distanceFunction, double goal_threshold
            /* "statsArgs..." ???*/);
 
 #endif // DRRT_H

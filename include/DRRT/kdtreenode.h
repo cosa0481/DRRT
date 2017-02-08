@@ -1,11 +1,9 @@
 #ifndef KDTREENODE_H
 #define KDTREENODE_H
 
+#include <vector>
 #include <DRRT/jlist.h>
-
-#define PI 3.1415926536
-
-class Edge;
+#include <DRRT/edge.h> // Eigen included here
 
 /* Node that can be used in the KDTree, where T is the type of
  * data used to measure distance along each dimension. Other nodes

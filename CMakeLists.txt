@@ -35,7 +35,6 @@ set( HDRS
                 include/DRRT/kdtreenode.h
                 include/DRRT/drrt_data_structures.h
                 include/DRRT/edge.h
-                include/DRRT/dubinsedge.h
                 include/DRRT/drrt_distance_functions.h
 		)
 
@@ -46,7 +45,7 @@ set( SRCS
                 src/ghostPoint.cpp
                 src/list.cpp
                 src/jlist.cpp
-                src/dubinsedge.cpp
+                src/edge.cpp
                 src/drrt_distance_functions.cpp
 		)
 

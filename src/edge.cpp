@@ -1,46 +1,122 @@
-#include <DRRT/dubinsedge.h>
+/* edge.cpp
+ * Corin Sandford
+ * Fall 2016
+ */
+
 #include <DRRT/kdtree.h>
+#include <DRRT/edge.h>
+
+#define PI 3.1415926536
+
+/////////////////////// Error Helpers ///////////////////////
+
+void error( std::string e )
+{
+    std::cout << e << std::endl;
+}
+
+void error( double d )
+{
+    std::cout << d << std::endl;
+}
+
+void error( int i )
+{
+    std::cout << i << std::endl;
+}
+
 
 /////////////////////// Critical Functions ///////////////////////
+
+double Edge::Edist(Eigen::VectorXd x, Eigen::VectorXd y)
+{return distFunc("R3SDist", x, y);}
+
+//double Edge::EKDdist(Eigen::VectorXd x, Eigen::VectorXd y)
+//{return distFunc("S3KDSearchDist", x, y);}
+
+double Edge::EWdist(Eigen::VectorXd x, Eigen::VectorXd y)
+{return distFunc("EuclidianDist", x.head(2), y.head(2));}
+
+void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
+                    Eigen::Vector4d cP,
+                    double delta)
+{
+    double thisDist = Edge::Edist( (*nP), cP );
+    if( thisDist > delta ) {
+        // First scale non-theta dimensions
+        ((*nP)).head(3) = cP.head(3) +
+                ( (*nP).head(3) - cP.head(3) ) * delta / thisDist;
+
+        // Saturate theta in the short of the two directions that it can go
+        if( std::abs( (*nP)(3) - cP(3) ) < PI ) {
+            // Saturate in the normal way
+            (*nP)(3) = cP(3) +
+                    ((*nP)(3) - cP(3)) * delta / thisDist;
+        } else {
+            // Saturate in the opposite way
+            if( (*nP)(3) < PI ) {
+                (*nP)(3) = (*nP)(3) + 2*PI;
+            } else {
+                (*nP)(3) = (*nP)(3) - 2*PI;
+            }
+
+            // Now Edge::saturate
+            (*nP)(3) = cP(3) +
+                    ((*nP)(3) - cP(3)) * delta / thisDist;
+
+            // Finally, wrap back to the identity that is on [0 2pi]
+            // Is this really wrapping?
+
+            Eigen::Vector2d minVec;
+            minVec(0) = (*nP)(3);
+            minVec(1) = 2*PI;
+            Eigen::Vector2d maxVec;
+            maxVec(0) = minVec.minCoeff();
+            maxVec(1) = 0.0;
+
+            (*nP)(3) = maxVec.maxCoeff();
+        }
+    }
+}
+
 
 /////////////////////// Edge Functions ///////////////////////
 
 std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<KDTreeNode> startNode,
                                     std::shared_ptr<KDTreeNode> endNode)
-{
-    return std::make_shared<DubinsEdge>(startNode,endNode);
-}
+{ return std::make_shared<Edge>( startNode, endNode ); }
 
-bool DubinsEdge::validMove(std::shared_ptr<CSpace> S)
+bool Edge::validMove(std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge)
 {
     if( S->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
         // the root of the search tree, and thus the time of startNode must be
         // greater than the time of endNode
-        return ((this->startNode->position(2) > this->endNode->position(2))
-                && ((S->dubinsMinVelocity <= this->velocity)
-                    && (this->velocity <= S->dubinsMaxVelocity)));
+        return ((edge->startNode->position(2) > edge->endNode->position(2))
+                && ((S->dubinsMinVelocity <= edge->velocity)
+                    && (edge->velocity <= S->dubinsMaxVelocity)));
     }
     // if space does not have time then we assume that a move is always valid
     return true;
 }
 
-Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
+Eigen::VectorXd Edge::poseAtDistAlongEdge(std::shared_ptr<Edge> edge,
+                                          double distAlongEdge)
 {
     double distRemaining = distAlongEdge;
-    if( this->trajectory.rows() < 2 || this->dist <= distAlongEdge ) {
-        return this->endNode->position;
+    if( edge->trajectory.rows() < 2 || edge->dist <= distAlongEdge ) {
+        return edge->endNode->position;
     }
 
     // Find the piece of trajectory that contains the point at the desired distance
     int i = 1;
     double thisDist = INF;
-    bool timeInPath = (this->trajectory.cols() >= 3);
-    while( i <= this->trajectory.rows() ) {
-        double wtime = dubinsDistAlongTimePath( this->trajectory.row(i-1),
-                                                this->trajectory.row(i) );
-        double wotime = dubinsDistAlongPath( this->trajectory.row(i-1),
-                                             this->trajectory.row(i) );
+    bool timeInPath = (edge->trajectory.cols() >= 3);
+    while( i <= edge->trajectory.rows() ) {
+        double wtime = dubinsDistAlongTimePath( edge->trajectory.row(i-1),
+                                                edge->trajectory.row(i) );
+        double wotime = dubinsDistAlongPath( edge->trajectory.row(i-1),
+                                             edge->trajectory.row(i) );
         if( timeInPath ) {
             thisDist = wtime;
         } else {
@@ -62,14 +138,14 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
 
     // Now calculate pose along that piece
     double ratio = distRemaining/thisDist;
-    Eigen::VectorXd ret = this->trajectory.row(i-1)
-            + ratio*(this->trajectory.row(i)-this->trajectory.row(i-1));
-    double retTimeRatio = distAlongEdge/this->dist;
-    double retTime = this->startNode->position(2)
-            + retTimeRatio*(this->endNode->position(2)
-                            - this->startNode->position(2));
-    double retTheta = atan2 (this->trajectory(i,1) - this->trajectory(i-1,1),
-                             this->trajectory(i,0) - this->trajectory(i-1,0) );
+    Eigen::VectorXd ret = edge->trajectory.row(i-1)
+            + ratio*(edge->trajectory.row(i)-edge->trajectory.row(i-1));
+    double retTimeRatio = distAlongEdge/edge->dist;
+    double retTime = edge->startNode->position(2)
+            + retTimeRatio*(edge->endNode->position(2)
+                            - edge->startNode->position(2));
+    double retTheta = atan2 (edge->trajectory(i,1) - edge->trajectory(i-1,1),
+                             edge->trajectory(i,0) - edge->trajectory(i-1,0) );
 
     Eigen::VectorXd vec(4);
     vec(0) = ret(0); // x-coordinate
@@ -80,31 +156,32 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
     return vec;
 }
 
-Eigen::VectorXd DubinsEdge::poseAtTimeAlongEdge(double timeAlongEdge)
+Eigen::VectorXd Edge::poseAtTimeAlongEdge(std::shared_ptr<Edge> edge,
+                                          double timeAlongEdge)
 {
-    if( this->trajectory.rows() < 2 || (this->startNode->position(2)
-                                        - this->endNode->position(2))
+    if( edge->trajectory.rows() < 2 || (edge->startNode->position(2)
+                                        - edge->endNode->position(2))
             <= timeAlongEdge ) {
-        return this->endNode->position;
+        return edge->endNode->position;
     }
 
     // Find the piece of the trajectory that contains the time at the
     // desired distance
     int i = 1;
-    while( this->trajectory(i,2)
-           > this->startNode->position(2) - timeAlongEdge ) {
+    while( edge->trajectory(i,2)
+           > edge->startNode->position(2) - timeAlongEdge ) {
         i += 1;
     }
 
     // Now calculate pose along that piece
-    double ratio = (this->trajectory(i-1,2)
-                    - (this->startNode->position(2)-timeAlongEdge))
-            / (this->trajectory(i-1,2) - this->trajectory(i,2));
-    Eigen::VectorXd ret = this->trajectory.row(i-1)
-            + ratio*(this->trajectory.row(i) - this->trajectory.row(i-1));
-    double retTime = this->startNode->position(2) - timeAlongEdge;
-    double retTheta = atan2( this->trajectory(i,1) - this->trajectory(i-1,1),
-                             this->trajectory(i,0) - this->trajectory(i-1,0) );
+    double ratio = (edge->trajectory(i-1,2)
+                    - (edge->startNode->position(2)-timeAlongEdge))
+            / (edge->trajectory(i-1,2) - edge->trajectory(i,2));
+    Eigen::VectorXd ret = edge->trajectory.row(i-1)
+            + ratio*(edge->trajectory.row(i) - edge->trajectory.row(i-1));
+    double retTime = edge->startNode->position(2) - timeAlongEdge;
+    double retTheta = atan2( edge->trajectory(i,1) - edge->trajectory(i-1,1),
+                             edge->trajectory(i,0) - edge->trajectory(i-1,0) );
 
     Eigen::VectorXd vec;
     vec(0) = ret(0); // x-coordinate
@@ -115,15 +192,15 @@ Eigen::VectorXd DubinsEdge::poseAtTimeAlongEdge(double timeAlongEdge)
     return vec;
 }
 
-void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
-                                     std::shared_ptr<KDTree> Tree)
+void Edge::calculateTrajectory(std::shared_ptr<CSpace> S,
+                               std::shared_ptr<Edge> edge)
 {
     double r_min = S->minTurningRadius;
 
-    Eigen::Vector2d initial_location = this->startNode->position.head(2);
-    double initial_theta = this->startNode->position(3);
-    Eigen::Vector2d goal_location = this->endNode->position.head(2);
-    double goal_theta = this->endNode->position(3);
+    Eigen::Vector2d initial_location = edge->startNode->position.head(2);
+    double initial_theta = edge->startNode->position(3);
+    Eigen::Vector2d goal_location = edge->endNode->position.head(2);
+    double goal_theta = edge->endNode->position(3);
 
     // Calculate the center of the right-turn and left-turn circles
     // ... right-turn initial_location circle
@@ -655,21 +732,21 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
         third_path_y = glc_center(1) + r_min*phis.sin();
     }
 
-    this->edgeType = bestTrajType;
-    this->Wdist = bestDist; // distance that the robot moves in the workspace
+    edge->edgeType = bestTrajType;
+    edge->Wdist = bestDist; // distance that the robot moves in the workspace
 
     int trajLength = first_path_x.size() + second_path_x.size() + third_path_x.size();
     Eigen::VectorXd traj1(trajLength), traj2(trajLength);
 
-    if( this->Wdist == INF ) {
-        this->dist = INF;
+    if( edge->Wdist == INF ) {
+        edge->dist = INF;
     } else if( S->spaceHasTime ) {
         // Calculate C-space edge length
         // Note this HARDCODED batch version of dubinsDistAlongPath only
         // works because we assume constant speed along the edge
-        this->dist = sqrt(pow(bestDist,2)
-                          + pow(this->startNode->position(2)
-                                - this->endNode->position(2), 2) );
+        edge->dist = sqrt(pow(bestDist,2)
+                          + pow(edge->startNode->position(2)
+                                - edge->endNode->position(2), 2) );
 
         /* We need to calculate the time parameterization for the robot
          * along the path. NOTE: We make the simplifying assumption that
@@ -683,11 +760,11 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
          * enough in "curvy" parts that the distance between points can
          * be approximated by the straight line distance between these
          * points i.e. the sum of the segment lengths is close enough to
-         * this->Wdist that problems will not occur.
+         * edge->Wdist that problems will not occur.
          */
 
-        this->velocity = this->Wdist
-                / (this->startNode->position(2)-this->endNode->position(2));
+        edge->velocity = edge->Wdist
+                / (edge->startNode->position(2)-edge->endNode->position(2));
 
         // Build trajectory with 0 for times
         Eigen::VectorXd zeros(first_path_x.size()
@@ -712,30 +789,29 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
                                       + third_path_x.size());
 
 
-        this->trajectory.block(0,0,
+        edge->trajectory.block(0,0,
             first_path_x.size() + second_path_x.size() + third_path_x.size(),
                                1) = traj1;
-        this->trajectory.block(0,1,
+        edge->trajectory.block(0,1,
             first_path_x.size() + second_path_x.size() + third_path_x.size(),
                                1) = traj2;
-        this->trajectory.block(0,2,
+        edge->trajectory.block(0,2,
             first_path_x.size() + second_path_x.size() + third_path_x.size(),
                                1) = zeros;
 
         // Now calculate times
-        this->trajectory(0,2) = this->startNode->position(2);
+        edge->trajectory(0,2) = edge->startNode->position(2);
         double cumulativeDist = 0.0;
-        for( int j = 1; j < this->trajectory.rows()-1; j++ ) {
-            cumulativeDist += Tree->distanceFunction(
-                        this->trajectory.row(j-1).head(2),
-                        this->trajectory.row(j).head(2));
-            this->trajectory(j,2) = this->startNode->position(2)
-                    - cumulativeDist/this->velocity;
+        for( int j = 1; j < edge->trajectory.rows()-1; j++ ) {
+            cumulativeDist += Edge::EWdist(edge->trajectory.row(j-1).head(2),
+                                     edge->trajectory.row(j).head(2));
+            edge->trajectory(j,2) = edge->startNode->position(2)
+                    - cumulativeDist/edge->velocity;
         }
-        this->trajectory.row(this->trajectory.rows()-1).head(3)
-                = this->endNode->position.head(3); // make end point exact
+        edge->trajectory.row(edge->trajectory.rows()-1).head(3)
+                = edge->endNode->position.head(3); // make end point exact
     } else {
-        this->dist = bestDist;
+        edge->dist = bestDist;
 
         traj1.block(0,0, first_path_x.size(),1) = first_path_x;
         traj1.block(first_path_x.size(),0,
@@ -750,31 +826,33 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
                     third_path_y.size(),1) = third_path_y;
 
 
-        this->trajectory.block(0,0, first_path_x.size() + second_path_x.size()
+        edge->trajectory.block(0,0, first_path_x.size() + second_path_x.size()
                                + third_path_x.size(),1) = traj1;
-        this->trajectory.block(0,1, first_path_x.size() + second_path_x.size()
+        edge->trajectory.block(0,1, first_path_x.size() + second_path_x.size()
                                + third_path_x.size(),1) = traj2;
     }
 
-    this->distOriginal = this->dist;
+    edge->distOriginal = edge->dist;
 }
 
-void DubinsEdge::calculateHoverTrajectory(std::shared_ptr<CSpace> S)
+void Edge::calculateHoverTrajectory(std::shared_ptr<CSpace> S,
+                                    std::shared_ptr<Edge> edge)
 {
-    this->edgeType = "xxx";
-    this->Wdist = 0.0;
-    this->dist = 0.0;
+    edge->edgeType = "xxx";
+    edge->Wdist = 0.0;
+    edge->dist = 0.0;
 
     if( S->spaceHasTime ) {
-        this->velocity = S->dubinsMinVelocity;
-        this->trajectory.row(0) = this->startNode->position.head(3);
-        this->trajectory.row(1) = this->endNode->position.head(3);
+        edge->velocity = S->dubinsMinVelocity;
+        edge->trajectory.row(0) = edge->startNode->position.head(3);
+        edge->trajectory.row(1) = edge->endNode->position.head(3);
     } else {
-        this->trajectory.row(0) = this->startNode->position.head(2);
-        this->trajectory.row(1) = this->endNode->position.head(2);
+        edge->trajectory.row(0) = edge->startNode->position.head(2);
+        edge->trajectory.row(1) = edge->endNode->position.head(2);
     }
 }
 
+
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//bool Edge::explicitEdgeCheck( std::shared_ptr<CSpace> S, Obstacle* obstacle ){}
+//bool Edge::explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle ){}
