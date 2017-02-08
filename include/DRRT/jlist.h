@@ -6,10 +6,14 @@
 #ifndef JLIST_H
 #define JLIST_H
 
+#include <vector>
+#include <string>
 #include <iostream>
-#include <DRRT/edge.h>
+#include <math.h>
+#include <eigen3/Eigen/Eigen>
 
 class KDTreeNode;
+class Edge;
 
 // A JList node (not that key is unused for JList operations,
 // but it is often helpful to have a key value associated
