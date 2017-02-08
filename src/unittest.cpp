@@ -11,6 +11,16 @@
 
 using namespace std;
 
+double distanceFunction( Eigen::VectorXd x, Eigen::VectorXd y )
+{
+    Eigen::ArrayXd temp = x.head(2) - y.head(2);
+    temp = temp*temp;
+    return sqrt( temp.sum()
+                 + pow( std::min( std::abs(x(3)-y(3)),
+                                  std::min(x(3),y(3)) + 2.0*PI
+                                  - std::max(x(3),y(3)) ), 2 ) );
+}
+
 int main(int argc, char* argv[])
 {
     string algorithmName = "RRTx";       // "RRT", "RRT*", "RRT#", or "RRTx"
@@ -25,7 +35,8 @@ int main(int argc, char* argv[])
     double envRad = 50.0;                // environment spans -envRad
                                          // to envRad in each dimension
     double robotRad = 0.5;               // robot radius
-    string distanceFunction = "R3SDist"; // distance function for KD-Tree
+    double(*distFunc)(Eigen::VectorXd a, Eigen::VectorXd b)
+            = distanceFunction; // distance function for KD-Tree
 
     Eigen::VectorXd start(4), goal(4);
     start << 0.0,0.0,0.0,PI/4;           // robot goes to *0,-40,0,pi/3*
@@ -59,10 +70,10 @@ int main(int argc, char* argv[])
     C->spaceHasTime = false;                 // not using time parameter
     C->spaceHasTheta = true;                 // using theta (yaw)
 
-    error("Parameters defined\nRunning RRTx");
+    std::cout << "Parameters defined\nRunning RRTx" << std::endl;
 
     RRTX(C, total_time, slice_time, 10.0, 100.0, changeThresh,
-         algorithmName, MoveRobot, false, false, "", distanceFunction,
+         algorithmName, MoveRobot, distFunc,
          goal_threshold);
 
     return 0;

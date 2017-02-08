@@ -5,6 +5,7 @@
 
 #include <DRRT/jlist.h>
 #include <DRRT/kdtreenode.h>
+#include <DRRT/edge.h>
 
 void JList::JlistPush( std::shared_ptr<KDTreeNode> t )
 {
@@ -84,7 +85,7 @@ void JList::JlistTop( std::shared_ptr<KDTreeNode> t )
 void JList::JlistTop( std::shared_ptr<Edge> e ) {
     if( length == 0 ) {
         // Jlist is empty
-        *e = Edge();
+        e->dist = -1;
     }
     e = front->edge;
 }
@@ -105,7 +106,7 @@ void JList::JlistTopKey( std::shared_ptr<Edge> e, std::shared_ptr<double> k )
 {
     if( length == 0 ) {
         // Jlist is empty
-        *e = Edge();
+        e->dist = -1;
         *k = -1.0;
     }
     e = front->edge;
@@ -140,7 +141,7 @@ void JList::JlistPop( std::shared_ptr<Edge> e )
 {
     if( length == 0 ) {
         // Jlist is empty
-        *e = Edge();
+        e->dist = -1;
     }
 
     std::shared_ptr<JListNode> oldTop = front;
@@ -192,7 +193,7 @@ void JList::JlistPopKey(std::shared_ptr<Edge> e, std::shared_ptr<double> k)
 {
     if( length == 0 ) {
         // Jlist is empty
-        *e = Edge();
+        e->dist = -1;
         *k = -1.0;
     }
 

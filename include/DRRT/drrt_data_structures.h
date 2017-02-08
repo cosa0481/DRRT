@@ -1,13 +1,10 @@
 #ifndef DRRT_DATA_STRUCTURES_H
 #define DRRT_DATA_STRUCTURES_H
 
-#include <vector>
-#include <string>
-#include <DRRT/kdtreenode.h>
-#include <DRRT/jlist.h>
 #include <DRRT/list.h>
 #include <DRRT/heap.h>
 #include <DRRT/edge.h>
+//#include <DRRT/dubinsedge.h>
 
 class CSpace{
 public:
