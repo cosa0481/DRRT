@@ -1341,7 +1341,7 @@ void findNewTarget(std::shared_ptr<CSpace> S,
             std::shared_ptr<KDTreeNode> newNode = randNodeDefault(S);
             double thisDist = Tree->distanceFunction(newNode->position,
                                                      R->robotPose);
-            KDTree::saturate(
+            Edge::saturate(
                         std::make_shared<Eigen::Vector4d>(newNode->position),
                         R->robotPose, S->delta, thisDist);
             Tree->kdInsert(newNode);

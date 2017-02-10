@@ -10,7 +10,7 @@ class CSpace{
 public:
     int d;                   // dimensions
     List obstacles;          // a list of obstacles
-    float obsDelta;          // the granularity of obstacle checks on edges
+    double obsDelta;         // the granularity of obstacle checks on edges
     Eigen::VectorXd lowerBounds;   // 1xD vector containing the lower bounds
     Eigen::VectorXd upperBounds;   // 1xD vector containing the upper bounds
     Eigen::VectorXd width;   // 1xD vector containing upperBounds-lowerBounds
@@ -38,10 +38,10 @@ public:
     int itsUntilSample;    // a count down to sample a particular point
     Eigen::VectorXd itsSamplePoint;   // sample this when itsUntilSample == 0
     Eigen::VectorXd timeSamplePoint;  // sample this when waitTime has passed
-    double waitTime;                   // time to wait in seconds
+    double waitTime;                  // time to wait in seconds
     u_int64_t startTimeNs;            // time this started
-    double timeElapsed; // elapsed time since started ( where time spent saving
-                       // experimental data has been removed )
+    double timeElapsed; // elapsed time since started (where time spent saving
+                        // experimental data has been removed)
 
     //Obstacle* obstacleToRemove;    // an obstacle to remove
 
@@ -59,7 +59,7 @@ public:
     double delta;                // RRT parameter delta
     double minTurningRadius;     // min turning radius e.g. for Dubin's car
 
-    double warmupTime;   // the amount of warm up time allowed (obstacles are
+    double warmupTime;  // the amount of warm up time allowed (obstacles are
                         // ignored for warm up time)
     bool inWarmupTime;  // true if we are in the warm up time
 

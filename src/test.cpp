@@ -249,7 +249,7 @@ std::shared_ptr<RobotData> RRTX(Problem p)
                                                        closestNode->position);
                 std::shared_ptr<Eigen::Vector4d> position
                         = std::make_shared<Eigen::Vector4d>(newNode->position);
-                KDTree::saturate(position, closestNode->position,
+                Edge::saturate(position, closestNode->position,
                                  p.c_space->delta, thisDist);
                 newNode->position = *position;
             }
@@ -283,14 +283,14 @@ std::shared_ptr<RobotData> RRTX(Problem p)
 
 /// Distance Function for use in the RRTx algorithm
 // This was created by Michael Otte (R3SDist)
-double distance_function( Eigen::VectorXd x, Eigen::VectorXd y )
+double distance_function( Eigen::VectorXd a, Eigen::VectorXd b )
 {
-    Eigen::ArrayXd temp = x.head(2) - y.head(2);
+    Eigen::ArrayXd temp = a.head(2) - b.head(2);
     temp = temp*temp;
     return sqrt( temp.sum()
-                 + pow( std::min( std::abs(x(3)-y(3)),
-                                  std::min(x(3),y(3)) + 2.0*PI
-                                  - std::max(x(3),y(3)) ), 2 ) );
+                 + pow( std::min( std::abs(a(3)-b(3)),
+                                  std::min(a(3),b(3)) + 2.0*PI
+                                  - std::max(a(3),b(3)) ), 2 ) );
 }
 
 int main(int argc, char* argv[])

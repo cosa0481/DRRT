@@ -46,46 +46,6 @@ public:
                                            Eigen::VectorXd b))
     { distanceFunction = func; }
 
-    // Saturate moving nP within delta of cP
-    static void saturate(std::shared_ptr<Eigen::Vector4d> nP,
-                         Eigen::Vector4d cP, double delta, double dist)
-    {
-        // First scale non-theta dimensions
-        ((*nP)).head(3) = cP.head(3) +
-                ( (*nP).head(3) - cP.head(3) ) * delta / dist;
-
-        // Saturate theta in the shorter of the
-        // two directions that it can go
-        if( std::abs( (*nP)(3) - cP(3) ) < PI ) {
-            // Saturate in the normal way
-            (*nP)(3) = cP(3) +
-                    ((*nP)(3) - cP(3)) * delta / dist;
-        } else {
-            // Saturate in the opposite way
-            if( (*nP)(3) < PI ) {
-                (*nP)(3) = (*nP)(3) + 2*PI;
-            } else {
-                (*nP)(3) = (*nP)(3) - 2*PI;
-            }
-
-            // Now saturate
-            (*nP)(3) = cP(3) +
-                    ((*nP)(3) - cP(3)) * delta / dist;
-
-            // Finally, wrap back to the identity that is on [0 2pi]
-            // Is this really wrapping?
-
-            Eigen::Vector2d minVec;
-            minVec(0) = (*nP)(3);
-            minVec(1) = 2*PI;
-            Eigen::Vector2d maxVec;
-            maxVec(0) = minVec.minCoeff();
-            maxVec(1) = 0.0;
-
-            (*nP)(3) = maxVec.maxCoeff();
-        }
-    }
-
     // Inserts a new node into the tree
     bool kdInsert(std::shared_ptr<KDTreeNode> node);
 

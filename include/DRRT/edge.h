@@ -103,6 +103,13 @@ public:
     static std::shared_ptr<Edge> newEdge(std::shared_ptr<KDTreeNode> startNode,
                                          std::shared_ptr<KDTreeNode> endNode);
 
+    // Saturate moving nP within delta of cP
+    // This must be implemented by all edge types!!
+    static void saturate(std::shared_ptr<Eigen::Vector4d> nP,
+                         Eigen::Vector4d cP,
+                         double delta,
+                         double dist);
+
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge
     // Dubin's edge version
