@@ -36,6 +36,7 @@ set( HDRS
                 include/DRRT/drrt_data_structures.h
                 include/DRRT/edge.h
                 include/DRRT/dubinsedge.h
+                include/DRRT/holedge.h
                 include/DRRT/drrt_distance_functions.h
 		)
 
@@ -47,6 +48,7 @@ set( SRCS
                 src/list.cpp
                 src/jlist.cpp
                 src/dubinsedge.cpp
+                src/holedge.cpp
                 src/drrt_distance_functions.cpp
 		)
 

@@ -1,3 +1,10 @@
+/* edge.h
+ * Corin Sandford
+ * Edge class is abstract
+ * Make sure to handle case where cspace has time and where cspace does not
+ * have time
+ */
+
 #ifndef EDGE_H
 #define EDGE_H
 
@@ -14,6 +21,9 @@ class KDTree;
 // Edge for a Dubin's state space
 class Edge{
 public:
+    std::shared_ptr<CSpace> cspace;
+    std::shared_ptr<KDTree> tree;
+
     std::shared_ptr<KDTreeNode> startNode;
     std::shared_ptr<KDTreeNode> endNode;
     // This field should be populated by Edge::calculateTrajectory()
@@ -49,9 +59,14 @@ public:
 
     // Constructor
     Edge() : dist(-1) { trajectory.resize(MAXPATHNODES,4); }
-    Edge(std::shared_ptr<KDTreeNode> s, std::shared_ptr<KDTreeNode> e)
-        : startNode(s), endNode(e)
-    {trajectory.resize(MAXPATHNODES,4);}
+    Edge(std::shared_ptr<CSpace> CS,
+         std::shared_ptr<KDTree> T,
+         std::shared_ptr<KDTreeNode> s,
+         std::shared_ptr<KDTreeNode> e)
+        : cspace(CS), tree(T), startNode(s), endNode(e)
+    {
+        trajectory.resize(MAXPATHNODES,4);
+    }
 
 
     /////////////////////// Critical Functions ///////////////////////
@@ -100,7 +115,9 @@ public:
 
     // Allocates a new edge
     // This must be implemented by all edge types!!
-    static std::shared_ptr<Edge> newEdge(std::shared_ptr<KDTreeNode> startNode,
+    static std::shared_ptr<Edge> newEdge(std::shared_ptr<CSpace> S,
+                                         std::shared_ptr<KDTree> Tree,
+                                         std::shared_ptr<KDTreeNode> startNode,
                                          std::shared_ptr<KDTreeNode> endNode);
 
     // Saturate moving nP within delta of cP
@@ -113,7 +130,7 @@ public:
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge
     // Dubin's edge version
-    virtual bool validMove(std::shared_ptr<CSpace> S)=0;
+    virtual bool validMove()=0;
 
     /* Returns the pose of a robot that is located dist along the edge
      * Note that 'dist' and 'far' are with respect to whatever type of
@@ -131,12 +148,11 @@ public:
      * velocity and minimum turning radius. At the very least this function
      * should populate the dist field of edge
      */
-    virtual void calculateTrajectory(std::shared_ptr<CSpace> S,
-                                     std::shared_ptr<KDTree> Tree)=0;
+    virtual void calculateTrajectory()=0;
 
     // This calculates a trajectory of what the robot is supposed to do
     // when it is hovering "in place". Dubin's edge version
-    virtual void calculateHoverTrajectory(std::shared_ptr<CSpace> S)=0;
+    virtual void calculateHoverTrajectory()=0;
 
 
     ///////////////////// Collision Checking Functions /////////////////////

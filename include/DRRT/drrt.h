@@ -368,8 +368,9 @@ bool rewire( std::shared_ptr<Queue> Q,
 // of the nodes in Q.OS stack (that have higher cost). This also takes
 // the robot to remember if node the robot was moving at is one of the
 // nodes that has become an orphan. Returns true if successful.
-bool propogateDescendants( std::shared_ptr<Queue> Q,
-                           std::shared_ptr<RobotData> R);
+bool propogateDescendants(std::shared_ptr<Queue> Q,
+                          std::shared_ptr<KDTree> Tree,
+                          std::shared_ptr<RobotData> R);
 
 /* If C-Space has a time dimension, add a sequence of descendents
  * to the root, where each great^n-grandchild is at the same

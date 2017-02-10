@@ -301,11 +301,11 @@ bool extend(std::shared_ptr<CSpace> S,
         // gets from newNode to closestNode while obeying the constraints
         // of the state space and the dynamics of the robot
         std::shared_ptr<Edge> thisEdge
-                = Edge::newEdge( newNode, closestNode );
-        thisEdge->calculateTrajectory( S, Tree );
+                = Edge::newEdge(S, Tree, newNode, closestNode);
+        thisEdge->calculateTrajectory();
 
         // Figure out if we can link to the nearest node
-        if ( !thisEdge->validMove( S )
+        if ( !thisEdge->validMove()
              || explicitEdgeCheck( S, thisEdge) ) {
             // We cannot link to nearest neighbor
             return false;
@@ -360,14 +360,14 @@ bool extend(std::shared_ptr<CSpace> S,
             // Calculate the shortest trajectory (and its distance) that
             // gets from nearNode to newNode while obeying the constraints
             // of the state space and the dynamics of the robot
-            thisEdge = Edge::newEdge( nearNode, newNode );
-            thisEdge->calculateTrajectory( S, Tree );
+            thisEdge = Edge::newEdge( S, Tree, nearNode, newNode );
+            thisEdge->calculateTrajectory();
 
             // Rewire neighbors that would do betten to use this node
             // as their parent unless they are in collision or
             // impossible due to dynamics of robot/space
             if( nearNode->rrtLMC > newNode->rrtLMC + thisEdge->dist
-                    && thisEdge->validMove( S )
+                    && thisEdge->validMove()
                     && !explicitEdgeCheck( S, thisEdge ) ) {
                 // Make this node the parent of the neighbor node
                 nearNode->rrtParentEdge = thisEdge;
@@ -433,10 +433,10 @@ bool extend(std::shared_ptr<CSpace> S,
             // simply the reverse of each other, therefore we need to
             // calculate and check the trajectory along the edge from
             // nearNode to newNode.
-            thisEdge = Edge::newEdge( nearNode, newNode );
-            thisEdge->calculateTrajectory( S, Tree );
+            thisEdge = Edge::newEdge( S, Tree, nearNode, newNode );
+            thisEdge->calculateTrajectory();
 
-            if( thisEdge->validMove( S )
+            if( thisEdge->validMove()
                     && !explicitEdgeCheck( S, thisEdge ) ) {
                 makeNeighborOf( newNode, nearNode, thisEdge );
             } else {
@@ -501,7 +501,8 @@ bool extend(std::shared_ptr<CSpace> S,
          */
         std::shared_ptr<KDTreeNode> parentNode
                 = newNode->rrtParentEdge->endNode;
-        std::shared_ptr<Edge> backEdge = Edge::newEdge( parentNode, newNode );
+        std::shared_ptr<Edge> backEdge
+                = Edge::newEdge( S, Tree, parentNode, newNode );
         backEdge->dist = INF;
         parentNode->SuccessorList->JlistPush( backEdge, INF );
         newNode->successorListItemInParent
@@ -537,11 +538,11 @@ bool extend(std::shared_ptr<CSpace> S,
             // In the general case, the trajectories along edges are not simply
             // the reverse of each other, therefore we need to calculate
             // and check the trajectory along the edge from nearNode to newNode
-            thisEdge = Edge::newEdge( nearNode, newNode );
-            thisEdge->calculateTrajectory( S, Tree );
+            thisEdge = Edge::newEdge( S, Tree, nearNode, newNode );
+            thisEdge->calculateTrajectory();
 
 
-            if( thisEdge->validMove(S)
+            if( thisEdge->validMove()
                     && !explicitEdgeCheck(S,thisEdge) ) {
                 // Add to initial in neighbor list of newnode
                 // (allows information propogation from newNode to
@@ -625,8 +626,8 @@ void findBestParent(std::shared_ptr<CSpace> S,
         // that gets from newNode to nearNode while obeying the
         // constraints of the state space and the dynamics
         // of the robot
-        thisEdge = Edge::newEdge( newNode, nearNode );
-        thisEdge->calculateTrajectory( S, Tree );
+        thisEdge = Edge::newEdge( S, Tree, newNode, nearNode );
+        thisEdge->calculateTrajectory();
 
         if( saveAllEdges ) {
             nearNode->tempEdge = thisEdge;
@@ -634,7 +635,7 @@ void findBestParent(std::shared_ptr<CSpace> S,
 
         // Check for validity vs edge collisions vs obstacles and
         // vs the time-dynamics of the robot and space
-        if( explicitEdgeCheck(S,thisEdge) || !thisEdge->validMove(S) ) {
+        if( explicitEdgeCheck(S,thisEdge) || !thisEdge->validMove() ) {
             if( saveAllEdges ) {
                 nearNode->tempEdge->dist = INF;
             }
@@ -742,7 +743,7 @@ bool recalculateLMC(std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node,
         neighborDist = neighborEdge->dist;
 
         if( node->rrtLMC > neighborNode->rrtLMC + neighborDist
-                && neighborEdge->validMove( Q->S ) ) {
+                && neighborEdge->validMove() ) {
             // Found a potentially better parent
             node->rrtLMC = neighborNode->rrtLMC + neighborDist;
             node->rrtParentEdge = listItem->edge;
@@ -937,7 +938,8 @@ void makeParentOf( std::shared_ptr<KDTreeNode> newParent,
     // successor list and save a pointer to its position in
     // that list. This edge is used to help keep track of
     // successors and not for movement.
-    std::shared_ptr<Edge> backEdge = Edge::Edge::newEdge( newParent, node );
+    std::shared_ptr<Edge> backEdge
+            = Edge::Edge::newEdge(edge->cspace, edge->tree, newParent, node );
     backEdge->dist = INF;
     newParent->SuccessorList->JlistPush( backEdge, INF );
     node->successorListItemInParent = newParent->SuccessorList->front;
@@ -983,7 +985,7 @@ bool recalculateLMCMineVTwo(std::shared_ptr<Queue> Q,
         if( node.get()->rrtLMC > neighborNode->rrtLMC + neighborDist &&
                 (!neighborNode->rrtParentUsed ||
                 neighborNode->rrtParentEdge->endNode != node) &&
-                neighborEdge->validMove(Q->S) /*Not sure why this last part of this check is necessary*/ ) {
+                neighborEdge->validMove() /*Not sure why this last part of this check is necessary*/ ) {
             // Found a better parent
             node->rrtLMC = neighborNode->rrtLMC + neighborDist;
             rrtParent = neighborNode;
@@ -1034,7 +1036,7 @@ bool rewire( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node,
         // initially created that cannot reach this node
         if( (node->rrtParentUsed
              && node->rrtParentEdge->endNode == neighborNode)
-                || !neighborEdge->validMove(Q->S) ) {
+                || !neighborEdge->validMove() ) {
             listItem = nextInNeighbor( thisNodeInNeighbors, Q );
             continue;
         }
@@ -1066,6 +1068,7 @@ bool rewire( std::shared_ptr<Queue> Q, std::shared_ptr<KDTreeNode> node,
 }
 
 bool propogateDescendants(std::shared_ptr<Queue> Q,
+                          std::shared_ptr<KDTree> Tree,
                           std::shared_ptr<RobotData> R)
 {
     if( Q->OS->length <= 0 ) {
@@ -1154,7 +1157,8 @@ bool propogateDescendants(std::shared_ptr<Queue> Q,
             thisNode->rrtParentEdge->endNode->SuccessorList->JlistRemove( thisNode->successorListItemInParent );
 
             // thisNode now has no parent
-            thisNode->rrtParentEdge = Edge::newEdge(thisNode, thisNode);
+            thisNode->rrtParentEdge
+                    = Edge::newEdge(Q->S,Tree,thisNode,thisNode);
             thisNode->rrtParentEdge->dist = INF;
             thisNode->rrtParentUsed = false;
         }
@@ -1191,8 +1195,8 @@ void addOtherTimesToRoot( std::shared_ptr<CSpace> S,
         newNode = std::make_shared<KDTreeNode>(newPose);
 
         // Edge from newNode to previousNode
-        thisEdge = Edge::newEdge( newNode, previousNode );
-        thisEdge->calculateHoverTrajectory( S );
+        thisEdge = Edge::newEdge( S, Tree, newNode, previousNode );
+        thisEdge->calculateHoverTrajectory();
 
         if( searchType == "RRT*" ) {
             // Make this node the parent of the neighbor node
@@ -1264,7 +1268,7 @@ void findNewTarget(std::shared_ptr<CSpace> S,
     std::shared_ptr<KDTreeNode> dummyRobotNode
             = std::make_shared<KDTreeNode>(R->robotPose);
     std::shared_ptr<Edge> edgeToBestNeighbor
-            = Edge::newEdge(dummyRobotNode,dummyRobotNode);
+            = Edge::newEdge(S,Tree,dummyRobotNode,dummyRobotNode);
 
     double bestDistToNeighbor, bestDistToGoal;
     std::shared_ptr<KDTreeNode> bestNeighbor, neighborNode;
@@ -1281,15 +1285,15 @@ void findNewTarget(std::shared_ptr<CSpace> S,
         while( ptr != ptr->child ) {
             neighborNode = ptr->node;
 
-            thisEdge = Edge::newEdge( dummyRobotNode, neighborNode );
-            thisEdge->calculateTrajectory( S, Tree );
+            thisEdge = Edge::newEdge( S,Tree,dummyRobotNode, neighborNode );
+            thisEdge->calculateTrajectory();
 
-            if( thisEdge->validMove(S)
+            if( thisEdge->validMove()
                     && !explicitEdgeCheck(S,thisEdge) ) {
                 // A safe point was found, see if it is the best so far
                 distToGoal = neighborNode->rrtLMC + thisEdge->dist;
                 if( distToGoal < bestDistToGoal
-                        && thisEdge->validMove(S) ) {
+                        && thisEdge->validMove() ) {
                     // Found a new and better neighbor
                     bestDistToGoal = distToGoal;
                     bestDistToNeighbor = thisEdge->dist;

@@ -3,12 +3,13 @@
 
 /////////////////////// Critical Functions ///////////////////////
 
-/////////////////////// Edge Functions ///////////////////////
-
-std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<KDTreeNode> startNode,
+/////////////////////// Static Edge Functions ///////////////////////
+std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<CSpace> S,
+                                    std::shared_ptr<KDTree> Tree,
+                                    std::shared_ptr<KDTreeNode> startNode,
                                     std::shared_ptr<KDTreeNode> endNode)
 {
-    return std::make_shared<DubinsEdge>(startNode,endNode);
+    return std::make_shared<DubinsEdge>(S,Tree,startNode,endNode);
 }
 
 void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
@@ -52,15 +53,16 @@ void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
     }
 }
 
-bool DubinsEdge::validMove(std::shared_ptr<CSpace> S)
+/////////////////////// Virtual Edge Functions ///////////////////////
+bool DubinsEdge::validMove()
 {
-    if( S->spaceHasTime ) {
+    if( this->cspace->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
         // the root of the search tree, and thus the time of startNode must be
         // greater than the time of endNode
         return ((this->startNode->position(2) > this->endNode->position(2))
-                && ((S->dubinsMinVelocity <= this->velocity)
-                    && (this->velocity <= S->dubinsMaxVelocity)));
+                && ((this->cspace->dubinsMinVelocity <= this->velocity)
+                    && (this->velocity <= this->cspace->dubinsMaxVelocity)));
     }
     // if space does not have time then we assume that a move is always valid
     return true;
@@ -156,10 +158,9 @@ Eigen::VectorXd DubinsEdge::poseAtTimeAlongEdge(double timeAlongEdge)
     return vec;
 }
 
-void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
-                                     std::shared_ptr<KDTree> Tree)
+void DubinsEdge::calculateTrajectory()
 {
-    double r_min = S->minTurningRadius;
+    double r_min = this->cspace->minTurningRadius;
 
     Eigen::Vector2d initial_location = this->startNode->position.head(2);
     double initial_theta = this->startNode->position(3);
@@ -704,7 +705,7 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
 
     if( this->Wdist == INF ) {
         this->dist = INF;
-    } else if( S->spaceHasTime ) {
+    } else if( this->cspace->spaceHasTime ) {
         // Calculate C-space edge length
         // Note this HARDCODED batch version of dubinsDistAlongPath only
         // works because we assume constant speed along the edge
@@ -767,7 +768,7 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
         this->trajectory(0,2) = this->startNode->position(2);
         double cumulativeDist = 0.0;
         for( int j = 1; j < this->trajectory.rows()-1; j++ ) {
-            cumulativeDist += Tree->distanceFunction(
+            cumulativeDist += this->tree->distanceFunction(
                         this->trajectory.row(j-1).head(2),
                         this->trajectory.row(j).head(2));
             this->trajectory(j,2) = this->startNode->position(2)
@@ -800,14 +801,14 @@ void DubinsEdge::calculateTrajectory(std::shared_ptr<CSpace> S,
     this->distOriginal = this->dist;
 }
 
-void DubinsEdge::calculateHoverTrajectory(std::shared_ptr<CSpace> S)
+void DubinsEdge::calculateHoverTrajectory()
 {
     this->edgeType = "xxx";
     this->Wdist = 0.0;
     this->dist = 0.0;
 
-    if( S->spaceHasTime ) {
-        this->velocity = S->dubinsMinVelocity;
+    if( this->cspace->spaceHasTime ) {
+        this->velocity = this->cspace->dubinsMinVelocity;
         this->trajectory.row(0) = this->startNode->position.head(3);
         this->trajectory.row(1) = this->endNode->position.head(3);
     } else {

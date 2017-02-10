@@ -10,19 +10,21 @@
 class DubinsEdge : public Edge
 {
 public:
+    // Constructors
     DubinsEdge()
         : Edge() {}
 
-    DubinsEdge(std::shared_ptr<KDTreeNode> start,
+    DubinsEdge(std::shared_ptr<CSpace> cspace,
+               std::shared_ptr<KDTree> tree,
+               std::shared_ptr<KDTreeNode> start,
                std::shared_ptr<KDTreeNode> end)
-        : Edge(start,end) {}
+        : Edge(cspace,tree,start,end) {}
 
-    bool validMove(std::shared_ptr<CSpace> S);
+    bool validMove();
     Eigen::VectorXd poseAtDistAlongEdge(double distAlongEdge);
     Eigen::VectorXd poseAtTimeAlongEdge(double timeAlongEdge);
-    void calculateTrajectory(std::shared_ptr<CSpace> S,
-                             std::shared_ptr<KDTree> Tree);
-    void calculateHoverTrajectory(std::shared_ptr<CSpace> S);
+    void calculateTrajectory();
+    void calculateHoverTrajectory();
 };
 
 #endif // DUBINSEDGE_H

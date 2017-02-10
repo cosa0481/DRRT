@@ -282,15 +282,16 @@ std::shared_ptr<RobotData> RRTX(Problem p)
 }
 
 /// Distance Function for use in the RRTx algorithm
-// This was created by Michael Otte (R3SDist)
+// This was created by Michael Otte (R3SDist) using [x,y,t,theta] (Dubin's)
 double distance_function( Eigen::VectorXd a, Eigen::VectorXd b )
 {
+//    return sqrt( pow(a(0)-b(0),2) + pow(a(1)-b(1),2) );
     Eigen::ArrayXd temp = a.head(2) - b.head(2);
     temp = temp*temp;
     return sqrt( temp.sum()
                  + pow( std::min( std::abs(a(3)-b(3)),
                                   std::min(a(3),b(3)) + 2.0*PI
-                                  - std::max(a(3),b(3)) ), 2 ) );
+                                    - std::max(a(3),b(3)) ), 2 ) );
 }
 
 int main(int argc, char* argv[])
@@ -321,7 +322,7 @@ int main(int argc, char* argv[])
     config_space->randNode = "randNodeOrFromStack";    // sampling function
     config_space->pGoal = 0.01; // probability of picking goal when sampling
 
-    config_space->spaceHasTime = false;                // not using time
+    config_space->spaceHasTime = false; // time not working, not using time
     config_space->spaceHasTheta = true;                // using theta (yaw)
 
     /// KDTREE VARIABLES
