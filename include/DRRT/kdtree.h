@@ -30,7 +30,7 @@ public:
     std::shared_ptr<KDTreeNode> root;   // the root node
 
     // Constructors
-    KDTree( int _d, Eigen::VectorXi _wraps, Eigen::VectorXd _wrapPoints )
+    KDTree(int _d, Eigen::VectorXi _wraps, Eigen::VectorXd _wrapPoints)
         :   d(_d), distanceFunction(0), treeSize(0),
             numWraps(_wraps.size()), wraps(_wraps), wrapPoints(_wrapPoints)
     {}

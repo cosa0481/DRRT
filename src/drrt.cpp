@@ -876,7 +876,7 @@ void cullCurrentNeighbors( std::shared_ptr<KDTreeNode> node,
 }
 
 std::shared_ptr<JListNode> nextOutNeighbor(
-        std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q )
+        std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q)
 {
     if( It->listFlag == 0 ) {
         It->listItem = It->thisNode->InitialNeighborListOut->front;
@@ -898,7 +898,7 @@ std::shared_ptr<JListNode> nextOutNeighbor(
 }
 
 std::shared_ptr<JListNode> nextInNeighbor(
-        std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q )
+        std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q)
 {
     if( It->listFlag == 0 ) {
         It->listItem = It->thisNode->InitialNeighborListIn->front;
@@ -1238,9 +1238,9 @@ void addOtherTimesToRoot( std::shared_ptr<CSpace> S,
 
 // debug: gets goal node which should be too far away on first movement
 void findNewTarget(std::shared_ptr<CSpace> S,
-                    std::shared_ptr<KDTree> Tree,
-                    std::shared_ptr<RobotData> R,
-                    double hyperBallRad )
+                   std::shared_ptr<KDTree> Tree,
+                   std::shared_ptr<RobotData> R,
+                   double hyperBallRad )
 {
     R->robotEdgeUsed = false;
     R->distAlongRobotEdge = 0.0;
@@ -1343,7 +1343,7 @@ void findNewTarget(std::shared_ptr<CSpace> S,
                                                      R->robotPose);
             KDTree::saturate(
                         std::make_shared<Eigen::Vector4d>(newNode->position),
-                        R->robotPose, DELTA, thisDist);
+                        R->robotPose, S->delta, thisDist);
             Tree->kdInsert(newNode);
         }
         Tree->kdFindMoreWithinRange( L, searchBallRad, R->robotPose );
@@ -1352,10 +1352,13 @@ void findNewTarget(std::shared_ptr<CSpace> S,
     Tree->emptyRangeList(L); // cleanup
 }
 
-void moveRobot(std::shared_ptr<CSpace> S, std::shared_ptr<Queue> Q,
-                std::shared_ptr<KDTree> Tree, double slice_time,
-                std::shared_ptr<KDTreeNode> root, double hyperBallRad,
-                std::shared_ptr<RobotData> R )
+void moveRobot(std::shared_ptr<CSpace> S,
+               std::shared_ptr<Queue> Q,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> root,
+               double slice_time,
+               double hyperBallRad,
+               std::shared_ptr<RobotData> R )
 {
     // Start by updating the location of the robot based on how
     // it moved since the last update (as well as the total path that
