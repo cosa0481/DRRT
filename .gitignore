@@ -2,3 +2,5 @@ debug*
 *.fig
 *.mat
 *.m
+*.txt
+*.jl

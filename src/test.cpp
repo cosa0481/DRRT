@@ -39,32 +39,15 @@ std::shared_ptr<RobotData> RRTX(Problem p)
 
     /// QUEUE
     std::shared_ptr<Queue> Q = std::make_shared<Queue>();
-    if( p.search_type == "RRT" ) {
-        Q->S = p.c_space;
-        Q->type = p.search_type;
-    } else if( p.search_type == "RRT*" ) {
-        Q->S = p.c_space;
-        Q->type = p.search_type;
-    } else if( p.search_type == "RRT#" ) {
-        // false >> use priority queue functions (keyQ)
-        // sorted based on cost from goal
-        Q->Q = make_shared<BinaryHeap>(false);
-        Q->S = p.c_space;
-        Q->type = p.search_type;
-    } else if( p.search_type == "RRTx" ) {
-        // false >> use priority queue functions (keyQ)
-        // sorted based on cost from goal
-        Q->Q = make_shared<BinaryHeap>(false);
-        // Obstacle successor stack
-        // true >> uses KDTreeNode's
-        Q->OS = std::make_shared<JList>(true);
-        Q->S = p.c_space;
-        Q->changeThresh = p.change_threshold;
-        Q->type = p.search_type;
-    } else {
-        std::cout << "Unknown search type: " << p.search_type << std::endl;
-        exit(1);
-    }
+    // false >> use priority queue functions (keyQ)
+    // sorted based on cost from goal
+    Q->Q = make_shared<BinaryHeap>(false);
+    // Obstacle successor stack
+    // true >> uses KDTreeNode's
+    Q->OS = std::make_shared<JList>(true);
+    Q->S = p.c_space;
+    Q->changeThresh = p.change_threshold;
+    Q->type = p.search_type;
 
     // stores a stack of points that we desire
     // to insert in the future (used when an
@@ -251,147 +234,6 @@ std::shared_ptr<RobotData> RRTX(Problem p)
             }
         }
     }
-
-//    int i = 0;
-//    while( true ) {
-
-//        double hyperBallRad;
-//        hyperBallRad = std::min( p.c_space->delta, p.ball_constant*(
-//               pow(std::log(1+kdtree->treeSize)/(kdtree->treeSize),
-//                   1/p.c_space->d) ));
-//        now_time = getTimeNs(startTime); // time in nanoseconds
-
-//        // Calculate the end time of the first slice
-//        slice_end_time = (1+sliceCounter)*p.slice_time;
-
-//        // See if warmup time has ended
-//        warmUpTimeJustEnded = false;
-//        if( p.c_space->inWarmupTime
-//                && p.c_space->warmupTime < p.c_space->timeElapsed ) {
-//            warmUpTimeJustEnded = true;
-//            p.c_space->inWarmupTime = false;
-//        }
-
-
-//        double now = getTimeNs(startTime); // time in nanoseconds
-//        p.c_space->timeElapsed = (now - p.c_space->startTimeNs)/1000000000.0
-//                               - saveElapsedTime; // time in seconds
-//        // If robot has used all of its allotted planning time of this slice
-//        if( p.c_space->timeElapsed >= slice_end_time ) {
-//            cout << "\nIteration: " << i << endl
-//                 << "------------" << endl;
-//            i++;
-//            // Calculate the end time of the next slice
-//            slice_end_time = (1+sliceCounter)*p.slice_time;
-
-//            robot_slice_start = now_time;
-//            sliceCounter += 1;
-//            truncElapsedTime = floor(p.c_space->timeElapsed*1000.0)/1000.0;
-
-//            /// MOVE ROBOT
-//            // Move robot if the robot is allowed to move
-//            /* Changed elapsedTime[checkPtr] to S->timeElapsed
-//             * since I believe they are the same at this point */
-//            if(p.c_space->timeElapsed > p.planning_only_time + p.slice_time) {
-//                if( p.move_robot_flag ) {
-//                    // Assumes Q is rrtxQueue and Q.Q is its BinaryHeap
-//                    moveRobot(Q,kdtree,root,p.slice_time,
-//                              hyperBallRad,robot);
-//                    rHist.row(histPos) = robot->robotPose;
-//                    histPos++;
-//                    if( robot->robotEdge != prev_edge) {
-//                        // Record data (edges)
-//                        kdEdge.row(kdEdgePos++)
-//                                = robot->robotEdge->startNode->position;
-//                        kdEdge.row(kdEdgePos++)
-//                                = robot->robotEdge->endNode->position;
-//                    }
-//                } else {
-//                    cout << "done (robot not moved)" << endl;
-//                    break;
-//                }
-//            }
-//            prev_edge = robot->robotEdge;
-
-//            // Make graph consistent (RRT# and RRTx)
-//            if( p.search_type == "RRTx" || p.search_type == "RRT#" ) {
-//                reduceInconsistency(Q, p.c_space->moveGoal, robotRads,
-//                                    root, hyperBallRad);
-//                if( p.c_space->moveGoal->rrtLMC != oldrrtLMC ) {
-//                    oldrrtLMC = p.c_space->moveGoal->rrtLMC;
-//                }
-//            }
-
-//            /// CHECK FOR COMPLETION
-//            // Check if robot has reached its movement goal
-//            currentDist = kdtree->distanceFunction(robot->robotPose,
-//                                                   root->position);
-//            cout << "Distance to goal: " << currentDist
-//                 << " units" << endl;
-//            if( currentDist < p.goal_threshold ) {
-//                cout << "Reached goal" << endl;
-//                cout << root->position << endl;
-//                break;
-//            }
-//            else if(kdtree->distanceFunction(robot->robotPose,prevPose) > 10) {
-//                cout << "Impossible move" << endl;
-//                break;
-//            }
-//            prevPose = robot->robotPose;
-
-//            // START normal graph search stuff
-//            /// GET RANDOM NODE
-//            std::shared_ptr<KDTreeNode> newNode
-//                    = std::make_shared<KDTreeNode>();
-//            std::shared_ptr<KDTreeNode> closestNode
-//                    = std::make_shared<KDTreeNode>();
-//            std::shared_ptr<double> closestDist
-//                    = std::make_shared<double>(INF);
-
-//            newNode = randNodeOrFromStack( p.c_space );
-
-//            // Happens when we explicitly sample the goal every so often
-//            if( newNode->kdInTree ) continue;
-
-//            // Find closest node already in the graph to the new node
-//            kdtree->kdFindNearest(closestNode, closestDist, newNode->position);
-
-//            /// SATURATE NODE
-//            if( *closestDist > p.c_space->delta
-//                    && newNode != p.c_space->goalNode ) {
-//                double thisDist = kdtree->distanceFunction(newNode->position,
-//                                                       closestNode->position);
-//                std::shared_ptr<Eigen::Vector4d> position
-//                        = std::make_shared<Eigen::Vector4d>(newNode->position);
-//                Edge::saturate(position, closestNode->position,
-//                                 p.c_space->delta, thisDist);
-//                newNode->position = *position;
-//            }
-
-//            ///*** ASSUMING NO OBSTACLES FOR NOW ***///
-//            // Check for collisions vs obstacles
-//            //bool explicitlyUnSafe;
-//            //explicitNodeCheck( explicitlyUnSafe, S, newNode );
-//            //if( explicitlyUnSafe ) {
-//            //    continue;
-//            //}
-
-//            /// EXTEND GRAPH
-//            extend(kdtree, Q, newNode, closestNode,
-//                   p.c_space->delta, hyperBallRad, p.c_space->moveGoal);
-//            kdTree.row(kdTreePos) = newNode->position;
-//            kdTreePos++;
-
-//            // Make graph consistent (RRT# and RRTx)
-//            if( p.search_type == "RRTx" || p.search_type == "RRT#" ) {
-//                reduceInconsistency(Q, p.c_space->moveGoal, robotRads,
-//                                    root, hyperBallRad);
-//                if( p.c_space->moveGoal->rrtLMC != oldrrtLMC ) {
-//                    oldrrtLMC = p.c_space->moveGoal->rrtLMC;
-//                }
-//            }
-//        }
-//    }
     return robot;
 }
 
