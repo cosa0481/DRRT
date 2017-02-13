@@ -43,7 +43,8 @@ Eigen::VectorXd HolEdge::poseAtDistAlongEdge(double distAlongEdge)
     // Find the piece of trajectory that contains the point at the desired distance
     int i = 1;
     double thisDist = INF;
-    bool timeInPath = (this->trajectory.cols() >= 3);
+    // Check if 3rd column is not zero (3rd column is time)
+    bool timeInPath = (this->trajectory.col(2)(0) != 0.0);
     while( i <= this->trajectory.rows() ) {
         double wtime = dubinsDistAlongTimePath( this->trajectory.row(i-1),
                                                 this->trajectory.row(i) );
@@ -106,7 +107,7 @@ Eigen::VectorXd HolEdge::poseAtTimeAlongEdge(double timeAlongEdge)
 
     // Now calculate pose along that piece
     double ratio = (this->trajectory(i-1,2)
-                    - (this->startNode->position(2)-timeAlongEdge))
+            - (this->startNode->position(2)-timeAlongEdge))
             / (this->trajectory(i-1,2) - this->trajectory(i,2));
     Eigen::VectorXd ret = this->trajectory.row(i-1)
             + ratio*(this->trajectory.row(i) - this->trajectory.row(i-1));

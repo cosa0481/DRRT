@@ -58,7 +58,7 @@ public:
                                 std::shared_ptr<double> nearestNodeDist,
                                 std::shared_ptr<KDTreeNode> root,
                                 Eigen::VectorXd queryPoint,
-                                std::shared_ptr<KDTreeNode> suggestedClosestNode,
+                         std::shared_ptr<KDTreeNode> suggestedClosestNode,
                                 double suggestedClosestDist);
 
     // Returns the nearest node to the queryPoint and also its distance
@@ -69,11 +69,12 @@ public:
     // Returns the nearest node to queryPoint in the subtree starting at
     // the root and also its distance. It also takes a suggestion for a
     // possible closest node (and uses that if it is best)
-    bool kdFindNearestinSubtreeWithGuess(std::shared_ptr<KDTreeNode> nearestNode,
-                                         std::shared_ptr<double> nearestNodeDist,
+    bool kdFindNearestinSubtreeWithGuess(
+                                std::shared_ptr<KDTreeNode> nearestNode,
+                                std::shared_ptr<double> nearestNodeDist,
                                          std::shared_ptr<KDTreeNode> root,
                                          Eigen::VectorXd queryPoint,
-                               std::shared_ptr<KDTreeNode> suggestedClosestNode,
+                      std::shared_ptr<KDTreeNode> suggestedClosestNode,
                                          double suggestedClosestDist);
 
     // Returns the nearest node to the queryPoint and also its distance
@@ -89,7 +90,7 @@ public:
     // without growing past k, otherwise the current top is removed
     // and then the top is returned
 
-    std::shared_ptr<KDTreeNode> addToKNNHeap(BinaryHeap* H,
+    std::shared_ptr<KDTreeNode> addToKNNHeap(std::shared_ptr<BinaryHeap> H,
                                              std::shared_ptr<KDTreeNode> node,
                                              double key, int k);
 
@@ -106,9 +107,10 @@ public:
      */
     bool kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
                                  std::shared_ptr<double> farthestNodeDist,
-                                 std::shared_ptr<KDTreeNode> root, int k,
+                                 std::shared_ptr<KDTreeNode> root,
+                                 int k,
                                  Eigen::VectorXd queryPoint,
-                                 BinaryHeap* nearestHeap);
+                                 std::shared_ptr<BinaryHeap> nearestHeap);
 
     // Returns the K nearest nodes to queryPoint and olso their distances
     // Note that they are not sorted but are in reverse heap order

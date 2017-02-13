@@ -197,8 +197,7 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
 
 // Takes care of inserting a new node in RRT
 // Returns true if successful
-bool extend(std::shared_ptr<CSpace> S,
-            std::shared_ptr<KDTree> Tree,
+bool extend(std::shared_ptr<KDTree> Tree,
             std::shared_ptr<Queue> Q,
             std::shared_ptr<KDTreeNode> newNode,
             std::shared_ptr<KDTreeNode> closestNode,
@@ -400,8 +399,7 @@ void findNewTarget( std::shared_ptr<CSpace> S,
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot(std::shared_ptr<CSpace> S,
-               std::shared_ptr<Queue> Q,
+void moveRobot(std::shared_ptr<Queue> Q,
                std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> root,
                double slice_time,

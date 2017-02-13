@@ -29,7 +29,8 @@ double randDouble( double min, double max )
 
 /////////////////////// Node Functions ///////////////////////
 
-double extractPathLength( std::shared_ptr<KDTreeNode> node, std::shared_ptr<KDTreeNode> root )
+double extractPathLength( std::shared_ptr<KDTreeNode> node,
+                          std::shared_ptr<KDTreeNode> root )
 {
     double pathLength = 0.0;
     std::shared_ptr<KDTreeNode> thisNode = node;
@@ -78,7 +79,7 @@ std::shared_ptr<KDTreeNode> randNodeOrGoal( std::shared_ptr<CSpace> S )
     }
 }
 
-std::shared_ptr<KDTreeNode> randNodeIts( std::shared_ptr<CSpace> S )
+std::shared_ptr<KDTreeNode> randNodeIts(std::shared_ptr<CSpace> S)
 {
     if( S->itsUntilSample == 0 ) {
         S->itsUntilSample -= 1;
@@ -88,7 +89,7 @@ std::shared_ptr<KDTreeNode> randNodeIts( std::shared_ptr<CSpace> S )
     return randNodeOrGoal( S );
 }
 
-std::shared_ptr<KDTreeNode> randNodeTime( std::shared_ptr<CSpace> S )
+std::shared_ptr<KDTreeNode> randNodeTime(std::shared_ptr<CSpace> S)
 {
     if( S->waitTime != INF && S->timeElapsed >= S->waitTime ) {
         S->waitTime = INF;
@@ -100,7 +101,7 @@ std::shared_ptr<KDTreeNode> randNodeTime( std::shared_ptr<CSpace> S )
 //std::shared_ptr<KDTreeNode> randNodeTimeWithObstacleRemove( std::shared_ptr<CSpace> S ){}
 //std::shared_ptr<KDTreeNode> randNodeItsWithObstacleRemove( std::shared_ptr<CSpace> S ){}
 
-std::shared_ptr<KDTreeNode> randNodeOrFromStack( std::shared_ptr<CSpace> S )
+std::shared_ptr<KDTreeNode> randNodeOrFromStack(std::shared_ptr<CSpace> S)
 {
     if( S->sampleStack->length > 0 ) {
         // Using the sampleStack so KDTreeNode->position is popped
@@ -112,7 +113,8 @@ std::shared_ptr<KDTreeNode> randNodeOrFromStack( std::shared_ptr<CSpace> S )
     }
 }
 
-std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( std::shared_ptr<CSpace> S )
+std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack(
+        std::shared_ptr<CSpace> S)
 {
     if( S->sampleStack->length > 0 ) {
         // Using the sampleStack so KDTreeNode->position is popped
@@ -125,7 +127,13 @@ std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( std::shared_ptr<CSpace> S
             return newNode;
         }
 
-        double minTimeToReachNode = S->start(2) + sqrt( (newNode->position(0) - S->root->position(0))*(newNode->position(0) - S->root->position(0)) + (newNode->position(1) - S->root->position(1))*(newNode->position(1) - S->root->position(1)) ) / S->robotVelocity;
+        double minTimeToReachNode = S->start(2)
+                + sqrt(
+                        (newNode->position(0) - S->root->position(0))
+                        *(newNode->position(0) - S->root->position(0))
+                        + (newNode->position(1) - S->root->position(1))
+                        *(newNode->position(1) - S->root->position(1))
+                      ) / S->robotVelocity;
 
         // If point is too soon vs robot's available speed
         // or if it is in the "past" and the robot is moving
@@ -134,13 +142,15 @@ std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack( std::shared_ptr<CSpace> S
                  S->moveGoal != S->goalNode) ) {
             // Resample time in ok range
             double r = (double) rand() / (RAND_MAX);
-            newNode->position(2) = minTimeToReachNode + r * (S->moveGoal->position(2) - minTimeToReachNode);
+            newNode->position(2) = minTimeToReachNode
+                    + r * (S->moveGoal->position(2) - minTimeToReachNode);
         }
         return newNode;
     }
 }
 
-bool checkNeighborsForEdgeProblems( std::shared_ptr<CSpace> S, std::shared_ptr<KDTreeNode> thisNode )
+bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace> S,
+                                   std::shared_ptr<KDTreeNode> thisNode)
 {
     if( thisNode->rrtParentUsed ) {
 //        if( explicitEdgeCheck( S, thisNode, thisNode->rrtParentEdge->endNode ) ) {
@@ -164,9 +174,9 @@ bool checkNeighborsForEdgeProblems( std::shared_ptr<CSpace> S, std::shared_ptr<K
 
 /////////////////////// Geometric Functions ///////////////////////
 
-double distanceSqrdPointToSegment( Eigen::VectorXd point,
-                                   Eigen::VectorXd startPoint,
-                                   Eigen::VectorXd endPoint )
+double distanceSqrdPointToSegment(Eigen::VectorXd point,
+                                  Eigen::VectorXd startPoint,
+                                  Eigen::VectorXd endPoint)
 {
     double vx = point(0) - startPoint(0);
     double vy = point(1) - startPoint(1);
@@ -187,8 +197,8 @@ double distanceSqrdPointToSegment( Eigen::VectorXd point,
     }
 }
 
-double segmentDistSqrd( Eigen::VectorXd PA, Eigen::VectorXd PB,
-                        Eigen::VectorXd QA, Eigen::VectorXd QB )
+double segmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
+                       Eigen::VectorXd QA, Eigen::VectorXd QB)
 {
     // Check if the points are definately not in collision by seeing
     // if both points of Q are on the same side of line containing P and vice versa
@@ -255,7 +265,7 @@ double segmentDistSqrd( Eigen::VectorXd PA, Eigen::VectorXd PB,
     return distances.minCoeff();  //*std::min_element( distances.begin(), distances.end() );
 }
 
-int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind )
+int findIndexBeforeTime(Eigen::MatrixXd path, double timeToFind)
 {
     if( path.rows() < 1) {
         return -1;
@@ -271,7 +281,8 @@ int findIndexBeforeTime( Eigen::MatrixXd path, double timeToFind )
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
+bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
+                       std::shared_ptr<Edge> edge)
 {
     // If ignoring obstacles
     if( S->inWarmupTime ) return false;
@@ -288,25 +299,24 @@ bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge )
 
 /////////////////////// RRT Functions ///////////////////////
 
-bool extend(std::shared_ptr<CSpace> S,
-            std::shared_ptr<KDTree> Tree,
+bool extend(std::shared_ptr<KDTree> Tree,
             std::shared_ptr<Queue> Q,
             std::shared_ptr<KDTreeNode> newNode,
             std::shared_ptr<KDTreeNode> closestNode,
             double delta, double hyperBallRad,
-            std::shared_ptr<KDTreeNode> moveGoal )
+            std::shared_ptr<KDTreeNode> moveGoal)
 {
     if( Q->type == "RRT" ) {
         // First calculate the shortest trajectory (and its distance) that
         // gets from newNode to closestNode while obeying the constraints
         // of the state space and the dynamics of the robot
         std::shared_ptr<Edge> thisEdge
-                = Edge::newEdge(S, Tree, newNode, closestNode);
+                = Edge::newEdge(Q->S, Tree, newNode, closestNode);
         thisEdge->calculateTrajectory();
 
         // Figure out if we can link to the nearest node
         if ( !thisEdge->validMove()
-             || explicitEdgeCheck( S, thisEdge) ) {
+             || explicitEdgeCheck( Q->S, thisEdge) ) {
             // We cannot link to nearest neighbor
             return false;
         }
@@ -325,7 +335,7 @@ bool extend(std::shared_ptr<CSpace> S,
         Tree->kdFindWithinRange( nodeList, hyperBallRad, newNode->position );
 
         // Try to find and link to best parent
-        findBestParent( S, Tree, newNode, nodeList, closestNode, true);
+        findBestParent( Q->S, Tree, newNode, nodeList, closestNode, true);
         if( !newNode->rrtParentUsed ) {
             Tree->emptyRangeList( nodeList ); // clean up
             return false;
@@ -360,7 +370,7 @@ bool extend(std::shared_ptr<CSpace> S,
             // Calculate the shortest trajectory (and its distance) that
             // gets from nearNode to newNode while obeying the constraints
             // of the state space and the dynamics of the robot
-            thisEdge = Edge::newEdge( S, Tree, nearNode, newNode );
+            thisEdge = Edge::newEdge( Q->S, Tree, nearNode, newNode );
             thisEdge->calculateTrajectory();
 
             // Rewire neighbors that would do betten to use this node
@@ -368,7 +378,7 @@ bool extend(std::shared_ptr<CSpace> S,
             // impossible due to dynamics of robot/space
             if( nearNode->rrtLMC > newNode->rrtLMC + thisEdge->dist
                     && thisEdge->validMove()
-                    && !explicitEdgeCheck( S, thisEdge ) ) {
+                    && !explicitEdgeCheck( Q->S, thisEdge ) ) {
                 // Make this node the parent of the neighbor node
                 nearNode->rrtParentEdge = thisEdge;
                 nearNode->rrtParentUsed = true;
@@ -391,7 +401,7 @@ bool extend(std::shared_ptr<CSpace> S,
         // edges from newNode to the neighbors in the field "tempEdge"
         // of the neighbors. This saves time in the case that
         // trajectory calculation is complicated.
-        findBestParent( S, Tree, newNode, nodeList, closestNode, true );
+        findBestParent( Q->S, Tree, newNode, nodeList, closestNode, true );
 
         // If no parent was found then ignore this node
         if( !newNode->rrtParentUsed ) {
@@ -433,11 +443,11 @@ bool extend(std::shared_ptr<CSpace> S,
             // simply the reverse of each other, therefore we need to
             // calculate and check the trajectory along the edge from
             // nearNode to newNode.
-            thisEdge = Edge::newEdge( S, Tree, nearNode, newNode );
+            thisEdge = Edge::newEdge( Q->S, Tree, nearNode, newNode );
             thisEdge->calculateTrajectory();
 
             if( thisEdge->validMove()
-                    && !explicitEdgeCheck( S, thisEdge ) ) {
+                    && !explicitEdgeCheck( Q->S, thisEdge ) ) {
                 makeNeighborOf( newNode, nearNode, thisEdge );
             } else {
                 // Edge cannot be created
@@ -486,7 +496,7 @@ bool extend(std::shared_ptr<CSpace> S,
         // the edges from newNode to the neighbors in the field
         // "tempEdge" of the neighbors. This saves time in the
         // case that trajectory calculation is complicated.
-        findBestParent( S, Tree, newNode, nodeList, closestNode, true );
+        findBestParent( Q->S, Tree, newNode, nodeList, closestNode, true );
 
         // If no parent was fonud then ignore this node
         if( !newNode->rrtParentUsed ) {
@@ -502,7 +512,7 @@ bool extend(std::shared_ptr<CSpace> S,
         std::shared_ptr<KDTreeNode> parentNode
                 = newNode->rrtParentEdge->endNode;
         std::shared_ptr<Edge> backEdge
-                = Edge::newEdge( S, Tree, parentNode, newNode );
+                = Edge::newEdge( Q->S, Tree, parentNode, newNode );
         backEdge->dist = INF;
         parentNode->SuccessorList->JlistPush( backEdge, INF );
         newNode->successorListItemInParent
@@ -538,12 +548,12 @@ bool extend(std::shared_ptr<CSpace> S,
             // In the general case, the trajectories along edges are not simply
             // the reverse of each other, therefore we need to calculate
             // and check the trajectory along the edge from nearNode to newNode
-            thisEdge = Edge::newEdge( S, Tree, nearNode, newNode );
+            thisEdge = Edge::newEdge( Q->S, Tree, nearNode, newNode );
             thisEdge->calculateTrajectory();
 
 
             if( thisEdge->validMove()
-                    && !explicitEdgeCheck(S,thisEdge) ) {
+                    && !explicitEdgeCheck(Q->S,thisEdge) ) {
                 // Add to initial in neighbor list of newnode
                 // (allows information propogation from newNode to
                 // nearNode always)
@@ -688,7 +698,8 @@ std::shared_ptr<JListNode> nextOutNeighbor( std::shared_ptr<RRTNodeNeighborItera
     return std::make_shared<JListNode>();
 }
 
-std::shared_ptr<JListNode> nextInNeighbor( std::shared_ptr<RRTNodeNeighborIterator> It, std::shared_ptr<Queue> Q )
+std::shared_ptr<JListNode> nextInNeighbor(
+        std::shared_ptr<RRTNodeNeighborIterator> It, std::shared_ptr<Queue> Q)
 {
     if( typeid(*Q) == typeid(rrtSharpQueue) ) {
         if( It->listFlag == 0 ) {
@@ -707,7 +718,8 @@ std::shared_ptr<JListNode> nextInNeighbor( std::shared_ptr<RRTNodeNeighborIterat
 }
 
 void makeNeighborOf(std::shared_ptr<KDTreeNode> newNeighbor,
-                    std::shared_ptr<KDTreeNode> node, std::shared_ptr<Edge> edge)
+                    std::shared_ptr<KDTreeNode> node,
+                    std::shared_ptr<Edge> edge)
 {
     node->rrtNeighborsOut->JlistPush( edge );
     edge->listItemInStartNode = newNeighbor->rrtNeighborsOut->front;
@@ -1356,8 +1368,7 @@ void findNewTarget(std::shared_ptr<CSpace> S,
     Tree->emptyRangeList(L); // cleanup
 }
 
-void moveRobot(std::shared_ptr<CSpace> S,
-               std::shared_ptr<Queue> Q,
+void moveRobot(std::shared_ptr<Queue> Q,
                std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> root,
                double slice_time,
@@ -1379,22 +1390,13 @@ void moveRobot(std::shared_ptr<CSpace> S,
         }
         R->numRobotMovePoints += R->numLocalMovePoints;
 
-        if( !S->spaceHasTime ) {
-            // new robot pose (R.robotPose(0) R.robotPose(1))
-            std::cout << "new robot pose(w/o t):\n" << R->robotPose << std::endl;
+        if( !Q->S->spaceHasTime ) {
+            std::cout << "new robot pose(w/o time):\n"
+                      << R->robotPose << std::endl;
         } else {
-            // new robot pose (R.robotPose(0) R.robotPose(1) R.robotPose(2))
-            std::cout << "new robot pose(w/ t):\n" << R->robotPose << std::endl;
+            std::cout << "new robot pose(w/ time):\n"
+                      << R->robotPose << std::endl;
         }
-
-        // Save stuff for plotting
-//        if( S->spaceHasTime ) {
-//            R->timeAlongRobotEdgeForPlotting = R->timeAlongRobotEdge;
-//        } else {
-//            R->distAlongRobotEdgeForPlotting = R->distAlongRobotEdge;
-//        }
-//        R->robotEdgeForPlotting = R->robotEdge;
-//        R->robotEdgeForPlottingUsed = true;
     } else {
         // Movement has just started, so remember that the robot is now moving
         R->moving = true;
@@ -1402,16 +1404,16 @@ void moveRobot(std::shared_ptr<CSpace> S,
         error("First pose:");
         std::cout << R->robotPose << std::endl;
 
-        if( !S->moveGoal->rrtParentUsed ) {
+        if( !Q->S->moveGoal->rrtParentUsed ) {
             // no parent has been found for the node at the robots position
             R->currentMoveInvalid = true;
         } else {
-            R->robotEdge = S->moveGoal->rrtParentEdge;
+            R->robotEdge = Q->S->moveGoal->rrtParentEdge;
 //            R->robotEdgeForPlotting = R->robotEdge;
             R->robotEdgeUsed = true;
 //            R->robotEdgeForPlottingUsed = true;
 
-            if( S->spaceHasTime ) {
+            if( Q->S->spaceHasTime ) {
                 R->timeAlongRobotEdge = 0.0;
 //                R->timeAlongRobotEdgeForPlotting = 0.0;
             } else {
@@ -1427,7 +1429,7 @@ void moveRobot(std::shared_ptr<CSpace> S,
     // after moving the robot (since the robot has already moved this
     // time slice)
     if( R->currentMoveInvalid ) {
-        findNewTarget( S, Tree, R, hyperBallRad );
+        findNewTarget( Q->S, Tree, R, hyperBallRad );
     } else {
         /* Recall that moveGoal is the node whose key is used to determine
          * the level set of cost propogation (this should theoretically
@@ -1436,9 +1438,9 @@ void moveRobot(std::shared_ptr<CSpace> S,
          * each slice time. Even if that does not happen, things will
          * still be okay in practice as long as robot is "close" to moveGoal
          */
-        S->moveGoal->isMoveGoal = false;
-        S->moveGoal = R->nextMoveTarget;
-        S->moveGoal->isMoveGoal = true;
+        Q->S->moveGoal->isMoveGoal = false;
+        Q->S->moveGoal = R->nextMoveTarget;
+        Q->S->moveGoal->isMoveGoal = true;
     }
 
 
@@ -1449,7 +1451,7 @@ void moveRobot(std::shared_ptr<CSpace> S,
     * to the first local point (the latter two things are used for
     * visualizition)
     */
-    if( !S->spaceHasTime ) {
+    if( !Q->S->spaceHasTime ) {
         // Not using the time dimension, so assume speed is equal to robotVelocity
         std::shared_ptr<KDTreeNode> nextNode = R->nextMoveTarget;
 
@@ -1457,7 +1459,7 @@ void moveRobot(std::shared_ptr<CSpace> S,
         // the current edge it is following
         double nextDist = R->robotEdge->dist - R->distAlongRobotEdge;
 
-        double distRemaining = S->robotVelocity*slice_time;
+        double distRemaining = Q->S->robotVelocity*slice_time;
 
         // Save first local path point
         R->numLocalMovePoints = 1;

@@ -78,7 +78,7 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
     // Find the piece of trajectory that contains the point at the desired distance
     int i = 1;
     double thisDist = INF;
-    bool timeInPath = (this->trajectory.cols() >= 3);
+    bool timeInPath = (this->trajectory.col(2)(0) != 0.0);
     while( i <= this->trajectory.rows() ) {
         double wtime = dubinsDistAlongTimePath( this->trajectory.row(i-1),
                                                 this->trajectory.row(i) );

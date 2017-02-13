@@ -416,7 +416,7 @@ bool KDTree::kdFindNearestWithGuess(std::shared_ptr<KDTreeNode> nearestNode,
 }
 
 /////////////////////// K Nearest ///////////////////////
-std::shared_ptr<KDTreeNode> KDTree::addToKNNHeap(BinaryHeap* H,
+std::shared_ptr<KDTreeNode> KDTree::addToKNNHeap(std::shared_ptr<BinaryHeap> H,
                                                  std::shared_ptr<KDTreeNode>
                                                                     node,
                                                  double key,
@@ -448,7 +448,7 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
                                      std::shared_ptr<KDTreeNode> root,
                                      int k,
                                      Eigen::VectorXd queryPoint,
-                                     BinaryHeap* nearestHeap)
+                                     std::shared_ptr<BinaryHeap> nearestHeap)
 {
     // Walk down the tree as if the node would be inserted
     std::shared_ptr<KDTreeNode> parent = root;
@@ -571,7 +571,7 @@ std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
             = std::make_shared<double>(0);
     kdFindKNearestInSubtree( farthestNearestNode, farthestNearestNodeDist,
                              this->root, k,
-                             queryPoint, &H );
+                             queryPoint, std::make_shared<BinaryHeap>(H) );
 
     if( this->numWraps > 0 ) {
         std::cout << "ERROR: knn search not implemented for wrapped space"

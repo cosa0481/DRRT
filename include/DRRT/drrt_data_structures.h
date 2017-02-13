@@ -85,7 +85,7 @@ public:
 typedef struct Queue{
     std::string type;
     std::shared_ptr<CSpace> S;
-    BinaryHeap* Q;      // normal queue (sorted based on cost from goal)
+    std::shared_ptr<BinaryHeap> Q;      // normal queue (sorted based on cost from goal)
     std::shared_ptr<JList> OS;          // obstacle successor stack
     double changeThresh; // threshold of local changes that we care about
 
