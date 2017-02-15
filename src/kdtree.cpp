@@ -8,25 +8,57 @@
 #define KDTREE_CPP
 
 #include <DRRT/kdtree.h>
+#include <iostream>
+
+void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
+                       int indent, char type)
+{
+    if(indent) std::cout << std::string(indent-1,' ') << type;
+
+    std::cout << node->position(0) << ","
+              << node->position(1) << ": "
+              << node->rrtLMC;
+    if( node->kdParentExist)
+        std::cout << " : " << node->position(node->kdParent->kdSplit);
+    if( !node->kdChildLExist && !node->kdChildRExist ) {
+        std::cout << " | leaf" << std::endl;
+    } else {
+        std::cout << std::endl;
+        if(node->kdChildLExist) {
+            printTree(node->kdChildL, indent+4, '<');
+        }
+        if(node->kdChildRExist) {
+            printTree(node->kdChildR, indent+4, '>');
+        }
+    }
+}
 
 bool KDTree::kdInsert(std::shared_ptr<KDTreeNode> node)
 {
-    if( node.get()->kdInTree ) return false;
-    node.get()->kdInTree = true;
+    if( node->kdInTree ) return false;
+    node->kdInTree = true;
 
     if( this->treeSize == 0 ) {
         this->root = node;
-        this->root->kdSplit = 1;
+        this->root->kdSplit = 0;
         this->treeSize = 1;
         return true;
     }
 
+    std::cout << "adding node:\n" << node->position << std::endl;
+
     // Figure out where to put this node
     std::shared_ptr<KDTreeNode> parent = this->root;
     while( true ) {
-        if( node.get()->position(parent->kdSplit)
-                < parent->position(parent->kdSplit) ) {
+        std::cout << "current parent:\n" << parent->position << std::endl;
+        std::cout << "node->position(parent->kdSplit): "
+                  << node->position(parent->kdSplit) << std::endl;
+        std::cout << "parent->position(parent->kdSplit): "
+                  << parent->position(parent->kdSplit) << std::endl;
+        if(node->position(parent->kdSplit)
+                < parent->position(parent->kdSplit)) {
             // Traverse tree to the left
+            std::cout << "left" << std::endl;
             if( !parent->kdChildLExist ) {
                 // The node gets inserted as the left child of the parent
                 parent->kdChildL = node;
@@ -37,6 +69,7 @@ bool KDTree::kdInsert(std::shared_ptr<KDTreeNode> node)
             continue;
         }
         else {
+            std::cout << "right" << std::endl;
             // Traverse tree to the right
             if( !parent->kdChildRExist ) {
                 // The node gets inserted as the right child of the parent
@@ -49,14 +82,13 @@ bool KDTree::kdInsert(std::shared_ptr<KDTreeNode> node)
         }
     }
 
+    std::cout << "parent is:\n" << parent->position << "\n" << std::endl;
+
     node->kdParent = parent;
     node->kdParentExist = true;
-    if( parent->kdSplit == this->d-1 ) {
-        node->kdSplit = 0;
-    }
-    else {
-        node->kdSplit = parent->kdSplit + 1;
-    }
+    if( parent->kdSplit == this->d-1 ) { node->kdSplit = 0; }
+    else { node->kdSplit = parent->kdSplit + 1; }
+
     this->treeSize += 1;
     return true;
 }
@@ -627,20 +659,21 @@ bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> root,
 {
     // Walk down the tree as if the node would be inserted
     std::shared_ptr<KDTreeNode> parent = root;
-    while( true ) {
-        //std::cout << "parent:\n" << parent->position << std::endl;
-        if( queryPoint(parent->kdSplit) < parent->position(parent->kdSplit) ) {
+    while(true) {
+        if(queryPoint(parent->kdSplit) < parent->position(parent->kdSplit)) {
             // Traverse tree to the left
-            if( !parent->kdChildLExist ) {
-                // The queryPoint would be inserted as the left child of the parent
+            if(!parent->kdChildLExist) {
+                // The queryPoint would be inserted as
+                // the left child of the parent
                 break;
             }
             parent = parent->kdChildL;
             continue;
         } else {
             // Traverse tree to the right
-            if( !parent->kdChildRExist ) {
-                // The queryPoint would be inserted as the right child of the parent
+            if(!parent->kdChildRExist) {
+                // The queryPoint would be inserted as
+                // the right child of the parent
                 break;
             }
             parent = parent->kdChildR;
@@ -649,26 +682,25 @@ bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> root,
     }
 
     double newDist = this->distanceFunction(queryPoint, parent->position);
-    if( newDist < range ) {
-        addToRangeList( nodeList, parent, newDist );
+    if(newDist < range) {
+        addToRangeList(nodeList, parent, newDist);
     }
 
     // Now walk back up the tree (will break out when done)
-    while( true ) {
+    while(true) {
         // Now check if there could possibly be any nodes on the other
         // side of the parent within range, if not then check grandparent etc.
 
         double parentHyperPlaneDist = queryPoint(parent->kdSplit)
-                - parent->position(parent->kdSplit);
+                                        - parent->position(parent->kdSplit);
 
-        if( parentHyperPlaneDist > range ) {
+        if(parentHyperPlaneDist > range) {
             // Then there could not be any closer nodes within range on the other
             // side of the parent (and the parent itself is also too far away
-            if( parent == root ) {
+            if(parent == root) {
                 // The parent is the root and we are done
                 return true;
             }
-
             parent = parent->kdParent;
             continue;
         }
@@ -678,29 +710,29 @@ bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> root,
 
         // First check the parent itself (if it is not already one
         // of the closest nodes)
-        if( !parent->inHeap ) { // inHeap is a misnomer since this is a list
+        if(!parent->inHeap) { // inHeap is a misnomer since this is a list
             newDist = this->distanceFunction(queryPoint, parent->position);
-            if( newDist < range ) {
-                addToRangeList( nodeList, parent, newDist );
+            if(newDist < range) {
+                addToRangeList(nodeList, parent, newDist);
             }
         }
 
         // Now check on the other side of the parent
-        if( queryPoint(parent->kdSplit) < parent->position(parent->kdSplit)
-                && parent->kdChildRExist ) {
+        if(queryPoint(parent->kdSplit) < parent->position(parent->kdSplit)
+                && parent->kdChildRExist) {
             // The queryPoint is on the left side of the porent, so we need to
             // look at the right side of it (if it exists)
-            kdFindWithinRangeInSubtree(parent->kdChildR,
-                                       range, queryPoint, nodeList);
-        } else if( parent->position(parent->kdSplit)
-                   <= queryPoint(parent->kdSplit) && parent->kdChildLExist ) {
+            kdFindWithinRangeInSubtree(parent->kdChildR, range,
+                                       queryPoint, nodeList);
+        } else if(parent->position(parent->kdSplit)
+                  <= queryPoint(parent->kdSplit) && parent->kdChildLExist) {
             // The queryPoint is on the right side of the parent, so we need to
             // look at the left side of it (if it exists)
-            kdFindWithinRangeInSubtree(parent->kdChildL,
-                                       range, queryPoint, nodeList);
+            kdFindWithinRangeInSubtree(parent->kdChildL, range,
+                                       queryPoint, nodeList);
         }
 
-        if( parent == root ) {
+        if(parent == root) {
             // The parent is the root and we are done
             return true;
         }
@@ -710,33 +742,28 @@ bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> root,
 }
 
 void KDTree::kdFindWithinRange(std::shared_ptr<JList> S,
-                               double range, Eigen::VectorXd queryPoint)
+                               double range,
+                               Eigen::VectorXd queryPoint)
 {
     // Insert root node in list if it is within range
     double distToRoot
             = this->distanceFunction(queryPoint, this->root->position);
-    if( distToRoot <= range ) {
-        addToRangeList( S, this->root, distToRoot );
-    }
+    if(distToRoot <= range) addToRangeList(S, this->root, distToRoot);
 
     // Find nodes within range
-    kdFindWithinRangeInSubtree(this->root,
-                               range, queryPoint, S );
+    kdFindWithinRangeInSubtree(this->root, range, queryPoint, S);
 
-    if( this->numWraps > 0 ) {
+    if(this->numWraps > 0) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
-
         std::shared_ptr<ghostPointIterator> pointIterator
-                = std::make_shared<ghostPointIterator>
-                (this, queryPoint);
-        while( true ) {
+                = std::make_shared<ghostPointIterator>(this, queryPoint);
+        while(true) {
             Eigen::VectorXd thisGhostPoint
-                    = getNextGhostPoint( pointIterator, range );
-            if( thisGhostPoint.isZero(0) ) break;
+                    = getNextGhostPoint(pointIterator, range);
+            if(thisGhostPoint.isZero(0)) break;
 
             // Now see if any points in the space are closer to this ghost
-            kdFindWithinRangeInSubtree(this->root,
-                                       range, thisGhostPoint, S );
+            kdFindWithinRangeInSubtree(this->root, range, thisGhostPoint, S);
         }
     }
 }

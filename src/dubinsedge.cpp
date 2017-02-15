@@ -18,26 +18,26 @@ void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
                     double dist)
 {
     // First scale non-theta dimensions
-    ((*nP)).head(3) = cP.head(3) +
-            ( (*nP).head(3) - cP.head(3) ) * delta / dist;
+    ((*nP)).head(2) = cP.head(2) +
+            ( (*nP).head(2) - cP.head(2) ) * delta / dist;
 
     // Saturate theta in the shorter of the
     // two directions that it can go
-    if( std::abs( (*nP)(3) - cP(3) ) < PI ) {
+    if( std::abs( (*nP)(2) - cP(2) ) < PI ) {
         // Saturate in the normal way
-        (*nP)(3) = cP(3) +
-                ((*nP)(3) - cP(3)) * delta / dist;
+        (*nP)(2) = cP(2) +
+                ((*nP)(2) - cP(2)) * delta / dist;
     } else {
         // Saturate in the opposite way
-        if( (*nP)(3) < PI ) {
-            (*nP)(3) = (*nP)(3) + 2*PI;
+        if( (*nP)(2) < PI ) {
+            (*nP)(2) = (*nP)(2) + 2*PI;
         } else {
-            (*nP)(3) = (*nP)(3) - 2*PI;
+            (*nP)(2) = (*nP)(2) - 2*PI;
         }
 
         // Now saturate
-        (*nP)(3) = cP(3) +
-                ((*nP)(3) - cP(3)) * delta / dist;
+        (*nP)(2) = cP(2) +
+                ((*nP)(2) - cP(2)) * delta / dist;
 
         // Finally, wrap back to the identity that is on [0 2pi]
         // Is this really wrapping?
@@ -49,7 +49,7 @@ void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
         maxVec(0) = minVec.minCoeff();
         maxVec(1) = 0.0;
 
-        (*nP)(3) = maxVec.maxCoeff();
+        (*nP)(2) = maxVec.maxCoeff();
     }
 }
 
@@ -78,7 +78,7 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
     // Find the piece of trajectory that contains the point at the desired distance
     int i = 1;
     double thisDist = INF;
-    bool timeInPath = (this->trajectory.col(2)(0) != 0.0);
+    bool timeInPath = this->trajectory.cols() > 3;
     while( i <= this->trajectory.rows() ) {
         double wtime = dubinsDistAlongTimePath( this->trajectory.row(i-1),
                                                 this->trajectory.row(i) );
@@ -107,18 +107,13 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
     double ratio = distRemaining/thisDist;
     Eigen::VectorXd ret = this->trajectory.row(i-1)
             + ratio*(this->trajectory.row(i)-this->trajectory.row(i-1));
-    double retTimeRatio = distAlongEdge/this->dist;
-    double retTime = this->startNode->position(2)
-            + retTimeRatio*(this->endNode->position(2)
-                            - this->startNode->position(2));
     double retTheta = atan2 (this->trajectory(i,1) - this->trajectory(i-1,1),
                              this->trajectory(i,0) - this->trajectory(i-1,0) );
 
-    Eigen::VectorXd vec(4);
+    Eigen::Vector3d vec;
     vec(0) = ret(0); // x-coordinate
     vec(1) = ret(1); // y-coordinate
-    vec(2) = retTime;
-    vec(3) = retTheta;
+    vec(2) = retTheta;
 
     return vec;
 }
@@ -163,9 +158,9 @@ void DubinsEdge::calculateTrajectory()
     double r_min = this->cspace->minTurningRadius;
 
     Eigen::Vector2d initial_location = this->startNode->position.head(2);
-    double initial_theta = this->startNode->position(3);
+    double initial_theta = this->startNode->position(2);
     Eigen::Vector2d goal_location = this->endNode->position.head(2);
-    double goal_theta = this->endNode->position(3);
+    double goal_theta = this->endNode->position(2);
 
     // Calculate the center of the right-turn and left-turn circles
     // ... right-turn initial_location circle

@@ -256,8 +256,10 @@ bool JList::JlistRemove( std::shared_ptr<JListNode> node )
 void JList::JlistPrint()
 {
     std::shared_ptr<JListNode> ptr = front;
+    int i = 0;
     while( ptr != ptr->child ) {
-        std::cout << ptr->node->dist << std::endl;
+        std::cout << "node" << i << ":\n" << ptr->node->position << std::endl;
+        //std::cout << ptr->node->dist << std::endl;
         ptr = ptr->child;
     }
 }

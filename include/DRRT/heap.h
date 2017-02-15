@@ -20,10 +20,10 @@ public:
     // Functions for interacting with marks and indices
     // Returns the key value of the node
     double keyD(std::shared_ptr<KDTreeNode> node)
-    {return node.get()->dist;}
+    {return node->dist;}
 
     double keyQ(std::shared_ptr<KDTreeNode> node)
-    {return std::min( node.get()->rrtTreeCost, node.get()->rrtLMC );}
+    {return std::min( node->rrtTreeCost, node->rrtLMC );}
 
     double key(std::shared_ptr<KDTreeNode> node)
     {return ( useDefault ? keyD(node) : keyQ(node) );}
@@ -31,11 +31,11 @@ public:
 
     // Default less than function
     bool lessD(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
-    {return (a.get()->dist < b.get()->dist);}
+    {return (a->dist < b->dist);}
 
     bool lessQ(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
     {return ((keyQ(a) < keyQ(b))
-             || (keyQ(a) == keyQ(b) && a.get()->isMoveGoal));}
+             || (keyQ(a) == keyQ(b) && a->isMoveGoal));}
 
     bool lessThan(std::shared_ptr<KDTreeNode> a,
                   std::shared_ptr<KDTreeNode> b)
@@ -44,11 +44,11 @@ public:
 
     // Default greater than function DATA
     bool greaterD(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
-    {return (a.get()->dist > b.get()->dist);}
+    {return (a->dist > b->dist);}
 
     bool greaterQ(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
     {return ((keyQ(a) > keyQ(b))
-             || (keyQ(a) == keyQ(b) && b.get()->isMoveGoal));}
+             || (keyQ(a) == keyQ(b) && b->isMoveGoal));}
 
     bool greaterThan(std::shared_ptr<KDTreeNode> a,
                      std::shared_ptr<KDTreeNode> b)
@@ -79,10 +79,10 @@ public:
 
     // Default heap check marker function (checks if node is marked)
     bool markedD(std::shared_ptr<KDTreeNode> node)
-    {return node.get()->inHeap;}
+    {return node->inHeap;}
 
     bool markedQ(std::shared_ptr<KDTreeNode> node)
-    {return node.get()->inPriorityQueue;}
+    {return node->inPriorityQueue;}
 
     bool marked(std::shared_ptr<KDTreeNode> node)
     {return (useDefault ? markedD(node) : markedQ(node));}
@@ -90,10 +90,10 @@ public:
 
     // Sets the heap index to a value
     void setIndexD(std::shared_ptr<KDTreeNode> node, int value)
-    {node.get()->heapIndex = value;}
+    {node->heapIndex = value;}
 
     void setIndexQ(std::shared_ptr<KDTreeNode> node, int value)
-    {node.get()->priorityQueueIndex = value;}
+    {node->priorityQueueIndex = value;}
 
     void setIndex(std::shared_ptr<KDTreeNode> node, int value)
     {(useDefault ? setIndexD(node,value) : setIndexQ(node,value));}
@@ -101,10 +101,10 @@ public:
 
     // Set the heap index to the unused value (-1)
     void unsetIndexD(std::shared_ptr<KDTreeNode> node)
-    {node.get()->heapIndex = -1;}
+    {node->heapIndex = -1;}
 
     void unsetIndexQ(std::shared_ptr<KDTreeNode> node)
-    {node.get()->priorityQueueIndex = -1;}
+    {node->priorityQueueIndex = -1;}
 
     void unsetIndex(std::shared_ptr<KDTreeNode> node)
     {(useDefault ? unsetIndexD(node) : unsetIndexQ(node));}
@@ -112,10 +112,10 @@ public:
 
     // Returns the heap index
     int getIndexD(std::shared_ptr<KDTreeNode> node)
-    {return node.get()->heapIndex;}
+    {return node->heapIndex;}
 
     int getIndexQ(std::shared_ptr<KDTreeNode> node)
-    {return node.get()->priorityQueueIndex;}
+    {return node->priorityQueueIndex;}
 
     int getIndex(std::shared_ptr<KDTreeNode> node)
     {return (useDefault ? getIndexD(node) : getIndexQ(node));}

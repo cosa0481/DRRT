@@ -183,7 +183,8 @@ typedef struct RobotData{
     // Constructor
     RobotData(Eigen::VectorXd rP,
               std::shared_ptr<KDTreeNode> nMT,
-              int maxPathNodes)
+              int maxPathNodes,
+              int dimensions)
         : robotPose(rP),
           nextRobotPose(rP),
           nextMoveTarget(nMT),
@@ -198,8 +199,8 @@ typedef struct RobotData{
           distAlongRobotEdge(0.0),
           timeAlongRobotEdge(0.0)
     {
-        robotLocalPath.resize(maxPathNodes,4);
-        robotMovePath.resize(maxPathNodes,4);
+        robotLocalPath.resize(maxPathNodes,dimensions);
+        robotMovePath.resize(maxPathNodes,dimensions);
     }
 
 } RobotData;

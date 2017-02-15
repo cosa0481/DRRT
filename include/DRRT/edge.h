@@ -58,14 +58,14 @@ public:
                      // only used if time is part of the state space
 
     // Constructor
-    Edge() : dist(-1) { trajectory.resize(MAXPATHNODES,4); }
+    Edge() : dist(-1) { trajectory.resize(MAXPATHNODES,3); }
     Edge(std::shared_ptr<CSpace> CS,
          std::shared_ptr<KDTree> T,
          std::shared_ptr<KDTreeNode> s,
          std::shared_ptr<KDTreeNode> e)
         : cspace(CS), tree(T), startNode(s), endNode(e)
     {
-        trajectory.resize(MAXPATHNODES,4);
+        trajectory.resize(MAXPATHNODES,3);
     }
 
 

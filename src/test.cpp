@@ -91,8 +91,8 @@ std::shared_ptr<RobotData> RRTX(Problem p)
 
     /// ROBOT DATA
     // Parameters that have to do with the robot path following simulation
-    std::shared_ptr<RobotData> robot
-            = std::make_shared<RobotData>(Q->S->goal, goal, MAXPATHNODES);
+    shared_ptr<RobotData> robot
+            = make_shared<RobotData>(Q->S->goal, goal, MAXPATHNODES,Q->S->d);
 
     double slice_counter = 0; // helps with saving accurate time data
 

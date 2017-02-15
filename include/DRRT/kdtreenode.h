@@ -27,7 +27,7 @@ public:
     double dist;      // ditto, this will hold the distance
 
     // More data used for KD Tree
-    Eigen::Vector4d position; // a d x 1 array of the dimensions of the space
+    Eigen::VectorXd position; // a d x 1 array of the dimensions of the space
     int kdSplit;              // the dimension used for splitting at this node
     std::shared_ptr<KDTreeNode> kdParent;   // parent in the tree
     std::shared_ptr<KDTreeNode> kdChildL;   // left child in the tree
@@ -85,7 +85,7 @@ public:
         InitialNeighborListIn(std::make_shared<JList>(false)),
         inOSQueue(false), isMoveGoal(false)
     {
-        position << 0, 0, 0, 0;
+        position.setZero();
     }
     KDTreeNode(float d) :  kdInTree(false), kdParentExist(false),
         kdChildLExist(false), kdChildRExist(false), heapIndex(-1),
@@ -98,7 +98,7 @@ public:
         InitialNeighborListIn(std::make_shared<JList>(false)),
         inOSQueue(false), isMoveGoal(false)
     {
-        position << 0, 0, 0, 0;
+        position.setZero();
     }
     KDTreeNode(float d, Eigen::VectorXd pos) :  kdInTree(false),
         kdParentExist(false), kdChildLExist(false), kdChildRExist(false),

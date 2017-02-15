@@ -115,7 +115,7 @@ Eigen::VectorXd HolEdge::poseAtTimeAlongEdge(double timeAlongEdge)
     double retTheta = atan2( this->trajectory(i,1) - this->trajectory(i-1,1),
                              this->trajectory(i,0) - this->trajectory(i-1,0) );
 
-    Eigen::VectorXd vec;
+    Eigen::VectorXd vec(4);
     vec(0) = ret(0); // x-coordinate
     vec(1) = ret(1); // y-coordinate
     vec(2) = retTime;

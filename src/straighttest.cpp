@@ -13,9 +13,9 @@ using namespace std;
 int histPos = 0,
     kdTreePos = 0,
     kdEdgePos = 0;
-Eigen::MatrixXd rHist(MAXPATHNODES,4),
-                kdTree(MAXPATHNODES,4),
-                kdEdge(MAXPATHNODES,4);
+Eigen::MatrixXd rHist(MAXPATHNODES,3),
+                kdTree(MAXPATHNODES,3),
+                kdEdge(MAXPATHNODES,3);
 chrono::time_point<chrono::high_resolution_clock> startTime;
 
 /// Main control function
@@ -30,11 +30,11 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     /// Queue
     shared_ptr<Queue> Q = make_shared<Queue>();
-    Q->Q = make_shared<BinaryHeap>(false); // priority queue
-    Q->OS = make_shared<JList>(true); // uses KDTreeNodes
-    Q->S = p.c_space;
+    Q->Q = make_shared<BinaryHeap>(false); // priority queue use Q functions
+    Q->OS = make_shared<JList>(true); // obstacle stack uses KDTreeNodes
     Q->changeThresh = p.change_threshold;
     Q->type = p.search_type;
+    Q->S = p.c_space;
     Q->S->sampleStack = make_shared<JList>(true); // uses KDTreeNodes
     Q->S->delta = p.delta;
 
@@ -47,6 +47,7 @@ shared_ptr<RobotData> RRTX(Problem p)
     //explicitNodeCheck(S,root);
     root->rrtTreeCost = 0.0;
     root->rrtLMC = 0.0;
+    root->rrtParentEdge = Edge::newEdge(Q->S,kdtree,root,root);
     kdtree->kdInsert(root);
     kdTree.row(kdTreePos++) = root->position;
 
@@ -62,7 +63,7 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     /// Robot
     shared_ptr<RobotData> robot
-            = make_shared<RobotData>(Q->S->goal, goal, MAXPATHNODES);
+            = make_shared<RobotData>(Q->S->goal, goal, MAXPATHNODES, Q->S->d);
 
     if(Q->S->spaceHasTime) {
         addOtherTimesToRoot(Q->S,kdtree,goal,root,Q->type);
@@ -79,13 +80,12 @@ shared_ptr<RobotData> RRTX(Problem p)
     Q->S->timeElapsed = 0.0;
     double slice_end;
 
-    double old_rrtLMC = INF;
     double now_time = getTimeNs(startTime);
     double trunc_elapsed_time;
 
     double current_distance;
     double move_distance;
-    Eigen::Vector4d prev_pose;
+    Eigen::Vector3d prev_pose;
     shared_ptr<Edge> prev_edge;
 
     current_distance = kdtree->distanceFunction(robot->robotPose,
@@ -94,46 +94,105 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
     shared_ptr<double> closest_dist = make_shared<double>(INF);
-    Eigen::Vector4d position;
+
+///////////////////
+    Eigen::Vector3d position;
+
+    position(0) = 15;
+    position(1) = 15;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node5 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node5->position);
+    extend(kdtree,Q,node5,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node5->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 8;
     position(1) = 12;
-    position(2) = 0;
-    position(3) = -3*PI/4;
+    position(2) = -3*PI/4;
     shared_ptr<KDTreeNode> node1 = make_shared<KDTreeNode>(position);
     kdtree->kdFindNearest(closest_node,closest_dist,node1->position);
-    extend(kdtree,Q,node1,closest_node,Q->S->delta,100,Q->S->moveGoal);
+    extend(kdtree,Q,node1,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node1->position;
 
-    position(0) = 12;
-    position(1) = 8;
-    position(2) = 0;
-    position(3) = -3*PI/4;
-    shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(position);
-    kdtree->kdFindNearest(closest_node,closest_dist,node2->position);
-    extend(kdtree,Q,node2,closest_node,Q->S->delta,100,Q->S->moveGoal);
-    kdTree.row(kdTreePos++) = node2->position;
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 7;
+    position(1) = 3;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node7 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node7->position);
+    extend(kdtree,Q,node7,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node7->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 10;
     position(1) = 10;
-    position(2) = 0;
-    position(3) = -3*PI/4;
+    position(2) = -3*PI/4;
     shared_ptr<KDTreeNode> node3 = make_shared<KDTreeNode>(position);
     kdtree->kdFindNearest(closest_node,closest_dist,node3->position);
-    extend(kdtree,Q,node3,closest_node,Q->S->delta,100,Q->S->moveGoal);
+    extend(kdtree,Q,node3,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node3->position;
 
-//    position(0) = 38;
-//    position(1) = 42;
-//    position(2) = 0;
-//    position(3) = -3*PI/4;
-//    shared_ptr<KDTreeNode> node4 = make_shared<KDTreeNode>(position);
-//    kdtree->kdFindNearest(closest_node,closest_dist,node4->position);
-//    extend(kdtree,Q,node4,closest_node,Q->S->delta,100,Q->S->moveGoal);
-//    kdTree.row(kdTreePos++) = node4->position;
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 12;
+    position(1) = 8;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node2->position);
+    extend(kdtree,Q,node2,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node2->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 13;
+    position(1) = 17;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node8 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node8->position);
+    extend(kdtree,Q,node8,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node8->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 5;
+    position(1) = 5;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node4 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node4->position);
+    extend(kdtree,Q,node4,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node4->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 17;
+    position(1) = 13;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node9 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node9->position);
+    extend(kdtree,Q,node9,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node9->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 3;
+    position(1) = 7;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node6 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node6->position);
+    extend(kdtree,Q,node6,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node6->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    kdtree->printTree(root);
+///////////////////
 
     int i = 0;
-    while(true) {
+    while(false) {
         double hyper_ball_rad = min(Q->S->delta, p.ball_constant*(
                                 pow(log(1+kdtree->treeSize)/(kdtree->treeSize),
                                     1/Q->S->d) ));
@@ -174,13 +233,6 @@ shared_ptr<RobotData> RRTX(Problem p)
             }
             prev_edge = robot->robotEdge;
 
-            /// Make graph consistent
-            reduceInconsistency(Q,Q->S->moveGoal, Q->S->robotRadius,
-                                root, hyper_ball_rad);
-            if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
-                old_rrtLMC = Q->S->moveGoal->rrtLMC;
-            }
-
             /// Check for completion
             current_distance = kdtree->distanceFunction(robot->robotPose,
                                                         root->position);
@@ -205,23 +257,23 @@ double distance_function(Eigen::VectorXd a, Eigen::VectorXd b)
     Eigen::ArrayXd temp = a.head(2) - b.head(2);
     temp = temp * temp;
     return sqrt( temp.sum()
-                 + pow(min(abs(a(3)-b(3)),
-                           min(a(3),b(3)) + 2.0*PI
-                           - max(a(3),b(3)) ), 2));
+                 + pow(min(abs(a(2)-b(2)),
+                           min(a(2),b(2)) + 2.0*PI
+                           - max(a(2),b(2)) ), 2));
 }
 
 int main() {
     /// Start and Goal
-    Eigen::Vector4d start, goal;
-    start << 0.0,0.0,0.0,-3*PI/4;
-    goal  << 20.0,20.0,0.0,-3*PI/4;
+    Eigen::Vector3d start, goal;
+    start << 0.0,0.0,-3*PI/4;
+    goal  << 20.0,20.0,-3*PI/4;
 
     /// C-Space
-    int dims = 4;
+    int dims = 3;
     double envRad = 50.0;
-    Eigen::Vector4d lbound, ubound;
-    lbound << -envRad, -envRad, 0.0, 0.0;
-    ubound << envRad, envRad, 0.0, 2*PI;
+    Eigen::Vector3d lbound, ubound;
+    lbound << -envRad, -envRad, 0.0;
+    ubound << envRad, envRad, 2*PI;
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
@@ -235,7 +287,7 @@ int main() {
 
     /// KD-Tree
     Eigen::VectorXi wv(1);
-    wv(0) = 3;
+    wv(0) = 2;
     Eigen::VectorXd wpv(1);
     wpv(0) = 2.0*PI;
 
@@ -249,8 +301,8 @@ int main() {
     double goal_thresh = 0.5;
     bool move_robot = true;
 
-    Problem problem = Problem(alg_name,cspace,plan_time,slice_time,delta,
-                              ball_const,change_thresh,goal_thresh,
+    Problem problem = Problem(alg_name, cspace, plan_time, slice_time, delta,
+                              ball_const, change_thresh, goal_thresh,
                               move_robot, wv, wpv, distance_function);
 
     /// Run RRTx
@@ -259,9 +311,9 @@ int main() {
     /// Save data
     Eigen::ArrayXXd firstpoints, lastpoints, diff;
     firstpoints = robot->robotMovePath.block(0,0,
-                                             robot->numRobotMovePoints-1,4);
+                                             robot->numRobotMovePoints-1,3);
     lastpoints = robot->robotMovePath.block(1,0,
-                                            robot->numRobotMovePoints-1,4);
+                                            robot->numRobotMovePoints-1,3);
 
     diff = firstpoints - lastpoints;
     diff = diff*diff;

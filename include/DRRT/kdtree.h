@@ -46,6 +46,10 @@ public:
                                            Eigen::VectorXd b))
     { distanceFunction = func; }
 
+    // Prints the tree from the node starting with indent=0
+    void printTree(std::shared_ptr<KDTreeNode> node,
+                   int indent=0, char type=' ');
+
     // Inserts a new node into the tree
     bool kdInsert(std::shared_ptr<KDTreeNode> node);
 

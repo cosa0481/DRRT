@@ -215,6 +215,7 @@ bool extend(std::shared_ptr<KDTree> Tree,
  * then it saves a copy of each edge in each node (to avoid work duplication
  * in RRT# and RRTx)
  */
+/// THIS FUNCTION INITIALLY SETS rrtLMC COST ///
 void findBestParent(std::shared_ptr<CSpace> S,
                     std::shared_ptr<KDTree> Tree,
                     std::shared_ptr<KDTreeNode> newNode,
@@ -347,9 +348,6 @@ bool recalculateLMCMineVTwo(std::shared_ptr<Queue> Q,
                             std::shared_ptr<KDTreeNode> node,
                             std::shared_ptr<KDTreeNode> root,
                             double hyperBallRad);
-
-// Takes care of inserting a new node
-// Uses above implementation of extend with Q = rrtXQueue
 
 // This is the (non-initial) rewire function used by RRTx that is
 // responsible for propogating changes through the graph
