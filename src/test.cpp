@@ -14,122 +14,92 @@ using namespace std;
 
 // Structures for saving data
 int histPos = 0;
-Eigen::MatrixXd rHist(MAXPATHNODES,4);
+Eigen::MatrixXd rHist(MAXPATHNODES,3);
 int kdTreePos = 0;
-Eigen::MatrixXd kdTree(MAXPATHNODES,4);
+Eigen::MatrixXd kdTree(MAXPATHNODES,3);
 int kdEdgePos = 0;
-Eigen::MatrixXd kdEdge(MAXPATHNODES,4);
+Eigen::MatrixXd kdEdge(MAXPATHNODES,3);
 
 std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 
-/// MAIN CONTROL FUNCTION
+/// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
 std::shared_ptr<RobotData> RRTX(Problem p)
 {
-    // Used for "sensing" obstacles (should make input)
+    // Used for "sensing" obstacles (should make input, from DRRT.jl)
     //double robotSensorRange = 20.0;
 
-    /// INITIALIZATION
+    /// Initialize
 
-    /// KDTREE
-    std::shared_ptr<KDTree> kdtree
-            = std::make_shared<KDTree>(p.c_space->d, p.wraps,
-                                       p.wrap_points);
-    kdtree->setDistanceFunction(p.distance_function);
-
-    /// QUEUE
-    std::shared_ptr<Queue> Q = std::make_shared<Queue>();
-    // false >> use priority queue functions (keyQ)
-    // sorted based on cost from goal
-    Q->Q = make_shared<BinaryHeap>(false);
-    // Obstacle successor stack
-    // true >> uses KDTreeNode's
-    Q->OS = std::make_shared<JList>(true);
-    Q->S = p.c_space;
+    /// Queue
+    shared_ptr<Queue> Q = make_shared<Queue>();
+    Q->Q = make_shared<BinaryHeap>(false); // priority queue use Q functions
+    Q->OS = make_shared<JList>(true); // obstacle stack uses KDTreeNodes
     Q->changeThresh = p.change_threshold;
     Q->type = p.search_type;
-
-    // stores a stack of points that we desire
-    // to insert in the future (used when an
-    // obstacle is removed) true >> uses KDTreeNodes
-    Q->S->sampleStack = std::make_shared<JList>(true);
-
+    Q->S = p.c_space;
+    Q->S->sampleStack = make_shared<JList>(true); // uses KDTreeNodes
     Q->S->delta = p.delta;
 
-    // Define root node in the search tree graph
-    std::shared_ptr<KDTreeNode> root
-            = std::make_shared<KDTreeNode>(p.c_space->start);
+    /// KD-Tree
+    shared_ptr<KDTree> kd_tree
+            = make_shared<KDTree>(p.c_space->d,p.wraps,p.wrap_points);
+    kd_tree->setDistanceFunction(p.distance_function);
 
-    // Explicit check root
+    shared_ptr<KDTreeNode> root = make_shared<KDTreeNode>(Q->S->start);
     //explicitNodeCheck(S,root);
-
     root->rrtTreeCost = 0.0;
     root->rrtLMC = 0.0;
+    root->rrtParentEdge = Edge::newEdge(Q->S,kd_tree,root,root);
+    kd_tree->kdInsert(root);
+    kdTree.row(kdTreePos++) = root->position;
 
-    // Insert the root into the KDTree
-    kdtree->kdInsert(root);
-    kdTree.row(kdTreePos) = root->position;
-    kdTreePos++;
-
-    // Define a goal node
-    std::shared_ptr<KDTreeNode> goal
-            = std::make_shared<KDTreeNode>(Q->S->goal);
+    shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>(Q->S->goal);
     goal->rrtTreeCost = INF;
     goal->rrtLMC = INF;
+    kdTree.row(kdTreePos++) = goal->position;
+
     Q->S->goalNode = goal;
     Q->S->root = root;
-
-    Q->S->moveGoal = goal; // this will store a node at least as far from
-                                // the root as the robot. During movement
-                                // its key is used to limit propogation
-                                // beyond the region we care about
-
+    Q->S->moveGoal = goal;
     Q->S->moveGoal->isMoveGoal = true;
 
-    kdTree.row(kdTreePos) = goal->position;
-    kdTreePos++;
-
-    /// ROBOT DATA
-    // Parameters that have to do with the robot path following simulation
+    /// Robot
     shared_ptr<RobotData> robot
-            = make_shared<RobotData>(Q->S->goal, goal, MAXPATHNODES,Q->S->d);
+            = make_shared<RobotData>(Q->S->goal, goal, MAXPATHNODES, Q->S->d);
 
-    double slice_counter = 0; // helps with saving accurate time data
-
-    if( p.c_space->spaceHasTime ) {
-        // Add other "times" to root of tree
-        addOtherTimesToRoot(Q->S, kdtree, goal, root, p.search_type);
+    if(Q->S->spaceHasTime) {
+        addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    // End initialization
-    cout << "Finished Initialization" << endl;
+    /// End Initialization
 
-    /// MAIN PROGRAM LOOP
-    // While planning time left, plan (will break out when done)
-    startTime = std::chrono::high_resolution_clock::now();
+    /// Main loop
+    startTime = chrono::high_resolution_clock::now();
+    double slice_counter = 0;
     double slice_start
-            = std::chrono::duration_cast<std::chrono::nanoseconds>
-            (startTime-startTime).count(); // time in nanoseconds
-    Q->S->startTimeNs = slice_start; // time in nanoseconds
+     = chrono::duration_cast<chrono::nanoseconds>(startTime-startTime).count();
+    Q->S->startTimeNs = slice_start;
     Q->S->timeElapsed = 0.0;
     double slice_end;
 
-    double old_rrtLMC = INF;
-    double now_time = getTimeNs(startTime); // time in nanoseconds
+    double now_time = getTimeNs(startTime);
     double trunc_elapsed_time;
+
+    double old_rrtLMC;
     double current_distance;
     double move_distance;
-    Eigen::Vector4d prev_pose;
-    std::shared_ptr<Edge> prev_edge;
+    Eigen::Vector3d prev_pose;
+    shared_ptr<Edge> prev_edge;
 
-    current_distance
-            = kdtree->distanceFunction(robot->robotPose, root->position);
+    current_distance = kd_tree->distanceFunction(robot->robotPose,
+                                                root->position);
     prev_pose = robot->robotPose;
 
     int i = 0;
     while(true) {
         double hyper_ball_rad = min(Q->S->delta, p.ball_constant*(
-                                pow(log(1+kdtree->treeSize)/(kdtree->treeSize),
+                                pow(log(1+kd_tree->treeSize)/(kd_tree->treeSize),
                                     1/Q->S->d) ));
         now_time = getTimeNs(startTime);
 
@@ -153,7 +123,7 @@ std::shared_ptr<RobotData> RRTX(Problem p)
             /// Move robot
             if(Q->S->timeElapsed > p.planning_only_time + p.slice_time) {
                 if(p.move_robot_flag) {
-                    moveRobot(Q,kdtree,root,
+                    moveRobot(Q,kd_tree,root,
                               p.slice_time,hyper_ball_rad,robot);
                     // Record data (robot path)
                     rHist.row(histPos++) = robot->robotPose;
@@ -168,6 +138,7 @@ std::shared_ptr<RobotData> RRTX(Problem p)
             }
             prev_edge = robot->robotEdge;
 
+
             /// Make graph consistent
             reduceInconsistency(Q,Q->S->moveGoal, Q->S->robotRadius,
                                 root, hyper_ball_rad);
@@ -176,9 +147,9 @@ std::shared_ptr<RobotData> RRTX(Problem p)
             }
 
             /// Check for completion
-            current_distance = kdtree->distanceFunction(robot->robotPose,
+            current_distance = kd_tree->distanceFunction(robot->robotPose,
                                                         root->position);
-            move_distance = kdtree->distanceFunction(robot->robotPose,
+            move_distance = kd_tree->distanceFunction(robot->robotPose,
                                                      prev_pose);
             cout << "Distance to goal: " << current_distance << endl;
             if(current_distance < p.goal_threshold) {
@@ -198,21 +169,17 @@ std::shared_ptr<RobotData> RRTX(Problem p)
             new_node = randNodeOrFromStack(Q->S);
             if(new_node->kdInTree) continue;
 
-            kdtree->kdFindNearest(closest_node,closest_dist,
+            kd_tree->kdFindNearest(closest_node,closest_dist,
                                   new_node->position);
 
             /// Saturate new node
             if(*closest_dist > Q->S->delta
                     && new_node != Q->S->goalNode) {
-                double this_dist = kdtree->distanceFunction(
+                double this_dist = kd_tree->distanceFunction(
                                                     new_node->position,
                                                     closest_node->position);
-                shared_ptr<Eigen::Vector4d> pos
-                        = make_shared<Eigen::Vector4d>(new_node->position);
-                Edge::saturate(pos,closest_node->position,
-                               Q->S->delta,this_dist);
-                new_node->position = *pos;
-            }
+                Edge::saturate(new_node->position,closest_node->position,
+                               Q->S->delta,this_dist);            }
 
             /// Check for obstacles
             //bool explicitly_unsafe;
@@ -220,7 +187,7 @@ std::shared_ptr<RobotData> RRTX(Problem p)
             //if(explicitly_unsafe) continue;
 
             /// Extend graph
-            if(extend(kdtree,Q,new_node,closest_node,
+            if(extend(kd_tree,Q,new_node,closest_node,
                       Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
                 // Record data (kd-tree)
                 kdTree.row(kdTreePos++) = new_node->position;
@@ -245,28 +212,28 @@ double distance_function( Eigen::VectorXd a, Eigen::VectorXd b )
     Eigen::ArrayXd temp = a.head(2) - b.head(2);
     temp = temp*temp;
     return sqrt( temp.sum()
-                 + pow( std::min( std::abs(a(3)-b(3)),
-                                  std::min(a(3),b(3)) + 2.0*PI
-                                    - std::max(a(3),b(3)) ), 2 ) );
+                 + pow( std::min( std::abs(a(2)-b(2)),
+                                  std::min(a(2),b(2)) + 2.0*PI
+                                    - std::max(a(2),b(2)) ), 2 ) );
 }
 
 int main(int argc, char* argv[])
 {
     /// START, GOAL
-    Eigen::Vector4d start, goal;
-    start << 0.0,0.0,0.0,-3*PI/4;        // robot goes here
+    Eigen::Vector3d start, goal;
+    start << 0.0,0.0,-3*PI/4;        // robot goes here
                                          // (goal location of search tree)
-    goal << 50.0,50.0,0.0,-3*PI/4 ;      // robot comes from here
+    goal << 50.0,50.0,-3*PI/4 ;      // robot comes from here
                                          // (start location of search tree)
 
     /// C-SPACE
-    int d = 4; // number of dimensions [x y 0.0(time) theta] (Dubins)
+    int d = 3; // number of dimensions [x y 0.0(time) theta] (Dubins)
 
     double envRad = 50.0;
     // environment spans -envRad to envRad in each dimension
-    Eigen::Vector4d lowerBounds, upperBounds;
-    lowerBounds << -envRad, -envRad, 0.0, 0.0;
-    upperBounds << envRad, envRad, 0.0, 2*PI;
+    Eigen::Vector3d lowerBounds, upperBounds;
+    lowerBounds << -envRad, -envRad, 0.0;
+    upperBounds << envRad, envRad, 2*PI;
 
     std::shared_ptr<CSpace> config_space
         = std::make_shared<CSpace>(d, lowerBounds, upperBounds, start, goal);
@@ -284,7 +251,7 @@ int main(int argc, char* argv[])
     /// KDTREE VARIABLES
     // Dubin's model wraps theta (4th entry) at 2pi
     Eigen::VectorXi wrap_vec(1); // 1 wrapping dimension
-    wrap_vec(0) = 3;
+    wrap_vec(0) = 2;
     Eigen::VectorXd wrap_points_vec(1);
     wrap_points_vec(0) = 2.0*PI;
 
@@ -319,9 +286,9 @@ int main(int argc, char* argv[])
     // Calculate and display distance traveled
     Eigen::ArrayXXd firstpoints, lastpoints, diff;
     firstpoints = robot_data->robotMovePath.block(0,0,
-                                      robot_data->numRobotMovePoints-1,4);
+                                      robot_data->numRobotMovePoints-1,3);
     lastpoints = robot_data->robotMovePath.block(1,0,
-                                     robot_data->numRobotMovePoints-1,4);
+                                     robot_data->numRobotMovePoints-1,3);
     diff = firstpoints - lastpoints;
     diff = diff*diff;
     for( int i = 0; i < diff.rows(); i++ ) {

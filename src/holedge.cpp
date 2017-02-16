@@ -4,14 +4,14 @@
 /////////////////////// Static Edge Functions ///////////////////////
 std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<CSpace> S,
                                     std::shared_ptr<KDTree> Tree,
-                                    std::shared_ptr<KDTreeNode> startNode,
-                                    std::shared_ptr<KDTreeNode> endNode)
+                                    std::shared_ptr<KDTreeNode>& startNode,
+                                    std::shared_ptr<KDTreeNode>& endNode)
 {
     return std::make_shared<HolEdge>(S,Tree,startNode,endNode);
 }
 
-void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
-                    Eigen::Vector4d cP,
+void Edge::saturate(Eigen::VectorXd& nP,
+                    Eigen::VectorXd cP,
                     double delta,
                     double dist)
 {

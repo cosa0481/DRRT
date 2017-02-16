@@ -161,10 +161,9 @@ void JList::JlistPop( std::shared_ptr<Edge> e )
     e = oldTop->edge;
 }
 
-void JList::JlistPopKey( std::shared_ptr<KDTreeNode> n,
+void JList::JlistPopKey( std::shared_ptr<KDTreeNode>& n,
                          std::shared_ptr<double> k)
 {
-
     if( length == 0 ) {
         // Jlist is empty
         *n = KDTreeNode();
@@ -255,12 +254,14 @@ bool JList::JlistRemove( std::shared_ptr<JListNode> node )
 
 void JList::JlistPrint()
 {
+    if( this->length == 0 ) std::cout << "NOTHING";
+    std::cout << std::endl;
     std::shared_ptr<JListNode> ptr = front;
-    int i = 0;
+    int i = 1;
     while( ptr != ptr->child ) {
-        std::cout << "node" << i << ":\n" << ptr->node->position << std::endl;
-        //std::cout << ptr->node->dist << std::endl;
+        std::cout << "node " << i << ": " << ptr->node << "\n" << ptr->node->position << std::endl;
         ptr = ptr->child;
+        i++;
     }
 }
 

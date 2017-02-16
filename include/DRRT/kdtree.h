@@ -58,15 +58,15 @@ public:
     // Returns the nearest node to the queryPoint in the subtree starting
     // at root and also its distance. It takes a suggestion for a possible
     // closest node and uses that if it is best
-    bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> nearestNode,
+    bool kdFindNearestInSubtree(std::shared_ptr<KDTreeNode> &nearestNode,
                                 std::shared_ptr<double> nearestNodeDist,
-                                std::shared_ptr<KDTreeNode> root,
+                                std::shared_ptr<KDTreeNode> &root,
                                 Eigen::VectorXd queryPoint,
-                         std::shared_ptr<KDTreeNode> suggestedClosestNode,
+                         std::shared_ptr<KDTreeNode> &suggestedClosestNode,
                                 double suggestedClosestDist);
 
     // Returns the nearest node to the queryPoint and also its distance
-    bool kdFindNearest(std::shared_ptr<KDTreeNode> nearestNode,
+    bool kdFindNearest(std::shared_ptr<KDTreeNode> &nearestNode,
                        std::shared_ptr<double> nearestNodeDist,
                        Eigen::VectorXd queryPoint);
 
@@ -134,7 +134,7 @@ public:
                           std::shared_ptr<double> k);
 
     // Empty the range list
-    void emptyRangeList(std::shared_ptr<JList> S);
+    void emptyRangeList(std::shared_ptr<JList> &S);
 
     // Finds all nodes within range of the queryPoint in the subtree starting
     // at root and also their distance squared. This data is stored in nodeList
@@ -146,6 +146,12 @@ public:
 
     // Returns all nodes within range of queryPoint and also their distances
     // This data is contained in the JList at S
+    /* This function walks down the kdtree as if it were inserting
+     * queryPoint to find where it would be inserted. It then walks back
+     * up the tree by looking at parents and checking the "hyperplanedist"
+     * It also checks further down the kdtree from where the point would
+     * be inserted
+     */
     void kdFindWithinRange(std::shared_ptr<JList> S, double range,
                            Eigen::VectorXd queryPoint);
 

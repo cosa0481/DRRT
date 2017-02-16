@@ -117,13 +117,13 @@ public:
     // This must be implemented by all edge types!!
     static std::shared_ptr<Edge> newEdge(std::shared_ptr<CSpace> S,
                                          std::shared_ptr<KDTree> Tree,
-                                         std::shared_ptr<KDTreeNode> startNode,
-                                         std::shared_ptr<KDTreeNode> endNode);
+                                         std::shared_ptr<KDTreeNode> &startNode,
+                                         std::shared_ptr<KDTreeNode> &endNode);
 
     // Saturate moving nP within delta of cP
     // This must be implemented by all edge types!!
-    static void saturate(std::shared_ptr<Eigen::Vector4d> nP,
-                         Eigen::Vector4d cP,
+    static void saturate(Eigen::VectorXd &nP,
+                         Eigen::VectorXd cP,
                          double delta,
                          double dist);
 

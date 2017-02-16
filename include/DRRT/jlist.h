@@ -68,7 +68,7 @@ public:
     void JlistTopKey( std::shared_ptr<Edge> e, std::shared_ptr<double> k );
     void JlistPop( std::shared_ptr<KDTreeNode> t );
     void JlistPop( std::shared_ptr<Edge> e );
-    void JlistPopKey(std::shared_ptr<KDTreeNode> n,
+    void JlistPopKey(std::shared_ptr<KDTreeNode> &n,
                      std::shared_ptr<double> k);
     void JlistPopKey(std::shared_ptr<Edge> e, std::shared_ptr<double> k);
     bool JlistRemove( std::shared_ptr<JListNode> node );

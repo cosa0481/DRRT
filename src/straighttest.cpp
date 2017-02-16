@@ -128,6 +128,16 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
+    position(0) = 13;
+    position(1) = 17;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node8 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node8->position);
+    extend(kdtree,Q,node8,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node8->position;
+
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
     position(0) = 10;
     position(1) = 10;
     position(2) = -3*PI/4;
@@ -145,16 +155,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node2->position);
     extend(kdtree,Q,node2,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node2->position;
-
-    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
-
-    position(0) = 13;
-    position(1) = 17;
-    position(2) = -3*PI/4;
-    shared_ptr<KDTreeNode> node8 = make_shared<KDTreeNode>(position);
-    kdtree->kdFindNearest(closest_node,closest_dist,node8->position);
-    extend(kdtree,Q,node8,closest_node,Q->S->delta,10,Q->S->moveGoal);
-    kdTree.row(kdTreePos++) = node8->position;
 
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
@@ -188,11 +188,12 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
+    std::cout << "KD-Tree" << std::endl;
     kdtree->printTree(root);
 ///////////////////
 
     int i = 0;
-    while(false) {
+    while(true) {
         double hyper_ball_rad = min(Q->S->delta, p.ball_constant*(
                                 pow(log(1+kdtree->treeSize)/(kdtree->treeSize),
                                     1/Q->S->d) ));
@@ -295,7 +296,7 @@ int main() {
     string alg_name = "RRTx";
     double plan_time = 0.0;
     double slice_time = 1.0/100;
-    double delta = 10.0;
+    double delta = 50.0;
     double ball_const = 100.0;
     double change_thresh = 1.0;
     double goal_thresh = 0.5;

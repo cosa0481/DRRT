@@ -218,9 +218,9 @@ bool extend(std::shared_ptr<KDTree> Tree,
 /// THIS FUNCTION INITIALLY SETS rrtLMC COST ///
 void findBestParent(std::shared_ptr<CSpace> S,
                     std::shared_ptr<KDTree> Tree,
-                    std::shared_ptr<KDTreeNode> newNode,
+                    std::shared_ptr<KDTreeNode> &newNode,
                     std::shared_ptr<JList> nodeList,
-                    std::shared_ptr<KDTreeNode> closestNode,
+                    std::shared_ptr<KDTreeNode> &closestNode,
                     bool saveAllEdges );
 
 // Takes care of inserting a new node in RRT*
@@ -344,7 +344,7 @@ void makeParentOf(std::shared_ptr<KDTreeNode> newParent,
 
 // Recalculates LMC based on neighbors
 // Returns true if successful
-bool recalculateLMCMineVTwo(std::shared_ptr<Queue> Q,
+bool recalculateLMC(std::shared_ptr<Queue> Q,
                             std::shared_ptr<KDTreeNode> node,
                             std::shared_ptr<KDTreeNode> root,
                             double hyperBallRad);

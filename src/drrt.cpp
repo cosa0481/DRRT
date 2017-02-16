@@ -489,8 +489,9 @@ bool extend(std::shared_ptr<KDTree> Tree,
         return true;
     } else { // Q->type == "RRTx"
         // Find all nodes within the (shrinking) hyper ball of
-        // (Edge::saturated) newNode
-        std::shared_ptr<JList> nodeList = std::make_shared<JList>(true); // true argument for using KDTreeNodes as elements
+        // (saturated) newNode
+        // true argument for using KDTreeNodes as elements
+        std::shared_ptr<JList> nodeList = std::make_shared<JList>(true);
         Tree->kdFindWithinRange(nodeList, hyperBallRad, newNode->position);
 
         // Try to find and link to best parent. This also saves
@@ -594,7 +595,6 @@ bool extend(std::shared_ptr<KDTree> Tree,
             listItem = listItem->child; // iterate through list
         }
 
-
         Tree->emptyRangeList(nodeList); // clean up
 
         // Insert the node into the priority queue
@@ -609,9 +609,9 @@ bool extend(std::shared_ptr<KDTree> Tree,
 
 void findBestParent(std::shared_ptr<CSpace> S,
                     std::shared_ptr<KDTree> Tree,
-                    std::shared_ptr<KDTreeNode> newNode,
+                    std::shared_ptr<KDTreeNode>& newNode,
                     std::shared_ptr<JList> nodeList,
-                    std::shared_ptr<KDTreeNode> closestNode,
+                    std::shared_ptr<KDTreeNode>& closestNode,
                     bool saveAllEdges)
 {
     // If the list is empty
@@ -812,9 +812,8 @@ void reduceInconsistency(std::shared_ptr<Queue> Q,
 
             // Update neighbors of thisNode if it has
             // changed more than change thresh
-            if( thisNode->rrtTreeCost - thisNode->rrtLMC > Q->changeThresh ) {
-                std::cout << "rewiring" << std::endl;
-                recalculateLMCMineVTwo( Q, thisNode, root, hyperBallRad );
+            if(thisNode->rrtTreeCost - thisNode->rrtLMC > Q->changeThresh) {
+                recalculateLMC( Q, thisNode, root, hyperBallRad );
                 rewire( Q, thisNode, root, hyperBallRad, Q->changeThresh );
             }
             thisNode->rrtTreeCost = thisNode->rrtLMC;
@@ -954,7 +953,7 @@ void makeParentOf( std::shared_ptr<KDTreeNode> newParent,
     node->successorListItemInParent = newParent->SuccessorList->front;
 }
 
-bool recalculateLMCMineVTwo(std::shared_ptr<Queue> Q,
+bool recalculateLMC(std::shared_ptr<Queue> Q,
                             std::shared_ptr<KDTreeNode> node,
                             std::shared_ptr<KDTreeNode> root,
                             double hyperBallRad)
@@ -1348,7 +1347,7 @@ void findNewTarget(std::shared_ptr<CSpace> S,
             double thisDist = Tree->distanceFunction(newNode->position,
                                                      R->robotPose);
             Edge::saturate(
-                        std::make_shared<Eigen::Vector4d>(newNode->position),
+                        newNode->position,
                         R->robotPose, S->delta, thisDist);
             Tree->kdInsert(newNode);
         }

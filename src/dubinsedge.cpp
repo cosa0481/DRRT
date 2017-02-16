@@ -6,50 +6,53 @@
 /////////////////////// Static Edge Functions ///////////////////////
 std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<CSpace> S,
                                     std::shared_ptr<KDTree> Tree,
-                                    std::shared_ptr<KDTreeNode> startNode,
-                                    std::shared_ptr<KDTreeNode> endNode)
+                                    std::shared_ptr<KDTreeNode>& startNode,
+                                    std::shared_ptr<KDTreeNode>& endNode)
 {
     return std::make_shared<DubinsEdge>(S,Tree,startNode,endNode);
 }
 
-void Edge::saturate(std::shared_ptr<Eigen::Vector4d> nP,
-                    Eigen::Vector4d cP,
+// For the Dubin's Car Model, saturate x,y,theta
+void Edge::saturate(Eigen::VectorXd& nP,
+                    Eigen::VectorXd cP,
                     double delta,
                     double dist)
 {
-    // First scale non-theta dimensions
-    ((*nP)).head(2) = cP.head(2) +
-            ( (*nP).head(2) - cP.head(2) ) * delta / dist;
+    if( nP.cols() == 3 ) {
+        // First scale non-theta dimensions
+        nP.head(2) = cP.head(2) +
+                ( nP.head(2) - cP.head(2) ) * delta / dist;
 
-    // Saturate theta in the shorter of the
-    // two directions that it can go
-    if( std::abs( (*nP)(2) - cP(2) ) < PI ) {
-        // Saturate in the normal way
-        (*nP)(2) = cP(2) +
-                ((*nP)(2) - cP(2)) * delta / dist;
-    } else {
-        // Saturate in the opposite way
-        if( (*nP)(2) < PI ) {
-            (*nP)(2) = (*nP)(2) + 2*PI;
+        // Saturate theta in the shorter of the
+        // two directions that it can go
+        if( std::abs( nP(2) - cP(2) ) < PI ) {
+            // Saturate in the normal way
+            nP(2) = cP(2) +
+                    (nP(2) - cP(2)) * delta / dist;
         } else {
-            (*nP)(2) = (*nP)(2) - 2*PI;
+            // Saturate in the opposite way
+            if( nP(2) < PI ) {
+                nP(2) = nP(2) + 2*PI;
+            } else {
+                nP(2) = nP(2) - 2*PI;
+            }
+
+            // Now saturate
+            nP(2) = cP(2) +
+                    (nP(2) - cP(2)) * delta / dist;
+
+            // Finally, wrap back to the identity that is on [0 2pi]
+            // Is this really wrapping?
+
+            Eigen::Vector2d minVec;
+            minVec(0) = nP(3);
+            minVec(1) = 2*PI;
+            Eigen::Vector2d maxVec;
+            maxVec(0) = minVec.minCoeff();
+            maxVec(1) = 0.0;
+
+            nP(2) = maxVec.maxCoeff();
         }
-
-        // Now saturate
-        (*nP)(2) = cP(2) +
-                ((*nP)(2) - cP(2)) * delta / dist;
-
-        // Finally, wrap back to the identity that is on [0 2pi]
-        // Is this really wrapping?
-
-        Eigen::Vector2d minVec;
-        minVec(0) = (*nP)(3);
-        minVec(1) = 2*PI;
-        Eigen::Vector2d maxVec;
-        maxVec(0) = minVec.minCoeff();
-        maxVec(1) = 0.0;
-
-        (*nP)(2) = maxVec.maxCoeff();
     }
 }
 
