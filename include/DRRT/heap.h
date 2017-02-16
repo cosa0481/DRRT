@@ -56,24 +56,24 @@ public:
 
 
     // Default heap marker function (marks when a node is in the heap)
-    void markD(std::shared_ptr<KDTreeNode> node)
+    void markD(std::shared_ptr<KDTreeNode> &node)
     {node->inHeap = true;}
 
-    void markQ(std::shared_ptr<KDTreeNode> node)
+    void markQ(std::shared_ptr<KDTreeNode> &node)
     {node->inPriorityQueue = true;}
 
-    void mark(std::shared_ptr<KDTreeNode> node)
+    void mark(std::shared_ptr<KDTreeNode> &node)
     {(useDefault ? markD(node) : markQ(node));}
 
 
     // Default heap unmarker function (un marks when a node is removed)
-    void unmarkD(std::shared_ptr<KDTreeNode> node)
+    void unmarkD(std::shared_ptr<KDTreeNode> &node)
     {node->inHeap = false;}
 
-    void unmarkQ(std::shared_ptr<KDTreeNode> node)
+    void unmarkQ(std::shared_ptr<KDTreeNode> &node)
     {node->inPriorityQueue = false;}
 
-    void unmark(std::shared_ptr<KDTreeNode> node)
+    void unmark(std::shared_ptr<KDTreeNode> &node)
     {(useDefault ? unmarkD(node) : unmarkQ(node));}
 
 
@@ -89,24 +89,24 @@ public:
 
 
     // Sets the heap index to a value
-    void setIndexD(std::shared_ptr<KDTreeNode> node, int value)
+    void setIndexD(std::shared_ptr<KDTreeNode> &node, int value)
     {node->heapIndex = value;}
 
-    void setIndexQ(std::shared_ptr<KDTreeNode> node, int value)
+    void setIndexQ(std::shared_ptr<KDTreeNode> &node, int value)
     {node->priorityQueueIndex = value;}
 
-    void setIndex(std::shared_ptr<KDTreeNode> node, int value)
+    void setIndex(std::shared_ptr<KDTreeNode> &node, int value)
     {(useDefault ? setIndexD(node,value) : setIndexQ(node,value));}
 
 
     // Set the heap index to the unused value (-1)
-    void unsetIndexD(std::shared_ptr<KDTreeNode> node)
+    void unsetIndexD(std::shared_ptr<KDTreeNode> &node)
     {node->heapIndex = -1;}
 
-    void unsetIndexQ(std::shared_ptr<KDTreeNode> node)
+    void unsetIndexQ(std::shared_ptr<KDTreeNode> &node)
     {node->priorityQueueIndex = -1;}
 
-    void unsetIndex(std::shared_ptr<KDTreeNode> node)
+    void unsetIndex(std::shared_ptr<KDTreeNode> &node)
     {(useDefault ? unsetIndexD(node) : unsetIndexQ(node));}
 
 
@@ -124,11 +124,11 @@ public:
     // Constructor
     BinaryHeap(bool useD) : indexOfLast(0), parentOfLast(-1), useDefault(useD)
     {
-        H.push_back( std::shared_ptr<KDTreeNode>() );
+//        this->H.push_back( std::shared_ptr<KDTreeNode>() );
     }
 
     // Returns the heap in a vector array
-    std::vector<std::shared_ptr<KDTreeNode>> getHeap() { return H; }
+    void getHeap(std::vector<std::shared_ptr<KDTreeNode>> &heap);
     // Returns the index of the last node in the heap array
     int* getIndexOfLast() {return &indexOfLast;}
     // Returns the index of the parent of the last index in the heap array
@@ -145,28 +145,28 @@ public:
     bool bubbleDown(int n);
 
     // Add a node to the heap
-    bool addToHeap(std::shared_ptr<KDTreeNode> node);
+    bool addToHeap(std::shared_ptr<KDTreeNode> &n);
 
     // Returns the node thas is on the top of the heap
     // If heap is empty, return node with data = -1
-    std::shared_ptr<KDTreeNode> topHeap();
+    void topHeap(std::shared_ptr<KDTreeNode> &node);
 
     // Removes the top valued node from the heap and returns it
     // If heap is empty, return node with data = -1
-    std::shared_ptr<KDTreeNode> popHeap();
+    void popHeap(std::shared_ptr<KDTreeNode> &node);
 
     // Removes the node from the heap, assuming that it is in the heap
     bool removeFromHeap(std::shared_ptr<KDTreeNode> node);
 
     // Updates a node that is already in the heap
-    bool updateHeap(std::shared_ptr<KDTreeNode> node);
+    bool updateHeap(std::shared_ptr<KDTreeNode> &node);
 
     // Returns true if heap is good, false if bad
     bool checkHeap();
 
     // Removes all items from the heap and returns an array containing
     // the heap items (unsorted)
-    std::vector<std::shared_ptr<KDTreeNode>> cleanHeap();
+    void cleanHeap(std::vector<std::shared_ptr<KDTreeNode>> &heap);
 
     /* Heap operation functions for returning the largest thing */
 
@@ -181,13 +181,13 @@ public:
     bool bubbleDownB(int n);
 
     // Add node to the heap
-    bool addToHeapB(std::shared_ptr<KDTreeNode> node);
+    bool addToHeapB(std::shared_ptr<KDTreeNode> &node);
 
     // Returns the node that is on top of the heap
-    std::shared_ptr<KDTreeNode> topHeapB() {return topHeap();}
+    void topHeapB(std::shared_ptr<KDTreeNode> &node) {return topHeap(node);}
 
     // Removes the top valued node from the heap and returns it
-    std::shared_ptr<KDTreeNode> popHeapB();
+    void popHeapB(std::shared_ptr<KDTreeNode> &node);
 
     // Removes the node from the heap, assuming it is in the heap
     bool removeFromHeapB(std::shared_ptr<KDTreeNode> node);
@@ -200,7 +200,8 @@ public:
 
     // Removes all items from the heap and returns an array containing
     // the heap items (unsorted)
-    std::vector<std::shared_ptr<KDTreeNode>> cleanHeapB() {return cleanHeap();}
+    void cleanHeapB(std::vector<std::shared_ptr<KDTreeNode>> &h)
+    { return cleanHeap(h); }
 };
 
 #endif // HEAP_H

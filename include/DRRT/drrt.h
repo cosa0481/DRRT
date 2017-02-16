@@ -198,12 +198,12 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
 // Takes care of inserting a new node in RRT
 // Returns true if successful
 bool extend(std::shared_ptr<KDTree> Tree,
-            std::shared_ptr<Queue> Q,
-            std::shared_ptr<KDTreeNode> newNode,
-            std::shared_ptr<KDTreeNode> closestNode,
+            std::shared_ptr<Queue> &Q,
+            std::shared_ptr<KDTreeNode> &newNode,
+            std::shared_ptr<KDTreeNode> &closestNode,
             double delta,
             double hyperBallRad,
-            std::shared_ptr<KDTreeNode> moveGoal);
+            std::shared_ptr<KDTreeNode> &moveGoal);
 
 
 /////////////////////// RRT* Functions ///////////////////////
@@ -292,10 +292,10 @@ void updateQueue(std::shared_ptr<Queue> Q,
 // Uses above implementation of extend with Q = rrtSharpQueue
 
 // Propogates cost information through the graph
-void reduceInconsistency(std::shared_ptr<Queue> Q,
-                         std::shared_ptr<KDTreeNode> goalNode,
+void reduceInconsistency(std::shared_ptr<Queue> &Q,
+                         std::shared_ptr<KDTreeNode> &goalNode,
                          double robotRad,
-                         std::shared_ptr<KDTreeNode> root,
+                         std::shared_ptr<KDTreeNode> &root,
                          double hyperBallRad);
 
 
@@ -303,22 +303,22 @@ void reduceInconsistency(std::shared_ptr<Queue> Q,
 // Functions used for RRTx
 
 // Successor stack marker function (marks when a node is in the successor stack OS)
-void markOS(std::shared_ptr<KDTreeNode> node);
+void markOS(std::shared_ptr<KDTreeNode> &node);
 
 // Successor stack unmarker function (unmarks when a node is removed from OS)
-void unmarkOS(std::shared_ptr<KDTreeNode> node);
+void unmarkOS(std::shared_ptr<KDTreeNode> &node);
 
 // Successor stack queue check marker function (checks if the node is marked OS)
 bool markedOS(std::shared_ptr<KDTreeNode> node);
 
 // Makes sure the node is in the priority queue
 bool verifyInQueue(std::shared_ptr<Queue> Q,
-                   std::shared_ptr<KDTreeNode> node);
+                   std::shared_ptr<KDTreeNode> &node);
 
 // Makes sure the node is in the OS queue
 // Removes it from the normal queue if necessary
 bool verifyInOSQueue(std::shared_ptr<Queue> Q,
-                     std::shared_ptr<KDTreeNode> node);
+                     std::shared_ptr<KDTreeNode> &node);
 
 // Removes members of the current neighbor list of node that are too far away
 void cullCurrentNeighbors(std::shared_ptr<KDTreeNode> node,

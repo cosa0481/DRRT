@@ -51,7 +51,7 @@ public:
                    int indent=0, char type=' ');
 
     // Inserts a new node into the tree
-    bool kdInsert(std::shared_ptr<KDTreeNode> node);
+    bool kdInsert(std::shared_ptr<KDTreeNode> &node);
 
     /////////////////////// Nearest ///////////////////////
 

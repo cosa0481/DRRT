@@ -208,7 +208,6 @@ std::shared_ptr<RobotData> RRTX(Problem p)
 // This was created by Michael Otte (R3SDist) using [x,y,t,theta] (Dubin's)
 double distance_function( Eigen::VectorXd a, Eigen::VectorXd b )
 {
-//    return sqrt( pow(a(0)-b(0),2) + pow(a(1)-b(1),2) );
     Eigen::ArrayXd temp = a.head(2) - b.head(2);
     temp = temp*temp;
     return sqrt( temp.sum()

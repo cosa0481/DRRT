@@ -2,7 +2,7 @@
  * Corin Sandford
  * Test written by: Michael Otte
  * Fall 2016
- * Test for BinaryHeap and HeapNode classes
+ * Test for BinaryHeap and this->HeapNode classes
  */
 
 #include <DRRT/heap.h>
@@ -11,6 +11,9 @@
 #include <time.h>
 #include <cstdlib>
 
+void BinaryHeap::getHeap(std::vector<std::shared_ptr<KDTreeNode>> &heap)
+{ heap = this->H; }
+
 /* Heap operation functions for returning the smallest thing */
 
 bool BinaryHeap::bubbleUp( int n )
@@ -18,15 +21,15 @@ bool BinaryHeap::bubbleUp( int n )
     if( n == 1 ) return true;
 
     int parent = n/2;
-    while( n > 1 && greaterThan(H[parent], H[n]) ) {
+    while( n > 1 && greaterThan(this->H[parent], this->H[n]) ) {
         // Swap graph node pointers
-        std::shared_ptr<KDTreeNode> tempNode = H[parent];
-        H[parent] = H[n];
-        H[n] = tempNode;
+        std::shared_ptr<KDTreeNode> tempNode = this->H[parent];
+        this->H[parent] = this->H[n];
+        this->H[n] = tempNode;
 
         // Update graph node heap index values
-        setIndex( H[parent], parent );
-        setIndex( H[n], n );
+        setIndex( this->H[parent], parent );
+        setIndex( this->H[n], n );
 
         // Get new node and parent indicies
         n = parent;
@@ -42,21 +45,21 @@ bool BinaryHeap::bubbleDown( int n )
         child = 2*n;
     } else if ( 2*n+1 > indexOfLast ) {
         return true;
-    } else if ( lessThan(H[2*n],H[2*n+1]) ) {
+    } else if ( lessThan(this->H[2*n],this->H[2*n+1]) ) {
         child = 2*n;
     } else {
         child = 2*n+1;
     }
 
-    while( n <= parentOfLast && lessThan(H[child],H[n]) ) {
+    while( n <= parentOfLast && lessThan(this->H[child],this->H[n]) ) {
         // Swap node pointers
-        std::shared_ptr<KDTreeNode> tempNode = H[child];
-        H[child] = H[n];
-        H[n] = tempNode;
+        std::shared_ptr<KDTreeNode> tempNode = this->H[child];
+        this->H[child] = this->H[n];
+        this->H[n] = tempNode;
 
         // Update graph node heap index values
-        setIndex( H[child], child );
-        setIndex( H[n], n );
+        setIndex( this->H[child], child );
+        setIndex( this->H[n], n );
 
         // Get new node and child indicies
         n = child;
@@ -64,7 +67,7 @@ bool BinaryHeap::bubbleDown( int n )
             child = 2*n;
         } else if ( 2*n+1 > indexOfLast ) {
             return true;
-        } else if ( lessThan(H[2*n],H[2*n+1]) ) {
+        } else if ( lessThan(this->H[2*n],this->H[2*n+1]) ) {
             child = 2*n;
         } else {
             child = 2*n+1;
@@ -73,57 +76,63 @@ bool BinaryHeap::bubbleDown( int n )
     return true;
 }
 
-bool BinaryHeap::addToHeap(std::shared_ptr<KDTreeNode> node)
+bool BinaryHeap::addToHeap(std::shared_ptr<KDTreeNode> &n)
 {
-    if( !marked(node) ) {
+    if( !marked(n) ) {
+        std::cout << "PQadd: " << n << "\n" << n->position << std::endl;
         indexOfLast += 1;
         parentOfLast = indexOfLast/2;
-        H.push_back( node );
+        H.push_back( n );
         setIndex( H[indexOfLast], indexOfLast );
         mark( H[indexOfLast] );
         bubbleUp( indexOfLast );
     } else {
         // Node is already in heap
+        std::cout << "node already in heap" << std::endl;
         return false;
     }
     return true;
 }
 
-std::shared_ptr<KDTreeNode> BinaryHeap::topHeap()
+void BinaryHeap::topHeap(std::shared_ptr<KDTreeNode> &node)
 {
-    if( indexOfLast < 1 ) return std::make_shared<KDTreeNode>();
-    return H[1];
+    if( indexOfLast >= 1 ) node = this->H[1];
 }
 
-std::shared_ptr<KDTreeNode> BinaryHeap::popHeap()
+void BinaryHeap::popHeap(std::shared_ptr<KDTreeNode> &node)
 {
-    if( indexOfLast < 1 ) return std::make_shared<KDTreeNode>();
-    std::shared_ptr<KDTreeNode> oldTopNode = H[1];
-    H[1] = H[indexOfLast];
-    setIndex( H[1], 1 );
-    indexOfLast -= 1;
-    parentOfLast = indexOfLast/2;
-    bubbleDown( 1 );
-    unmark( oldTopNode );
-    unsetIndex( oldTopNode );
-    return oldTopNode;
+    std::cout << "popHeap()" << std::endl;
+    std::cout << "indexOfLast: " << indexOfLast << std::endl;
+    if( indexOfLast >= 1 ) {
+        std::shared_ptr<KDTreeNode> oldTopNode = this->H[1];
+        std::cout << "oldTopNode: " << oldTopNode << "\n" << oldTopNode->position << std::endl;
+        this->H[1] = this->H[indexOfLast];
+        std::cout << "H[1]: " << H[1] << "\n" << H[1]->position << std::endl;
+        setIndex( this->H[1], 1 );
+        indexOfLast -= 1;
+        parentOfLast = indexOfLast/2;
+        bubbleDown( 1 );
+        unmark( oldTopNode );
+        unsetIndex( oldTopNode );
+        node = oldTopNode;
+    }
 }
 
 bool BinaryHeap::removeFromHeap( std::shared_ptr<KDTreeNode> node )
 {
     int n = getIndex(node);
-    H[n] = H[indexOfLast];
-    setIndex( H[n], n );
+    this->H[n] = this->H[indexOfLast];
+    setIndex( this->H[n], n );
     indexOfLast -= 1;
     parentOfLast = indexOfLast/2;
     bubbleUp( n );
-    bubbleDown( getIndex(H[n]) );
+    bubbleDown( getIndex(this->H[n]) );
     unmark( node );
     unsetIndex( node );
     return true;
 }
 
-bool BinaryHeap::updateHeap( std::shared_ptr<KDTreeNode> node )
+bool BinaryHeap::updateHeap( std::shared_ptr<KDTreeNode> &node )
 {
     if( !marked( node ) ) {
         // Node not in the heap
@@ -139,24 +148,24 @@ bool BinaryHeap::checkHeap()
 
     int i = 2;
     if( indexOfLast < 1 ) {
-        std::cout << "Heap is empty" << std::endl;
+        std::cout << "this->Heap is empty" << std::endl;
         return true;
-    } else if( getIndex(H[1]) != 1 ) {
-        std::cout << "getIndex(H[1]) = " << getIndex(H[1]) << std::endl;
+    } else if( getIndex(this->H[1]) != 1 ) {
+        std::cout << "getIndex(this->H[1]) = " << getIndex(this->H[1]) << std::endl;
         std::cout << "There is a problem with the heap (root)" << std::endl;
         return false;
     }
 
     while( i <= indexOfLast ) {
-        if( lessThan(H[i],H[i/2]) ) {
+        if( lessThan(this->H[i],this->H[i/2]) ) {
             std::cout << "There is a problem with the heap order" << std::endl;
             return false;
-        } else if( getIndex(H[i]) != i ) {
+        } else if( getIndex(this->H[i]) != i ) {
             std::cout << "There is a problem with the heap node data: "
-                      << "getIndex(H["<<i<<"]) != "<<i << std::endl;
+                      << "getIndex(this->H["<<i<<"]) != "<<i << std::endl;
             for( int j = 1; j<=indexOfLast; j++ ) {
-                std::cout << "getIndex(H["<<j<<"]) = "
-                          << getIndex(H[j]) << std::endl;
+                std::cout << "getIndex(this->H["<<j<<"]) = "
+                          << getIndex(this->H[j]) << std::endl;
             }
             return false;
         }
@@ -167,21 +176,20 @@ bool BinaryHeap::checkHeap()
     return true;
 }
 
-std::vector<std::shared_ptr<KDTreeNode>> BinaryHeap::cleanHeap()
+void BinaryHeap::cleanHeap(std::vector<std::shared_ptr<KDTreeNode>> &heap)
 {
-    std::vector<std::shared_ptr<KDTreeNode>> heap = H;
     for( int i = 0; i <= indexOfLast; i++ ) {
-        unmark( H[i] );
-        unsetIndex( H[i] );
+        unmark( this->H[i] );
+        unsetIndex( this->H[i] );
     }
 
     indexOfLast = 0;
     parentOfLast = -1;
 
-    return heap;
+    heap = this->H;
 }
 
-/* Heap operation functions for returning the largest thing */
+/* this->Heap operation functions for returning the largest thing */
 
 bool BinaryHeap::bubbleUpB( int n )
 {
@@ -189,15 +197,15 @@ bool BinaryHeap::bubbleUpB( int n )
 
     int parent = n/2;
 
-    while( n > 1 && lessThan(H[parent],H[n]) ) {
+    while( n > 1 && lessThan(this->H[parent],this->H[n]) ) {
         // Swap graph node pointers
-        std::shared_ptr<KDTreeNode> tempNode = H[parent];
-        H[parent] = H[n];
-        H[n] = tempNode;
+        std::shared_ptr<KDTreeNode> tempNode = this->H[parent];
+        this->H[parent] = this->H[n];
+        this->H[n] = tempNode;
 
         // Update graph node heap index values
-        setIndex( H[parent], parent );
-        setIndex( H[n], n );
+        setIndex( this->H[parent], parent );
+        setIndex( this->H[n], n );
 
         // Get new node and parent indicies
         n = parent;
@@ -213,21 +221,21 @@ bool BinaryHeap::bubbleDownB( int n )
         child = 2*n;
     } else if ( 2*n+1 > indexOfLast ) {
         return true;
-    } else if ( greaterThan(H[2*n],H[2*n+1]) ) {
+    } else if ( greaterThan(this->H[2*n],this->H[2*n+1]) ) {
         child = 2*n;
     } else {
         child = 2*n+1;
     }
 
-    while( n <= parentOfLast && greaterThan(H[child],H[n]) ) {
+    while( n <= parentOfLast && greaterThan(this->H[child],this->H[n]) ) {
         // Swap node pointers
-        std::shared_ptr<KDTreeNode> tempNode = H[child];
-        H[child] = H[n];
-        H[n] = tempNode;
+        std::shared_ptr<KDTreeNode> tempNode = this->H[child];
+        this->H[child] = this->H[n];
+        this->H[n] = tempNode;
 
         // Update graph node heap index values
-        setIndex( H[child], child );
-        setIndex( H[n], n );
+        setIndex( this->H[child], child );
+        setIndex( this->H[n], n );
 
         // Get new node and child indicies
         n = child;
@@ -235,7 +243,7 @@ bool BinaryHeap::bubbleDownB( int n )
             child = 2*n;
         } else if ( 2*n+1 > indexOfLast ) {
             return true;
-        } else if ( greaterThan(H[2*n],H[2*n+1]) ) {
+        } else if ( greaterThan(this->H[2*n],this->H[2*n+1]) ) {
             child = 2*n;
         } else {
             child = 2*n+1;
@@ -244,14 +252,14 @@ bool BinaryHeap::bubbleDownB( int n )
     return true;
 }
 
-bool BinaryHeap::addToHeapB( std::shared_ptr<KDTreeNode> node )
+bool BinaryHeap::addToHeapB( std::shared_ptr<KDTreeNode> &node )
 {
     if( !marked(node) ) {
         indexOfLast += 1;
         parentOfLast = indexOfLast/2;
-        H.push_back( node );
-        setIndex( H[indexOfLast], indexOfLast );
-        mark( H[indexOfLast] );
+        this->H.push_back( node );
+        setIndex( this->H[indexOfLast], indexOfLast );
+        mark( this->H[indexOfLast] );
         bubbleUpB( indexOfLast );
     } else {
         // Node is already in heap
@@ -260,29 +268,30 @@ bool BinaryHeap::addToHeapB( std::shared_ptr<KDTreeNode> node )
     return true;
 }
 
-std::shared_ptr<KDTreeNode> BinaryHeap::popHeapB()
+void BinaryHeap::popHeapB(std::shared_ptr<KDTreeNode> &node)
 {
-    if( indexOfLast < 1 ) return std::make_shared<KDTreeNode>();
-    std::shared_ptr<KDTreeNode> oldTopNode = H[1];
-    H[1] = H[indexOfLast];
-    setIndex( H[1], 1 );
-    indexOfLast -= 1;
-    parentOfLast = indexOfLast/2;
-    bubbleDownB( 1 );
-    unmark( oldTopNode );
-    unsetIndex( oldTopNode );
-    return oldTopNode;
+    if( indexOfLast >= 1 ) {
+        std::shared_ptr<KDTreeNode> oldTopNode = this->H[1];
+        this->H[1] = this->H[indexOfLast];
+        setIndex( this->H[1], 1 );
+        indexOfLast -= 1;
+        parentOfLast = indexOfLast/2;
+        bubbleDownB( 1 );
+        unmark( oldTopNode );
+        unsetIndex( oldTopNode );
+        node = oldTopNode;
+    }
 }
 
 bool BinaryHeap::removeFromHeapB( std::shared_ptr<KDTreeNode> node )
 {
     int n = getIndex( node );
-    H[n] = H[indexOfLast];
-    setIndex( H[n], n );
+    this->H[n] = this->H[indexOfLast];
+    setIndex( this->H[n], n );
     indexOfLast -= 1;
     parentOfLast = indexOfLast/2;
     bubbleUpB( n );
-    bubbleDownB( getIndex(H[n]) );
+    bubbleDownB( getIndex(this->H[n]) );
     unmark( node );
     unsetIndex( node );
     return true;
@@ -303,24 +312,24 @@ bool BinaryHeap::checkHeapB()
 {
     int i = 2;
     if( indexOfLast < 1 ) {
-        std::cout << "Heap is empty" << std::endl;
+        std::cout << "this->Heap is empty" << std::endl;
         return true;
-    } else if( getIndex(H[1]) != 1 ) {
-        std::cout << getIndex(H[1]) << std::endl;
+    } else if( getIndex(this->H[1]) != 1 ) {
+        std::cout << getIndex(this->H[1]) << std::endl;
         std::cout << "There is a problem with the heap (root)" << std::endl;
         return false;
     }
 
     while( i <= indexOfLast ) {
-        if( greaterThan(H[i],H[i/2]) ) {
+        if( greaterThan(this->H[i],this->H[i/2]) ) {
             std::cout << "There is a problem with the heap order" << std::endl;
             return false;
-        } else if( getIndex(H[i]) != i ) {
+        } else if( getIndex(this->H[i]) != i ) {
             std::cout << "There is a problem with the heap node data: "
-                      << "getIndex(H["<<i<<"]) != "<< i << std::endl;
+                      << "getIndex(this->H["<<i<<"]) != "<< i << std::endl;
             for( int j = 1; j<=indexOfLast; j++ ) {
-                std::cout << "getIndex(H["<<j<<"]) = "
-                          << getIndex(H[j]) << std::endl;
+                std::cout << "getIndex(this->H["<<j<<"]) = "
+                          << getIndex(this->H[j]) << std::endl;
             }
             return false;
         }
@@ -334,12 +343,12 @@ bool BinaryHeap::checkHeapB()
 /* Test case
 int main()
 {
-    std::cout << "Test of BinaryHeap and HeapNode data classes" << std::endl;
+    std::cout << "Test of BinaryHeap and this->HeapNode data classes" << std::endl;
     std::cout << "--------------------------------------------" << std::endl;
 
     // Tests heap operation functions for returning the smallest thing
 
-    BinaryHeap BH = BinaryHeap();
+    BinaryHeap Bthis->H = BinaryHeap();
     srand(time(NULL));
     double r;
     for( int i = 1; i <= 100; i++ ) {
@@ -349,32 +358,32 @@ int main()
          if( (r = (double) rand() / (RAND_MAX)) > 0.2 ) {
             std::cout << "add" << std::endl;
             KDTreeNode node = KDTreeNode(r);
-            if( !BH.addToHeap( &node ) ) {
+            if( !Bthis->H.addTothis->Heap( &node ) ) {
                 std::cout << "node not added to heap" << std::endl;
             }
          } else if( (r = (double) rand() / (RAND_MAX)) > 0.5 ) {
              std::cout << "pop" << std::endl;
-             BH.popHeap();
-         } else if( *BH.getIndexOfLast() > 1.0 ) {
+             Bthis->H.popthis->Heap();
+         } else if( *Bthis->H.getIndexOfLast() > 1.0 ) {
              std::cout << "remove" << std::endl;
-             int randN = (int) rand() % (*BH.getIndexOfLast()) + 1;
-             std::vector<KDTreeNode> heap = *BH.getHeap();
-             BH.removeFromHeap( &heap[ randN ] );
+             int randN = (int) rand() % (*Bthis->H.getIndexOfLast()) + 1;
+             std::vector<KDTreeNode> heap = *Bthis->H.getthis->Heap();
+             Bthis->H.removeFromthis->Heap( &heap[ randN ] );
          }
 
-         BH.checkHeap();
+         Bthis->H.checkthis->Heap();
 
          if( (r = (double) rand() / (RAND_MAX)) > 0.5
-                && *BH.getIndexOfLast() > 1.0 ) {
+                && *Bthis->H.getIndexOfLast() > 1.0 ) {
              std::cout << "update" << std::endl;
-             int randN = (int) rand() % (*BH.getIndexOfLast()) + 1;
-             std::vector<KDTreeNode>& heap = *BH.getHeap();
+             int randN = (int) rand() % (*Bthis->H.getIndexOfLast()) + 1;
+             std::vector<KDTreeNode>& heap = *Bthis->H.getthis->Heap();
              heap[ randN ].dist = (double) rand() / (RAND_MAX);
-             if( !BH.updateHeap( heap[ randN ] ) ) {
+             if( !Bthis->H.updatethis->Heap( heap[ randN ] ) ) {
                  std::cout << "node at index: " << randN
                            << " not in heap" << std::endl;
              }
-             BH.checkHeap();
+             Bthis->H.checkthis->Heap();
          }
 
 
@@ -384,7 +393,7 @@ int main()
 
     // Tests heap operation function for returning the largest thing
 
-    BH = BinaryHeap();
+    Bthis->H = BinaryHeap();
     srand(time(NULL));
     for( int i = 1; i <= 100; i++ ) {
 
@@ -393,32 +402,32 @@ int main()
          if( (r = (double) rand() / (RAND_MAX)) > 0.2 ) {
             std::cout << "add" << std::endl;
             KDTreeNode node = KDTreeNode(r);
-            if( !BH.addToHeapB( &node ) ) {
+            if( !Bthis->H.addTothis->HeapB( &node ) ) {
                 std::cout << "node not added to heap" << std::endl;
             }
          } else if( (r = (double) rand() / (RAND_MAX)) > 0.5 ) {
              std::cout << "pop" << std::endl;
-             BH.popHeapB();
-         } else if( *BH.getIndexOfLast() > 1.0 ) {
+             Bthis->H.popthis->HeapB();
+         } else if( *Bthis->H.getIndexOfLast() > 1.0 ) {
              std::cout << "remove" << std::endl;
-             int randN = (int) rand() % (*BH.getIndexOfLast()) + 1;
-             std::vector<KDTreeNode> heap = *BH.getHeap();
-             BH.removeFromHeapB( &heap[ randN ] );
+             int randN = (int) rand() % (*Bthis->H.getIndexOfLast()) + 1;
+             std::vector<KDTreeNode> heap = *Bthis->H.getthis->Heap();
+             Bthis->H.removeFromthis->HeapB( &heap[ randN ] );
          }
 
-         BH.checkHeapB();
+         Bthis->H.checkthis->HeapB();
 
          if( (r = (double) rand() / (RAND_MAX)) > 0.5
-                && *BH.getIndexOfLast() > 1.0 ) {
+                && *Bthis->H.getIndexOfLast() > 1.0 ) {
              std::cout << "update" << std::endl;
-             int randN = (int) rand() % (*BH.getIndexOfLast()) + 1;
-             std::vector<KDTreeNode>& heap = *BH.getHeap();
+             int randN = (int) rand() % (*Bthis->H.getIndexOfLast()) + 1;
+             std::vector<KDTreeNode>& heap = *Bthis->H.getthis->Heap();
              heap[ randN ].dist = (double) rand() / (RAND_MAX);
-             if( !BH.updateHeapB( heap[ randN ] ) ) {
+             if( !Bthis->H.updatethis->HeapB( heap[ randN ] ) ) {
                  std::cout << "node at index: " << randN
                            << " not in heap" << std::endl;
              }
-             BH.checkHeapB();
+             Bthis->H.checkthis->HeapB();
          }
 
 

@@ -17,8 +17,8 @@ void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
     std::cout << node->position(0) << ","
               << node->position(1) << ": "
               << node->rrtLMC;
-    if( node->kdParentExist)
-        std::cout << " : " << node->position(node->kdParent->kdSplit);
+//    if( node->kdParentExist)
+//        std::cout << " : " << node->position(node->kdParent->kdSplit);
     if( !node->kdChildLExist && !node->kdChildRExist ) {
         std::cout << " | leaf" << std::endl;
     } else {
@@ -32,7 +32,7 @@ void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
     }
 }
 
-bool KDTree::kdInsert(std::shared_ptr<KDTreeNode> node)
+bool KDTree::kdInsert(std::shared_ptr<KDTreeNode>& node)
 {
     if( node->kdInTree ) return false;
     node->kdInTree = true;
@@ -441,25 +441,29 @@ std::shared_ptr<KDTreeNode> KDTree::addToKNNHeap(std::shared_ptr<BinaryHeap> H,
                                                  double key,
                                                  int k)
 {
-    std::vector<std::shared_ptr<KDTreeNode>> heap = H->getHeap();
+    std::vector<std::shared_ptr<KDTreeNode>> heap;
+    H->getHeap(heap);
+    std::shared_ptr<KDTreeNode> top = std::make_shared<KDTreeNode>();
     if( node->inHeap ) {
-        if( H->topHeapB()->dist == -1 ) {
+        H->topHeapB(top);
+        if( top->dist == -1 ) {
             std::cout << "Heap node has no reference tree node!" << std::endl;
         }
-        return H->topHeapB();
+        return top;
     } else if( *H->getIndexOfLast() < k ) {
         // Just insert
         node->dist = key;
-        H->addToHeapB( node );
+        H->addToHeapB(node);
     } else if( heap[1]->dist > key ) {
-        H->popHeapB();
+        H->popHeapB(top);
         node->dist = key;
-        H->addToHeapB( node );
+        H->addToHeapB(node);
     }
-    if( H->topHeapB()->dist == -1 ) {
+    H->topHeapB(top);
+    if( top->dist == -1 ) {
         std::cout << "Heap node has no reference tree node!" << std::endl;
     }
-    return H->topHeapB();
+    return top;
 }
 
 bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
@@ -471,8 +475,8 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
 {
     // Walk down the tree as if the node would be inserted
     std::shared_ptr<KDTreeNode> parent = root;
-    std::shared_ptr<KDTreeNode> currentWorstClosestNode
-            = nearestHeap->topHeapB();
+    std::shared_ptr<KDTreeNode> currentWorstClosestNode;
+    nearestHeap->topHeapB(currentWorstClosestNode);
     std::shared_ptr<double> currentWorstClosestDist
             = std::make_shared<double>(currentWorstClosestNode->dist);
     while( true ) {
@@ -572,16 +576,17 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
 std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
                                                 Eigen::VectorXd queryPoint)
 {
-    BinaryHeap H = BinaryHeap(true); // true >> use heap functions (key not keyQ)
+    std::shared_ptr<BinaryHeap> Heap = std::make_shared<BinaryHeap>(true);
+    // true >> use heap functions (key not keyQ)
 
     // Insert root node in heap
     this->root->dist = this->distanceFunction(queryPoint, this->root->position);
-    H.addToHeapB( this->root );
+    Heap->addToHeapB( this->root );
 
     // Insert a dummy node in the heap with INF key
     std::shared_ptr<KDTreeNode> dummyNode
             = std::make_shared<KDTreeNode>((double)INF);
-    H.addToHeapB( dummyNode );
+    Heap->addToHeapB( dummyNode );
 
     // Find k nearest neighbors
     std::shared_ptr<KDTreeNode> farthestNearestNode
@@ -590,7 +595,7 @@ std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
             = std::make_shared<double>(0);
     kdFindKNearestInSubtree( farthestNearestNode, farthestNearestNodeDist,
                              this->root, k,
-                             queryPoint, std::make_shared<BinaryHeap>(H) );
+                             queryPoint, Heap );
 
     if( this->numWraps > 0 ) {
         std::cout << "ERROR: knn search not implemented for wrapped space"
@@ -598,10 +603,12 @@ std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
     }
 
     // Remove the dummy node if still there (guarenteed to be on top, due to INF key)
-    std::shared_ptr<KDTreeNode> topNode = H.topHeapB();
-    if( topNode == dummyNode ) H.popHeapB();
-
-    return H.cleanHeapB();
+    std::shared_ptr<KDTreeNode> topNode = std::make_shared<KDTreeNode>();
+    Heap->topHeapB(topNode);
+    if( topNode == dummyNode ) Heap->popHeapB(topNode);
+    std::vector<std::shared_ptr<KDTreeNode>> dHeap;
+    Heap->cleanHeapB(dHeap);
+    return dHeap;
 }
 
 /////////////////////// Within Range ///////////////////////
