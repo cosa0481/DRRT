@@ -233,59 +233,59 @@ void findBestParent(std::shared_ptr<CSpace> S,
 
 // Checks all nodes in the heap to see if there are edge problems -collision-
 // Returns true if there are edge problems
-bool checkHeapForEdgeProblems(std::shared_ptr<Queue> Q);
+bool checkHeapForEdgeProblems(std::shared_ptr<Queue> &Q);
 
 // Resets the neighbor iterator
-void resetNeighborIterator(std::shared_ptr<RRTNodeNeighborIterator> It);
+void resetNeighborIterator(std::shared_ptr<RRTNodeNeighborIterator> &It);
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-std::shared_ptr<JListNode> nextOutNeighbor(
-        std::shared_ptr<RRTNodeNeighborIterator> It,
-        std::shared_ptr<Queue> Q);
+//std::shared_ptr<JListNode> nextOutNeighbor(
+//        std::shared_ptr<RRTNodeNeighborIterator> It,
+//        std::shared_ptr<Queue> Q);
 
 // Returns the JListNode containing the next neighbor of the node
 // for which this iterator was created
-std::shared_ptr<JListNode> nextInNeighbor(
-        std::shared_ptr<RRTNodeNeighborIterator> It,
-        std::shared_ptr<Queue> Q);
+//std::shared_ptr<JListNode> nextInNeighbor(
+//        std::shared_ptr<RRTNodeNeighborIterator> It,
+//        std::shared_ptr<Queue> Q);
 
 // Links an edge -from- node -to- newNeighbor
 // Edge should already be populated correctly.
-void makeNeighborOf(std::shared_ptr<KDTreeNode> newNeighbor,
-                    std::shared_ptr<KDTreeNode> node,
-                    std::shared_ptr<Edge> edge);
+void makeNeighborOf(std::shared_ptr<KDTreeNode> &newNeighbor,
+                    std::shared_ptr<KDTreeNode> &node,
+                    std::shared_ptr<Edge> &edge);
 
 // Links an "initial" "out" edge -from- node -to newNeighbor
 // Edge should already be populated correctly.
 // This is actually only used for -RRTx- but is included here because
 // of its similarity to the function above.
-void makeInitialOutNeighborOf(std::shared_ptr<KDTreeNode> newNeighbor,
-                              std::shared_ptr<KDTreeNode> node,
-                              std::shared_ptr<Edge> edge);
+void makeInitialOutNeighborOf(std::shared_ptr<KDTreeNode> &newNeighbor,
+                              std::shared_ptr<KDTreeNode> &node,
+                              std::shared_ptr<Edge> &edge);
 
 // Links an "initial" "in" edge -from- node -to- newNeighbor
 // (i.e. the edge is only stored on the recieving node and not on the sending node)
 // Edge should already be populated correctly.
 // This is actually only used for -RRTx- but is included here because
 // of its similarity to the functions above.
-void makeInitialInNeighborOf(std::shared_ptr<KDTreeNode> newNeighbor,
-                             std::shared_ptr<KDTreeNode> node,
-                             std::shared_ptr<Edge> edge);
+void makeInitialInNeighborOf(std::shared_ptr<KDTreeNode> &newNeighbor,
+                             std::shared_ptr<KDTreeNode> &node,
+                             std::shared_ptr<Edge> &edge);
 
 // Recalculates LMC based on neighbors that this node can reach
 // Note the first argument in unused but necessary for the multiple
 // dispatch that is used to differentiate between RRT* and RRT#
 // Returns true if successful
-bool recalculateLMC(std::shared_ptr<Queue> Q,
-                    std::shared_ptr<KDTreeNode> node,
-                    std::shared_ptr<KDTreeNode> root);
+//bool recalculateLMC(std::shared_ptr<Queue> Q,
+//                    std::shared_ptr<KDTreeNode> node,
+//                    std::shared_ptr<KDTreeNode> root);
 
 // Updates the priority queue (adds node if necessary, does not if not)
 // Returns true if node is added
-void updateQueue(std::shared_ptr<Queue> Q,
-                 std::shared_ptr<KDTreeNode> newNode,
-                 std::shared_ptr<KDTreeNode> root,
+void updateQueue(std::shared_ptr<Queue> &Q,
+                 std::shared_ptr<KDTreeNode> &newNode,
+                 std::shared_ptr<KDTreeNode> &root,
                  double hyperBallRad);
 
 // Takes care of inserting a new node in RRT#
@@ -312,49 +312,51 @@ void unmarkOS(std::shared_ptr<KDTreeNode> &node);
 bool markedOS(std::shared_ptr<KDTreeNode> node);
 
 // Makes sure the node is in the priority queue
-bool verifyInQueue(std::shared_ptr<Queue> Q,
+bool verifyInQueue(std::shared_ptr<Queue> &Q,
                    std::shared_ptr<KDTreeNode> &node);
 
 // Makes sure the node is in the OS queue
 // Removes it from the normal queue if necessary
-bool verifyInOSQueue(std::shared_ptr<Queue> Q,
+bool verifyInOSQueue(std::shared_ptr<Queue> &Q,
                      std::shared_ptr<KDTreeNode> &node);
 
 // Removes members of the current neighbor list of node that are too far away
-void cullCurrentNeighbors(std::shared_ptr<KDTreeNode> node,
+void cullCurrentNeighbors(std::shared_ptr<KDTreeNode> &node,
                           double hyperBallRad);
 
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
 std::shared_ptr<JListNode> nextOutNeighbor(
-        std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q);
+        std::shared_ptr<RRTNodeNeighborIterator> &It,
+        std::shared_ptr<Queue> &Q);
 
 // RRTx based version
 // Returns the JListNode containing the next outgoing neighbor edge of the
 // node for which this iterator was created
 std::shared_ptr<JListNode> nextInNeighbor(
-        std::shared_ptr<RRTNodeNeighborIterator> It, Queue Q);
+        std::shared_ptr<RRTNodeNeighborIterator> &It,
+        std::shared_ptr<Queue> &Q);
 
 // Makes newParent the parent of node via the edge
-void makeParentOf(std::shared_ptr<KDTreeNode> newParent,
-                  std::shared_ptr<KDTreeNode> node,
-                  std::shared_ptr<Edge> edge,
-                  std::shared_ptr<KDTreeNode> root);
+void makeParentOf(std::shared_ptr<KDTreeNode> &newParent,
+                  std::shared_ptr<KDTreeNode> &node,
+                  std::shared_ptr<Edge> &edge,
+                  std::shared_ptr<KDTreeNode> &root);
 
 // Recalculates LMC based on neighbors
 // Returns true if successful
-bool recalculateLMC(std::shared_ptr<Queue> Q,
-                            std::shared_ptr<KDTreeNode> node,
-                            std::shared_ptr<KDTreeNode> root,
+bool recalculateLMC(std::shared_ptr<Queue> &Q,
+                            std::shared_ptr<KDTreeNode> &node,
+                            std::shared_ptr<KDTreeNode> &root,
                             double hyperBallRad);
 
 // This is the (non-initial) rewire function used by RRTx that is
 // responsible for propogating changes through the graph
 // Returns true if successful
-bool rewire( std::shared_ptr<Queue> Q,
-             std::shared_ptr<KDTreeNode> node,
-             std::shared_ptr<KDTreeNode> root,
+bool rewire( std::shared_ptr<Queue> &Q,
+             std::shared_ptr<KDTreeNode> &node,
+             std::shared_ptr<KDTreeNode> &root,
              double hyperBallRad,
              double changeThresh);
 
@@ -365,7 +367,7 @@ bool rewire( std::shared_ptr<Queue> Q,
 // of the nodes in Q.OS stack (that have higher cost). This also takes
 // the robot to remember if node the robot was moving at is one of the
 // nodes that has become an orphan. Returns true if successful.
-bool propogateDescendants(std::shared_ptr<Queue> Q,
+bool propogateDescendants(std::shared_ptr<Queue> &Q,
                           std::shared_ptr<KDTree> Tree,
                           std::shared_ptr<RobotData> R);
 
@@ -378,10 +380,10 @@ bool propogateDescendants(std::shared_ptr<Queue> Q,
  * This helps the robot to reach the goal location as quickly as
  * possible instead of burning time
  */
-void addOtherTimesToRoot( std::shared_ptr<CSpace> S,
+void addOtherTimesToRoot( std::shared_ptr<CSpace> &S,
                           std::shared_ptr<KDTree> Tree,
-                          std::shared_ptr<KDTreeNode> goal,
-                          std::shared_ptr<KDTreeNode> root,
+                          std::shared_ptr<KDTreeNode> &goal,
+                          std::shared_ptr<KDTreeNode> &root,
                           std::string searchType);
 
 // Attempts to find a new move target for the robot, places
@@ -397,9 +399,9 @@ void findNewTarget( std::shared_ptr<CSpace> S,
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot(std::shared_ptr<Queue> Q,
+void moveRobot(std::shared_ptr<Queue> &Q,
                std::shared_ptr<KDTree> Tree,
-               std::shared_ptr<KDTreeNode> root,
+               std::shared_ptr<KDTreeNode> &root,
                double slice_time,
                double hyperBallRad,
                std::shared_ptr<RobotData> R);

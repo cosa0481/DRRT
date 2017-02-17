@@ -123,7 +123,7 @@ typedef struct RRTNodeNeighborIterator{
                             // iterating through
 
     // Constructor
-    RRTNodeNeighborIterator( std::shared_ptr<KDTreeNode> node ):
+    RRTNodeNeighborIterator( std::shared_ptr<KDTreeNode> &node ):
         thisNode(node), listFlag(0)
     {}
 

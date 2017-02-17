@@ -124,8 +124,11 @@ public:
     // Constructor
     BinaryHeap(bool useD) : indexOfLast(0), parentOfLast(-1), useDefault(useD)
     {
-//        this->H.push_back( std::shared_ptr<KDTreeNode>() );
+        this->H.push_back( std::make_shared<KDTreeNode>() );
     }
+
+    // Displays the KDTreeNodes in the heap
+    void displayHeap();
 
     // Returns the heap in a vector array
     void getHeap(std::vector<std::shared_ptr<KDTreeNode>> &heap);
@@ -145,7 +148,7 @@ public:
     bool bubbleDown(int n);
 
     // Add a node to the heap
-    bool addToHeap(std::shared_ptr<KDTreeNode> &n);
+    bool addToHeap(std::shared_ptr<KDTreeNode> &node);
 
     // Returns the node thas is on the top of the heap
     // If heap is empty, return node with data = -1
@@ -156,7 +159,7 @@ public:
     void popHeap(std::shared_ptr<KDTreeNode> &node);
 
     // Removes the node from the heap, assuming that it is in the heap
-    bool removeFromHeap(std::shared_ptr<KDTreeNode> node);
+    bool removeFromHeap(std::shared_ptr<KDTreeNode> &node);
 
     // Updates a node that is already in the heap
     bool updateHeap(std::shared_ptr<KDTreeNode> &node);

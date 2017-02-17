@@ -577,7 +577,7 @@ std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
                                                 Eigen::VectorXd queryPoint)
 {
     std::shared_ptr<BinaryHeap> Heap = std::make_shared<BinaryHeap>(true);
-    // true >> use heap functions (key not keyQ)
+    // true >> use heap functions (key not keyQ) not priority queue functions
 
     // Insert root node in heap
     this->root->dist = this->distanceFunction(queryPoint, this->root->position);

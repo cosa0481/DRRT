@@ -112,7 +112,7 @@ public:
     {}
     KDTreeNode(Eigen::VectorXd pos) : kdInTree(false), kdParentExist(false),
         kdChildLExist(false), kdChildRExist(false), heapIndex(-1),
-        inHeap(false), dist(-1), position(pos), rrtParentUsed(false),
+        inHeap(false), dist(INFINITY), position(pos), rrtParentUsed(false),
         rrtNeighborsOut(std::make_shared<JList>(false)),
         rrtNeighborsIn(std::make_shared<JList>(false)),
         priorityQueueIndex(-1), inPriorityQueue(false),

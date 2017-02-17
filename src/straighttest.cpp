@@ -22,8 +22,8 @@ void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
 {
     shared_ptr<KDTreeNode> parent = leaf;
     while(parent->rrtParentUsed) {
-        cout << parent->position << endl;
-        cout << "VVVVVVVV : " << parent->rrtLMC << endl;
+        cout << "pose: " << parent->rrtLMC << "\n" << parent->position << endl;
+        cout << "VVVVVVVV" << endl;
         parent = parent->rrtParentEdge->endNode;
     }
     cout << parent->position << endl;

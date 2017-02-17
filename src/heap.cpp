@@ -6,10 +6,20 @@
  */
 
 #include <DRRT/heap.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <cstdlib>
+
+void BinaryHeap::displayHeap()
+{
+    std::cout << "Heap Size: " << H.size() << std::endl;
+    for(int i = 0; i < H.size(); i++ ) {
+        std::cout << "HeapNode " << i << ": " << H[i] << std::endl;
+        if( H[i]->dist != -1) {
+            std::cout << H[i]->position << std::endl;
+        } else {
+            std::cout << "dummy node" << std::endl;
+        }
+    }
+    std::cout << std::endl;
+}
 
 void BinaryHeap::getHeap(std::vector<std::shared_ptr<KDTreeNode>> &heap)
 { heap = this->H; }
@@ -76,13 +86,13 @@ bool BinaryHeap::bubbleDown( int n )
     return true;
 }
 
-bool BinaryHeap::addToHeap(std::shared_ptr<KDTreeNode> &n)
+bool BinaryHeap::addToHeap(std::shared_ptr<KDTreeNode> &node)
 {
-    if( !marked(n) ) {
-        std::cout << "PQadd: " << n << "\n" << n->position << std::endl;
+    if( !marked(node) ) {
+//        std::cout << "adding: " << node << "\n" << node->position << std::endl;
         indexOfLast += 1;
         parentOfLast = indexOfLast/2;
-        H.push_back( n );
+        H.push_back( node );
         setIndex( H[indexOfLast], indexOfLast );
         mark( H[indexOfLast] );
         bubbleUp( indexOfLast );
@@ -101,24 +111,27 @@ void BinaryHeap::topHeap(std::shared_ptr<KDTreeNode> &node)
 
 void BinaryHeap::popHeap(std::shared_ptr<KDTreeNode> &node)
 {
-    std::cout << "popHeap()" << std::endl;
-    std::cout << "indexOfLast: " << indexOfLast << std::endl;
-    if( indexOfLast >= 1 ) {
-        std::shared_ptr<KDTreeNode> oldTopNode = this->H[1];
-        std::cout << "oldTopNode: " << oldTopNode << "\n" << oldTopNode->position << std::endl;
+//    std::cout << "popping: " << node << "\n" << node->position << std::endl;
+    std::shared_ptr<KDTreeNode> oldTopNode;
+//    std::cout << "indexOfLast: " << indexOfLast << std::endl;
+    if( indexOfLast > 1 ) {
+        oldTopNode = this->H[1];
         this->H[1] = this->H[indexOfLast];
-        std::cout << "H[1]: " << H[1] << "\n" << H[1]->position << std::endl;
+        this->H.erase(H.begin()+indexOfLast);
         setIndex( this->H[1], 1 );
-        indexOfLast -= 1;
-        parentOfLast = indexOfLast/2;
-        bubbleDown( 1 );
-        unmark( oldTopNode );
-        unsetIndex( oldTopNode );
-        node = oldTopNode;
+    } else if( indexOfLast == 1 ) {
+        oldTopNode = this->H[1];
+        this->H.erase(H.begin()+1);
     }
+    indexOfLast -= 1;
+    parentOfLast = indexOfLast/2;
+    bubbleDown( 1 );
+    unmark( oldTopNode );
+    unsetIndex( oldTopNode );
+    node = oldTopNode;
 }
 
-bool BinaryHeap::removeFromHeap( std::shared_ptr<KDTreeNode> node )
+bool BinaryHeap::removeFromHeap( std::shared_ptr<KDTreeNode> &node )
 {
     int n = getIndex(node);
     this->H[n] = this->H[indexOfLast];
@@ -270,17 +283,23 @@ bool BinaryHeap::addToHeapB( std::shared_ptr<KDTreeNode> &node )
 
 void BinaryHeap::popHeapB(std::shared_ptr<KDTreeNode> &node)
 {
-    if( indexOfLast >= 1 ) {
-        std::shared_ptr<KDTreeNode> oldTopNode = this->H[1];
+    std::cout << "popping: " << node << "\n" << node->position << std::endl;
+    std::shared_ptr<KDTreeNode> oldTopNode;
+    if( indexOfLast > 1 ) {
+        oldTopNode = this->H[1];
         this->H[1] = this->H[indexOfLast];
+        this->H.erase(H.begin()+indexOfLast);
         setIndex( this->H[1], 1 );
-        indexOfLast -= 1;
-        parentOfLast = indexOfLast/2;
-        bubbleDownB( 1 );
-        unmark( oldTopNode );
-        unsetIndex( oldTopNode );
-        node = oldTopNode;
+    } else if( indexOfLast == 1 ) {
+        oldTopNode = this->H[1];
+        this->H.erase(H.begin()+1);
     }
+    indexOfLast -= 1;
+    parentOfLast = indexOfLast/2;
+    bubbleDownB( 1 );
+    unmark( oldTopNode );
+    unsetIndex( oldTopNode );
+    node = oldTopNode;
 }
 
 bool BinaryHeap::removeFromHeapB( std::shared_ptr<KDTreeNode> node )

@@ -11,6 +11,10 @@
 #include <iostream>
 #include <math.h>
 #include <eigen3/Eigen/Eigen>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <cstdlib>
 
 class KDTreeNode;
 class Edge;
