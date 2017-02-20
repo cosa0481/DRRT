@@ -10,6 +10,16 @@
 #include <DRRT/kdtree.h>
 #include <iostream>
 
+void KDTree::addTreetoPQ(std::shared_ptr<Queue> &Q,
+                         std::shared_ptr<KDTreeNode> &node)
+{
+    Q->Q->addToHeap(node);
+    if(node->kdChildLExist || node->kdChildRExist) {
+        if(node->kdChildLExist) addTreetoPQ(Q, node->kdChildL);
+        if(node->kdChildRExist) addTreetoPQ(Q, node->kdChildR);
+    }
+}
+
 void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
                        int indent, char type)
 {
@@ -17,8 +27,11 @@ void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
     std::cout << node->position(0) << ","
               << node->position(1) << ": "
               << node->rrtLMC;
-//    if( node->kdParentExist)
-//        std::cout << " : " << node->position(node->kdParent->kdSplit);
+    if( node->rrtParentUsed ) {
+        std::cout << " : " << node->rrtParentEdge->endNode->position(0) << ","
+                  << node->rrtParentEdge->endNode->position(1);
+        std::cout << " (" << node->rrtParentEdge->dist << ")";
+    }
     if( !node->kdChildLExist && !node->kdChildRExist ) {
         std::cout << " | leaf" << std::endl;
     } else {
@@ -613,8 +626,8 @@ std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
 
 /////////////////////// Within Range ///////////////////////
 
-bool KDTree::addToRangeList(std::shared_ptr<JList> S,
-                            std::shared_ptr<KDTreeNode> node,
+bool KDTree::addToRangeList(std::shared_ptr<JList> &S,
+                            std::shared_ptr<KDTreeNode> &node,
                             double key)
 {
     // "inHeap" is a misnomer because this is a list
@@ -627,8 +640,8 @@ bool KDTree::addToRangeList(std::shared_ptr<JList> S,
     return true;
 }
 
-void KDTree::popFromRangeList(std::shared_ptr<JList> S,
-                              std::shared_ptr<KDTreeNode> t,
+void KDTree::popFromRangeList(std::shared_ptr<JList> &S,
+                              std::shared_ptr<KDTreeNode> &t,
                               std::shared_ptr<double> k)
 {
     S->JlistPopKey(t,k);
@@ -646,10 +659,10 @@ void KDTree::emptyRangeList(std::shared_ptr<JList>& S)
 
 }
 
-bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> root,
+bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> &root,
                                         double range,
                                         Eigen::VectorXd queryPoint,
-                                        std::shared_ptr<JList> nodeList)
+                                        std::shared_ptr<JList> &nodeList)
 {
     // Walk down the tree as if the node would be inserted
     std::shared_ptr<KDTreeNode> parent = root;
@@ -737,7 +750,7 @@ bool KDTree::kdFindWithinRangeInSubtree(std::shared_ptr<KDTreeNode> root,
     }
 }
 
-void KDTree::kdFindWithinRange(std::shared_ptr<JList> S,
+void KDTree::kdFindWithinRange(std::shared_ptr<JList> &S,
                                double range,
                                Eigen::VectorXd queryPoint)
 {
@@ -764,7 +777,7 @@ void KDTree::kdFindWithinRange(std::shared_ptr<JList> S,
     }
 }
 
-void KDTree::kdFindMoreWithinRange(std::shared_ptr<JList> L,
+void KDTree::kdFindMoreWithinRange(std::shared_ptr<JList> &L,
                                    double range, Eigen::VectorXd queryPoint)
 {
     // Insert root node in list if it is within range

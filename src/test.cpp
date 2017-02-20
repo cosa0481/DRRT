@@ -22,6 +22,18 @@ Eigen::MatrixXd kdEdge(MAXPATHNODES,3);
 
 std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 
+void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
+{
+    std::cout << "\nRRTx Path" << std::endl;
+    while(leaf->rrtParentUsed) {
+        cout << "pose: " << leaf->rrtLMC << "\n" << leaf->position << endl;
+        cout << "VVVVVVVV" << endl;
+        leaf = leaf->rrtParentEdge->endNode;
+    }
+    cout << leaf->position << endl;
+}
+
+
 /// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
 std::shared_ptr<RobotData> RRTX(Problem p)
@@ -198,6 +210,14 @@ std::shared_ptr<RobotData> RRTX(Problem p)
                                 root,hyper_ball_rad);
             if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
                 old_rrtLMC = Q->S->moveGoal->rrtLMC;
+            }
+
+//            std::cout << "Current RRTx Path: " << std::endl;
+//            printRRTxPath(new_node);
+
+            if( i == 1 && new_node->rrtParentUsed && (new_node->rrtLMC
+                    - new_node->rrtParentEdge->endNode->rrtLMC > 10) ) {
+                new_node->rrtLMC = INF;
             }
         }
     }

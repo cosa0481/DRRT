@@ -7,7 +7,7 @@
 #include <DRRT/kdtreenode.h>
 #include <DRRT/edge.h>
 
-void JList::JlistPush( std::shared_ptr<KDTreeNode> t )
+void JList::JlistPush( std::shared_ptr<KDTreeNode> &t )
 {
     std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( t );
     newNode->parent = front->parent;
@@ -23,7 +23,7 @@ void JList::JlistPush( std::shared_ptr<KDTreeNode> t )
     length += 1;
 }
 
-void JList::JlistPush( std::shared_ptr<Edge> e )
+void JList::JlistPush( std::shared_ptr<Edge> &e )
 {
     std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( e );
     newNode->parent = front->parent;
@@ -39,7 +39,7 @@ void JList::JlistPush( std::shared_ptr<Edge> e )
     length += 1;
 }
 
-void JList::JlistPush( std::shared_ptr<KDTreeNode> t, double k )
+void JList::JlistPush( std::shared_ptr<KDTreeNode> &t, double k )
 {
     std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( t );
     newNode->parent = front->parent;
@@ -56,7 +56,7 @@ void JList::JlistPush( std::shared_ptr<KDTreeNode> t, double k )
     length += 1;
 }
 
-void JList::JlistPush( std::shared_ptr<Edge> e, double k )
+void JList::JlistPush( std::shared_ptr<Edge> &e, double k )
 {
     std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( e );
     newNode->parent = front->parent;
@@ -73,7 +73,7 @@ void JList::JlistPush( std::shared_ptr<Edge> e, double k )
     length += 1;
 }
 
-void JList::JlistTop( std::shared_ptr<KDTreeNode> t )
+void JList::JlistTop( std::shared_ptr<KDTreeNode> &t )
 {
     if( length == 0 ) {
         // Jlist is empty
@@ -82,7 +82,7 @@ void JList::JlistTop( std::shared_ptr<KDTreeNode> t )
     t = front->node;
 }
 
-void JList::JlistTop( std::shared_ptr<Edge> e ) {
+void JList::JlistTop( std::shared_ptr<Edge> &e ) {
     if( length == 0 ) {
         // Jlist is empty
         e->dist = -1;
@@ -90,7 +90,7 @@ void JList::JlistTop( std::shared_ptr<Edge> e ) {
     e = front->edge;
 }
 
-void JList::JlistTopKey( std::shared_ptr<KDTreeNode> t,
+void JList::JlistTopKey( std::shared_ptr<KDTreeNode> &t,
                          std::shared_ptr<double> k )
 {
     if( length == 0 ) {
@@ -102,7 +102,7 @@ void JList::JlistTopKey( std::shared_ptr<KDTreeNode> t,
     *k = front->key;
 }
 
-void JList::JlistTopKey( std::shared_ptr<Edge> e, std::shared_ptr<double> k )
+void JList::JlistTopKey( std::shared_ptr<Edge> &e, std::shared_ptr<double> k )
 {
     if( length == 0 ) {
         // Jlist is empty
@@ -113,7 +113,7 @@ void JList::JlistTopKey( std::shared_ptr<Edge> e, std::shared_ptr<double> k )
     *k = front->key;
 }
 
-void JList::JlistPop( std::shared_ptr<KDTreeNode> t )
+void JList::JlistPop( std::shared_ptr<KDTreeNode> &t )
 {
     if( length == 0 ) {
         // Jlist is empty
@@ -137,7 +137,7 @@ void JList::JlistPop( std::shared_ptr<KDTreeNode> t )
     t = oldTop->node;
 }
 
-void JList::JlistPop( std::shared_ptr<Edge> e )
+void JList::JlistPop( std::shared_ptr<Edge> &e )
 {
     if( length == 0 ) {
         // Jlist is empty
@@ -161,7 +161,7 @@ void JList::JlistPop( std::shared_ptr<Edge> e )
     e = oldTop->edge;
 }
 
-void JList::JlistPopKey( std::shared_ptr<KDTreeNode>& n,
+void JList::JlistPopKey( std::shared_ptr<KDTreeNode> &n,
                          std::shared_ptr<double> k)
 {
     if( length == 0 ) {
@@ -188,7 +188,7 @@ void JList::JlistPopKey( std::shared_ptr<KDTreeNode>& n,
     *k = oldTop->key;
 }
 
-void JList::JlistPopKey(std::shared_ptr<Edge> e, std::shared_ptr<double> k)
+void JList::JlistPopKey(std::shared_ptr<Edge> &e, std::shared_ptr<double> k)
 {
     if( length == 0 ) {
         // Jlist is empty
@@ -215,7 +215,7 @@ void JList::JlistPopKey(std::shared_ptr<Edge> e, std::shared_ptr<double> k)
 }
 
 // Removes node from the list
-bool JList::JlistRemove( std::shared_ptr<JListNode> node )
+bool JList::JlistRemove( std::shared_ptr<JListNode> &node )
 {
     if( length == 0 ) {
         // Node not in Jlist
@@ -259,7 +259,16 @@ void JList::JlistPrint()
     std::shared_ptr<JListNode> ptr = front;
     int i = 1;
     while( ptr != ptr->child ) {
-        std::cout << "node " << i << ": " << ptr->node << "\n" << ptr->node->position << std::endl;
+        if( useNodes ) {
+            std::cout << "node " << i << ": "
+                      << ptr->node->rrtLMC << "\n" << ptr->node->position
+                      << std::endl;
+        } else { // use edges
+            std::cout << "edge " << i << ": "
+                      << ptr->edge->dist << "\n"
+                      << ptr->edge->startNode->position << "\n->\n"
+                      << ptr->edge->endNode->position << std::endl;
+        }
         ptr = ptr->child;
         i++;
     }

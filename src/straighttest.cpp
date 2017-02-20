@@ -20,13 +20,13 @@ chrono::time_point<chrono::high_resolution_clock> startTime;
 
 void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
 {
-    shared_ptr<KDTreeNode> parent = leaf;
-    while(parent->rrtParentUsed) {
-        cout << "pose: " << parent->rrtLMC << "\n" << parent->position << endl;
+    std::cout << "\nRRTx Path" << std::endl;
+    while(leaf->rrtParentUsed) {
+        cout << "pose: " << leaf->rrtLMC << "\n" << leaf->position << endl;
         cout << "VVVVVVVV" << endl;
-        parent = parent->rrtParentEdge->endNode;
+        leaf = leaf->rrtParentEdge->endNode;
     }
-    cout << parent->position << endl;
+    cout << leaf->position << endl;
 }
 
 /// Main control function
@@ -59,6 +59,7 @@ shared_ptr<RobotData> RRTX(Problem p)
     root->rrtTreeCost = 0.0;
     root->rrtLMC = 0.0;
     root->rrtParentEdge = Edge::newEdge(Q->S,kdtree,root,root);
+    root->rrtParentUsed = false;
     kdtree->kdInsert(root);
     kdTree.row(kdTreePos++) = root->position;
 
@@ -110,15 +111,24 @@ shared_ptr<RobotData> RRTX(Problem p)
 ///////////////////
     Eigen::Vector3d position;
 
-    position(0) = 15;
-    position(1) = 15;
-    position(2) = -3*PI/4;
-    shared_ptr<KDTreeNode> node5 = make_shared<KDTreeNode>(position);
-    kdtree->kdFindNearest(closest_node,closest_dist,node5->position);
-    extend(kdtree,Q,node5,closest_node,Q->S->delta,10,Q->S->moveGoal);
-    kdTree.row(kdTreePos++) = node5->position;
+    //kdtree->printTree(root);
 
+    position(0) = 5;
+    position(1) = 5;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node4 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node4->position);
+    extend(kdtree,Q,node4,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node4->position;
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    // If the difference between the first node and the root is
+    // > delta, then set its LMC to INF so it can be recalculated
+    // when the next node is added
+    // Noticed this when adding 8,12 before 5,5 and 8,12 would
+    // remain the rrtChild of the root instead of switching to 5,5
+    if( node4->rrtLMC - node4->rrtParentEdge->endNode->rrtLMC > 10 )
+        node4->rrtLMC = INF;
 
     position(0) = 8;
     position(1) = 12;
@@ -127,7 +137,15 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node1->position);
     extend(kdtree,Q,node1,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node1->position;
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
+    position(0) = 15;
+    position(1) = 15;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node5 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node5->position);
+    extend(kdtree,Q,node5,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node5->position;
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 7;
@@ -137,7 +155,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node7->position);
     extend(kdtree,Q,node7,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node7->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 10;
@@ -147,7 +164,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node3->position);
     extend(kdtree,Q,node3,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node3->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 18;
@@ -157,7 +173,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node10->position);
     extend(kdtree,Q,node10,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node10->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 22;
@@ -167,9 +182,7 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node11->position);
     extend(kdtree,Q,node11,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node11->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
-
 
     position(0) = 13;
     position(1) = 17;
@@ -178,7 +191,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node8->position);
     extend(kdtree,Q,node8,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node8->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 20;
@@ -188,39 +200,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node12->position);
     extend(kdtree,Q,node12,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node12->position;
-
-    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
-
-
-
-    position(0) = 12;
-    position(1) = 8;
-    position(2) = -3*PI/4;
-    shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(position);
-    kdtree->kdFindNearest(closest_node,closest_dist,node2->position);
-    extend(kdtree,Q,node2,closest_node,Q->S->delta,10,Q->S->moveGoal);
-    kdTree.row(kdTreePos++) = node2->position;
-
-    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
-
-    position(0) = 5;
-    position(1) = 5;
-    position(2) = -3*PI/4;
-    shared_ptr<KDTreeNode> node4 = make_shared<KDTreeNode>(position);
-    kdtree->kdFindNearest(closest_node,closest_dist,node4->position);
-    extend(kdtree,Q,node4,closest_node,Q->S->delta,10,Q->S->moveGoal);
-    kdTree.row(kdTreePos++) = node4->position;
-
-    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
-
-    position(0) = 17;
-    position(1) = 13;
-    position(2) = -3*PI/4;
-    shared_ptr<KDTreeNode> node9 = make_shared<KDTreeNode>(position);
-    kdtree->kdFindNearest(closest_node,closest_dist,node9->position);
-    extend(kdtree,Q,node9,closest_node,Q->S->delta,10,Q->S->moveGoal);
-    kdTree.row(kdTreePos++) = node9->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
     position(0) = 3;
@@ -230,17 +209,34 @@ shared_ptr<RobotData> RRTX(Problem p)
     kdtree->kdFindNearest(closest_node,closest_dist,node6->position);
     extend(kdtree,Q,node6,closest_node,Q->S->delta,10,Q->S->moveGoal);
     kdTree.row(kdTreePos++) = node6->position;
-
     reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
 
-    std::cout << "KD-Tree" << std::endl;
+    position(0) = 12;
+    position(1) = 8;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node2->position);
+    extend(kdtree,Q,node2,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node2->position;
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    position(0) = 17;
+    position(1) = 13;
+    position(2) = -3*PI/4;
+    shared_ptr<KDTreeNode> node9 = make_shared<KDTreeNode>(position);
+    kdtree->kdFindNearest(closest_node,closest_dist,node9->position);
+    extend(kdtree,Q,node9,closest_node,Q->S->delta,10,Q->S->moveGoal);
+    kdTree.row(kdTreePos++) = node9->position;
+    reduceInconsistency(Q, Q->S->moveGoal, Q->S->robotRadius, root, 10);
+
+    std::cout << "\nKD-Tree" << std::endl;
     kdtree->printTree(root);
     kdtree->kdFindNearest(closest_node,closest_dist,goal->position);
     printRRTxPath(closest_node);
 ///////////////////
 
     int i = 0;
-    while(false) {
+    while(true) {
         double hyper_ball_rad = min(Q->S->delta, p.ball_constant*(
                                 pow(log(1+kdtree->treeSize)/(kdtree->treeSize),
                                     1/Q->S->d) ));
@@ -343,7 +339,7 @@ int main() {
     string alg_name = "RRTx";
     double plan_time = 0.0;
     double slice_time = 1.0/100;
-    double delta = 50.0;
+    double delta = 10.0;
     double ball_const = 100.0;
     double change_thresh = 1.0;
     double goal_thresh = 0.5;

@@ -19,6 +19,7 @@ public:
 
     // Functions for interacting with marks and indices
     // Returns the key value of the node
+    /// Should keyD return rrtLMC as well? used in kdFindKNearest only (afaik)
     double keyD(std::shared_ptr<KDTreeNode> node)
     {return node->dist;}
 
@@ -31,7 +32,7 @@ public:
 
     // Default less than function
     bool lessD(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
-    {return (a->dist < b->dist);}
+    {return (keyD(a) < keyD(b));}
 
     bool lessQ(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
     {return ((keyQ(a) < keyQ(b))
@@ -44,7 +45,7 @@ public:
 
     // Default greater than function DATA
     bool greaterD(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
-    {return (a->dist > b->dist);}
+    {return (keyD(a) > keyD(b));}
 
     bool greaterQ(std::shared_ptr<KDTreeNode> a, std::shared_ptr<KDTreeNode> b)
     {return ((keyQ(a) > keyQ(b))
