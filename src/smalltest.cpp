@@ -1,11 +1,8 @@
-/* test.cpp
+/* smalltest.cpp
  * Corin Sandford
- * Fall 2016
- * This file is made into an executable: 'test'
- * Used to test high level things in the library
- * To define distance function just implement :
- *      'double distanceFunction(Eigen::VectorXd x, Eigen::VectorXd y)'
- * above the main function
+ * Spring 2017
+ * Used to test high level things in the
+ * library on a smaller scale than test.cpp
  */
 
 #include <DRRT/drrt.h>
@@ -241,14 +238,14 @@ int main()
 {
     /// C-Space
     int dims = 3;                   // x,y,theta
-    double envRad = 50.0;           // dimensions of the c-spcae
+    double envRad = 10.0;           // dimensions of the c-spcae
     Eigen::Vector3d lbound, ubound;
     lbound << -envRad, -envRad, 0.0;
     ubound << envRad, envRad, 2*PI;
 
     Eigen::Vector3d start, goal;
     start << 0.0, 0.0, -3*PI/4;
-    goal << 50.0, 50.0, -3*PI/4;    // where the robot begins
+    goal << 20.0, 20.0, -3*PI/4;    // where the robot begins
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
@@ -269,7 +266,7 @@ int main()
 
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
-    double plan_time = 500.0;       // plan *only* for this long
+    double plan_time = 50.0;        // plan *only* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 10.0;            // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius

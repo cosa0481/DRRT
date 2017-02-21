@@ -75,6 +75,9 @@ target_link_libraries( test ${LIBRARY_NAME} )
 add_executable( straighttest src/straighttest.cpp ${HDRS} )
 target_link_libraries( straighttest ${LIBRARY_NAME} )
 
+add_executable( smalltest src/smalltest.cpp ${HDRS} )
+target_link_libraries( smalltest ${LIBRARY_NAME} )
+
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}
 #    LIB_NAME ${LIBRARY_NAME}

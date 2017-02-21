@@ -66,7 +66,6 @@ shared_ptr<RobotData> RRTX(Problem p)
     shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>(Q->S->goal);
     goal->rrtTreeCost = INF;
     goal->rrtLMC = INF;
-//    kdtree->kdInsert(goal);
     kdTree.row(kdTreePos++) = goal->position;
 
     Q->S->goalNode = goal;
@@ -124,9 +123,13 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     // If the difference between the first node and the root is
     // > delta, then set its LMC to INF so it can be recalculated
-    // when the next node is added
+    // when the next node is added since if rrtLMC - rrtTreeCost
+    // > changeThreshold decides whether this is necessary.
+    // This didn't work correctly because the code skips a node whose
+    // parent is the root when it comes to rewiring In Neighbors.
     // Noticed this when adding 8,12 before 5,5 and 8,12 would
     // remain the rrtChild of the root instead of switching to 5,5
+    /// In general this shouldn't happen because of saturation of nodes/* test.cpp
     if( node4->rrtLMC - node4->rrtParentEdge->endNode->rrtLMC > 10 )
         node4->rrtLMC = INF;
 
@@ -306,18 +309,18 @@ double distance_function(Eigen::VectorXd a, Eigen::VectorXd b)
                            - max(a(2),b(2)) ), 2));
 }
 
-int main() {
-    /// Start and Goal
-    Eigen::Vector3d start, goal;
-    start << 0.0,0.0,-3*PI/4;
-    goal  << 25.0,25.0,-3*PI/4;
-
+int main()
+{
     /// C-Space
     int dims = 3;
     double envRad = 50.0;
     Eigen::Vector3d lbound, ubound;
     lbound << -envRad, -envRad, 0.0;
     ubound << envRad, envRad, 2*PI;
+
+    Eigen::Vector3d start, goal;
+    start << 0.0,0.0,-3*PI/4;
+    goal  << 25.0,25.0,-3*PI/4;
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
@@ -329,7 +332,7 @@ int main() {
     cspace->spaceHasTime = false;
     cspace->spaceHasTheta = true; // Dubin's model
 
-    /// KD-Tree
+    /// K-D Tree
     Eigen::VectorXi wv(1);
     wv(0) = 2;
     Eigen::VectorXd wpv(1);
