@@ -15,16 +15,16 @@
 // A KD-Tree data structure that stores nodes of type T
 class KDTree {
 public:
-    int d;                      // the number of dimensions in the space (5)
+    int d;                       // the number of dimensions in the space (5)
 
     // distance function to use
     double (*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b);
 
-    int treeSize;              // the number of nodes in the KD-Tree
+    int treeSize;               // the number of nodes in the KD-Tree
 
-    int numWraps;              // the total number of dimensions that wrap
-    Eigen::VectorXi wraps; // a vector of length d containing a list of
-                           // all the dimensions that wrapAround
+    int numWraps;               // the total number of dimensions that wrap
+    Eigen::VectorXi wraps;      // a vector of length d containing a list of
+                                // all the dimensions that wrapAround
     Eigen::VectorXd wrapPoints; // space is assumed to start at 0 and end at
                                 // wrapPoints[i] along dimension wraps[i]
     std::shared_ptr<KDTreeNode> root;   // the root node

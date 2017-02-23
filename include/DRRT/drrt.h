@@ -135,7 +135,7 @@ std::shared_ptr<KDTreeNode> randNodeItsWithObstacleRemove(
 
 // Returns a random node unless there are points in the sample stack,
 // in which case it returns the first one of those
-std::shared_ptr<KDTreeNode> randNodeOrFromStack(std::shared_ptr<CSpace> S);
+std::shared_ptr<KDTreeNode> randNodeOrFromStack(std::shared_ptr<CSpace> &S);
 
 /* This returns a random node where the time dimension is drawn uniformly
  * at random from (the min time the robot could reach the point in an

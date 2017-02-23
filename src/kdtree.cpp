@@ -423,7 +423,7 @@ bool KDTree::kdFindNearestWithGuess(std::shared_ptr<KDTreeNode> nearestNode,
         Eigen::VectorXd thisGhostPoint;
         while( true ) {
             thisGhostPoint = getNextGhostPoint( pointIterator, *Ldist );
-            Eigen::VectorXd zeros( pointIterator->kdTree->numWraps, 0 );
+            Eigen::VectorXd zeros( this->numWraps, 0 );
             if( thisGhostPoint == zeros) break;
 
             // Now see if any points in the space are closer to this ghost

@@ -2,21 +2,27 @@ project( DRRT )
 
 cmake_minimum_required( VERSION 2.8 )
 
-set( CMAKE_BUILD_TYPE Debug ) # Default
+set( CMAKE_BUILD_TYPE Default ) # Debug
 
 list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules )
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH} )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" )
 
 find_package( Eigen3 REQUIRED )
+find_package( Pangolin REQUIRED )
+find_package( SceneGraph REQUIRED )
 
 set( _INCLUDE_DIRS
 		${CMAKE_BINARY_DIR}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
                 ${EIGEN3_INCLUDE_DIRS}
+                ${Pangolin_INCLUDE_DIRS}
+                ${SceneGraph_INCLUDE_DIRS}
 		)
 
 set( _LIBRARIES
+                ${Pangolin_LIBRARIES}
+                ${SceneGraph_LIBRARIES}
 		)
 
 # Expose these for third parties
@@ -56,7 +62,7 @@ set( SRCS
 
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
-# VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )
+# VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )?
 add_library( ${LIBRARY_NAME} ${SRCS} ${HDRS} )
 target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 
@@ -81,8 +87,8 @@ target_link_libraries( smalltest ${LIBRARY_NAME} )
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}
 #    LIB_NAME ${LIBRARY_NAME}
-#    VERSION 2.1
-#    DESCRIPTION "DRRT library."
+#    VERSION 0.1
+#    DESCRIPTION "RRTx library."
 #    INSTALL_INCLUDE_DIR true
 #    INSTALL_GENERATED_HEADERS ${GENERATED_HEADERS}
 #    DESTINATION ${CMAKE_INSTALL_PREFIX}

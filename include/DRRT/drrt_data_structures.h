@@ -135,6 +135,8 @@ typedef struct RRTNodeNeighborIterator{
  * currentMoveInvalid is important for the algorithm in general
  */
 typedef struct RobotData{
+    std::mutex robotMutex_;
+
     Eigen::VectorXd robotPose;  // this is where the robot is
                                 // (i.e. where it was at the end of
                                 // the last control loop

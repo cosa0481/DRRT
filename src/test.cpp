@@ -98,9 +98,7 @@ shared_ptr<RobotData> RRTX(Problem p)
     double now_time = getTimeNs(startTime);
     double trunc_elapsed_time;
 
-    double old_rrtLMC;
-    double current_distance;
-    double move_distance;
+    double old_rrtLMC, current_distance, move_distance, this_dist;
     Eigen::Vector3d prev_pose;
     shared_ptr<Edge> prev_edge;
 
@@ -185,9 +183,10 @@ shared_ptr<RobotData> RRTX(Problem p)
                                   new_node->position);
 
             /// Saturate new node
-            if(*closest_dist > Q->S->delta && new_node != Q->S->goalNode) {
-                double this_dist = kd_tree->distanceFunction(new_node->position,
-                                                        closest_node->position);
+            this_dist = kd_tree->distanceFunction(new_node->position,
+                                                    closest_node->position);
+            if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
+
                 Edge::saturate(new_node->position, closest_node->position,
                                Q->S->delta, this_dist);
             }

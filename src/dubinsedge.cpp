@@ -165,22 +165,25 @@ void DubinsEdge::calculateTrajectory()
     Eigen::Vector2d goal_location = this->endNode->position.head(2);
     double goal_theta = this->endNode->position(2);
 
+    Eigen::Vector2d temp, temp2;
+
     // Calculate the center of the right-turn and left-turn circles
-    // ... right-turn initial_location circle
-    Eigen::Vector2d temp;
-    Eigen::Vector2d temp2;
+    // Right-turn initial_location circle
     temp(0) = cos(initial_theta-(PI/2.0));
     temp(1) = sin(initial_theta-(PI/2.0));
-    // ... left-turn initial location circle
     Eigen::Vector2d irc_center = initial_location + r_min * temp;
+
+    // Left-turn initial location circle
     temp(0) = cos(initial_theta+(PI/2.0));
     temp(1) = sin(initial_theta+(PI/2.0));
-    // ... right-turn goal_location circle
     Eigen::Vector2d ilc_center = initial_location + r_min * temp;
+
+    // Right-turn goal_location circle
     temp(0) = cos(goal_theta-(PI/2.0));
     temp(1) = sin(goal_theta-(PI/2.0));
-    // ...left_turn goal_location circle
     Eigen::Vector2d grc_center = goal_location + r_min * temp;
+
+    // Left-turn goal_location circle
     temp(0) = cos(goal_theta+(PI/2.0));
     temp(1) = sin(goal_theta+(PI/2.0));
     Eigen::Vector2d glc_center = goal_location + r_min * temp;
@@ -191,9 +194,9 @@ void DubinsEdge::calculateTrajectory()
     std::string bestTrajType = "xxx";
 
     Eigen::ArrayXd diff, temp3(2), t; // Arrays used for coefficient-wise
-                                      // operations (.operator() in Julia)
+                                      // operations
     double D, R, sq, a, b, firstDist, secondDist, thirdDist;
-    Eigen::VectorXd v; // temp, temp2 defined above
+    Eigen::VectorXd v;
 
     /// BEGIN determine best path
 

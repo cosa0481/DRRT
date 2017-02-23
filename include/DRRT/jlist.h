@@ -16,6 +16,8 @@
 #include <time.h>
 #include <cstdlib>
 #include <iomanip>
+#include <thread>
+#include <mutex>
 
 class KDTreeNode;
 class Edge;
