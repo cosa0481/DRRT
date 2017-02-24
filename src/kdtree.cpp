@@ -10,14 +10,18 @@
 #include <DRRT/kdtree.h>
 #include <iostream>
 
-void KDTree::addTreetoPQ(std::shared_ptr<Queue> &Q,
-                         std::shared_ptr<KDTreeNode> &node)
+void KDTree::addVizNode(std::shared_ptr<KDTreeNode> node)
 {
-    Q->Q->addToHeap(node);
-    if(node->kdChildLExist || node->kdChildRExist) {
-        if(node->kdChildLExist) addTreetoPQ(Q, node->kdChildL);
-        if(node->kdChildRExist) addTreetoPQ(Q, node->kdChildR);
-    }
+    std::lock_guard<std::mutex> lock(this->treeMutex_);
+    this->nodes.push_back(node);
+}
+
+void KDTree::removeVizNode(std::shared_ptr<KDTreeNode> &node)
+{
+    std::lock_guard<std::mutex> lock(this->treeMutex_);
+    this->nodes.erase(
+                std::remove(this->nodes.begin(),this->nodes.end(),node),
+                this->nodes.end());
 }
 
 void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
@@ -49,6 +53,11 @@ bool KDTree::kdInsert(std::shared_ptr<KDTreeNode>& node)
 {
     if( node->kdInTree ) return false;
     node->kdInTree = true;
+    // Add node to visualizer
+    {
+        std::lock_guard<std::mutex> lock(this->treeMutex_);
+        this->nodes.push_back(node);
+    }
 
     if( this->treeSize == 0 ) {
         this->root = node;

@@ -15,6 +15,9 @@
 // A KD-Tree data structure that stores nodes of type T
 class KDTree {
 public:
+    std::mutex treeMutex_;
+    std::vector<std::shared_ptr<KDTreeNode>> nodes;
+
     int d;                       // the number of dimensions in the space (5)
 
     // distance function to use
@@ -33,22 +36,26 @@ public:
     KDTree(int _d, Eigen::VectorXi _wraps, Eigen::VectorXd _wrapPoints)
         :   d(_d), distanceFunction(0), treeSize(0),
             numWraps(_wraps.size()), wraps(_wraps), wrapPoints(_wrapPoints)
-    {}
+    { nodes = std::vector<std::shared_ptr<KDTreeNode>>(); }
+
     KDTree(int _d)
         :   d(_d), distanceFunction(0), treeSize(0), numWraps(0)
-    {}
+    {knodes = std::vector<std::shared_ptr<KDTreeNode>>(); }
+
     KDTree()
         :  d(0), distanceFunction(0), treeSize(0), numWraps(0)
-    {}
+    { nodes = std::vector<std::shared_ptr<KDTreeNode>>(); }
 
     // Setter for distanceFunction
     void setDistanceFunction(double(*func)(Eigen::VectorXd a,
                                            Eigen::VectorXd b))
     { distanceFunction = func; }
 
-    // Adds all nodes to the priority queue
-    void addTreetoPQ(std::shared_ptr<Queue> &Q,
-                     std::shared_ptr<KDTreeNode> &node);
+    // Adds a node to the JList for the visualizer
+    void addVizNode(std::shared_ptr<KDTreeNode> node);
+
+    // Removes a node from the visualizer node list
+    void removeVizNode(std::shared_ptr<KDTreeNode> &node);
 
     // Prints the tree from the node starting with indent=0
     void printTree(std::shared_ptr<KDTreeNode> node,

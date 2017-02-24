@@ -6,6 +6,7 @@
  */
 
 #include <DRRT/drrt.h> // the RRTx library
+#include <DRRT/visualizer.h>
 
 using namespace std;
 
@@ -13,9 +14,11 @@ using namespace std;
 int histPos = 0,
     kdTreePos = 0,
     kdEdgePos = 0;
+
 Eigen::MatrixXd rHist(MAXPATHNODES,3),
                 kdTree(MAXPATHNODES,3),
                 kdEdge(MAXPATHNODES,3);
+
 chrono::time_point<chrono::high_resolution_clock> startTime;
 
 void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
@@ -30,7 +33,7 @@ void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
 }
 
 /// Main control function
-shared_ptr<RobotData> RRTX(Problem p)
+shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 {
     if(p.search_type != "RRTx") {
         std::cout << "y u no want RRTx?" << std::endl;
@@ -80,6 +83,10 @@ shared_ptr<RobotData> RRTX(Problem p)
     if(Q->S->spaceHasTime) {
         addOtherTimesToRoot(Q->S,kdtree,goal,root,Q->type);
     }
+
+    shared_ptr<thread> visualizer_thread
+            = make_shared<thread>(visualizer,kdtree,robot);
+    vis = visualizer_thread;
 
     /// End Initialization
 
@@ -234,8 +241,9 @@ shared_ptr<RobotData> RRTX(Problem p)
 
     std::cout << "\nKD-Tree" << std::endl;
     kdtree->printTree(root);
-    kdtree->kdFindNearest(closest_node,closest_dist,goal->position);
-    printRRTxPath(closest_node);
+//    kdtree->kdFindNearest(closest_node,closest_dist,goal->position);
+//    printRRTxPath(closest_node);
+
 ///////////////////
 
     int i = 0;
@@ -294,6 +302,8 @@ shared_ptr<RobotData> RRTX(Problem p)
                 break;
             }
             prev_pose = robot->robotPose;
+
+            if( i == 1 ) { printRRTxPath(robot->nextMoveTarget); }
         }
     }
     return robot;
@@ -313,7 +323,7 @@ int main()
 {
     /// C-Space
     int dims = 3;
-    double envRad = 50.0;
+    double envRad = 10.0;
     Eigen::Vector3d lbound, ubound;
     lbound << -envRad, -envRad, 0.0;
     ubound << envRad, envRad, 2*PI;
@@ -352,8 +362,10 @@ int main()
                               ball_const, change_thresh, goal_thresh,
                               move_robot, wv, wpv, distance_function);
 
+    shared_ptr<thread> vis_thread;
+
     /// Run RRTx
-    shared_ptr<RobotData> robot = RRTX(problem);
+    shared_ptr<RobotData> robot = RRTX(problem,vis_thread);
 
     /// Save data
     Eigen::ArrayXXd firstpoints, lastpoints, diff;
@@ -394,6 +406,7 @@ int main()
     ofs.close();
 
     cout<< "Data written to kdTree.txt, kdEdge.txt, and robotPath.txt" <<endl;
+    vis_thread->join();
 
     return 0;
 }

@@ -1175,11 +1175,8 @@ bool propogateDescendants(std::shared_ptr<Queue> &Q,
         Q->OS->JlistPop(thisNode);
         unmarkOS(thisNode);
 
-        {
-            std::lock_guard<std::mutex> lock(R->robotMutex_);
-            if( thisNode == R->nextMoveTarget ) {
-                R->currentMoveInvalid = true;
-            }
+        if( thisNode == R->nextMoveTarget ) {
+            R->currentMoveInvalid = true;
         }
 
         if( thisNode->rrtParentUsed ) {
@@ -1278,13 +1275,13 @@ void findNewTarget(std::shared_ptr<CSpace> &S,
                    double hyperBallRad )
 {
     Eigen::VectorXd robPose, nextPose;
+    R->robotEdgeUsed = false;
+    R->distAlongRobotEdge = 0.0;
+    R->timeAlongRobotEdge = 0.0;
+    nextPose = R->nextMoveTarget->position;
     {
         std::lock_guard<std::mutex> lock(R->robotMutex_);
-        R->robotEdgeUsed = false;
-        R->distAlongRobotEdge = 0.0;
-        R->timeAlongRobotEdge = 0.0;
         robPose = R->robotPose;
-        nextPose = R->nextMoveTarget->position;
     }
 
     // Move target has become invalid
@@ -1340,32 +1337,29 @@ void findNewTarget(std::shared_ptr<CSpace> &S,
 
         // If a valid neighbor was found, then use it
         if( bestDistToGoal != INF ) {
-            {
-                std::lock_guard<std::mutex> lock(R->robotMutex_);
-                R->nextMoveTarget = bestNeighbor;
-                R->distanceFromNextRobotPoseToNextMoveTarget = bestDistToNeighbor;
-                R->currentMoveInvalid = false;
-                // Found a valid move target
+            R->nextMoveTarget = bestNeighbor;
+            R->distanceFromNextRobotPoseToNextMoveTarget = bestDistToNeighbor;
+            R->currentMoveInvalid = false;
+            // Found a valid move target
 
-                R->robotEdge = edgeToBestNeighbor; /** this edge is empty **/
-                R->robotEdgeUsed = true;
+            R->robotEdge = edgeToBestNeighbor; /** this edge is empty **/
+            R->robotEdgeUsed = true;
 
-                if( S->spaceHasTime ) {
-                    R->timeAlongRobotEdge = 0.0;
-                    // note this is updated before robot moves
-                } else {
-                    R->distAlongRobotEdge = 0.0;
-                    // note this is updated before robot moves
-                }
-
-                // Set moveGoal to be nextMoveTarget
-                // NOTE may want to actually insert a new node at the robot's
-                // position and use that instead, since these "edges" created
-                // between robot pose and R.nextMoveTarget may be lengthy
-                S->moveGoal->isMoveGoal = false;
-                S->moveGoal = R->nextMoveTarget;
-                S->moveGoal->isMoveGoal = true;
+            if( S->spaceHasTime ) {
+                R->timeAlongRobotEdge = 0.0;
+                // note this is updated before robot moves
+            } else {
+                R->distAlongRobotEdge = 0.0;
+                // note this is updated before robot moves
             }
+
+            // Set moveGoal to be nextMoveTarget
+            // NOTE may want to actually insert a new node at the robot's
+            // position and use that instead, since these "edges" created
+            // between robot pose and R.nextMoveTarget may be lengthy
+            S->moveGoal->isMoveGoal = false;
+            S->moveGoal = R->nextMoveTarget;
+            S->moveGoal->isMoveGoal = true;
             break;
         }
 
@@ -1393,35 +1387,43 @@ void moveRobot(std::shared_ptr<Queue> &Q,
                double hyperBallRad,
                std::shared_ptr<RobotData> &R )
 {
-    std::lock_guard<std::mutex> lock(R->robotMutex_);
     // Start by updating the location of the robot based on how
     // it moved since the last update (as well as the total path that
     // it has followed)
     if( R->moving ) {
+        {
+            std::lock_guard<std::mutex> lock(R->robotMutex_);
+            std::cout << "Moving "
+                      << Tree->distanceFunction(R->robotPose,R->nextRobotPose)
+                      << " units" << std::endl;
+            R->robotPose = R->nextRobotPose;
+        }
 
-        std::cout << "Moving "
-                  << Tree->distanceFunction(R->robotPose,R->nextRobotPose)
-                  << " units" << std::endl;
-        R->robotPose = R->nextRobotPose;
         //R.robotMovePath[R.numRobotMovePoints+1:R.numRobotMovePoints+R.numLocalMovePoints,:] = R.robotLocalPath[1:R.numLocalMovePoints,:];
         for( int i = 0; i < R->numLocalMovePoints-1; i++ ) {
             R->robotMovePath.row(R->numRobotMovePoints+i) = R->robotLocalPath.row(i);
         }
         R->numRobotMovePoints += R->numLocalMovePoints;
 
-        if( !Q->S->spaceHasTime ) {
-            std::cout << "new robot pose(w/o time):\n"
-                      << R->robotPose << std::endl;
-        } else {
-            std::cout << "new robot pose(w/ time):\n"
-                      << R->robotPose << std::endl;
+        {
+            std::lock_guard<std::mutex> lock(R->robotMutex_);
+            if( !Q->S->spaceHasTime ) {
+                std::cout << "new robot pose(w/o time):\n"
+                          << R->robotPose << std::endl;
+            } else {
+                std::cout << "new robot pose(w/ time):\n"
+                          << R->robotPose << std::endl;
+            }
         }
     } else {
         // Movement has just started, so remember that the robot is now moving
         R->moving = true;
 
         error("First pose:");
-        std::cout << R->robotPose << std::endl;
+        {
+            std::lock_guard<std::mutex> lock(R->robotMutex_);
+            std::cout << R->robotPose << std::endl;
+        }
 
         if( !Q->S->moveGoal->rrtParentUsed ) {
             // no parent has been found for the node at the robots position
@@ -1479,8 +1481,10 @@ void moveRobot(std::shared_ptr<Queue> &Q,
 
         // Save first local path point
         R->numLocalMovePoints = 1;
-        R->robotLocalPath.row(R->numLocalMovePoints-1) = R->robotPose;
-
+        {
+            std::lock_guard<std::mutex> lock(R->robotMutex_);
+            R->robotLocalPath.row(R->numLocalMovePoints-1) = R->robotPose;
+        }
         // Starting at current location (and looking ahead to nextNode), follow
         // parent pointers back for appropriate distance (or root or dead end)
         while( nextDist <= distRemaining && nextNode != root
@@ -1534,10 +1538,13 @@ void moveRobot(std::shared_ptr<Queue> &Q,
         std::shared_ptr<KDTreeNode> nextNode = R->nextMoveTarget;
 
         // Save first local path point
+        double targetTime;
         R->numLocalMovePoints = 1;
-        R->robotLocalPath.row(R->numLocalMovePoints) = R->robotPose;
-
-        double targetTime = R->robotPose(2) - slice_time;
+        {
+            std::lock_guard<std::mutex> lock(R->robotMutex_);
+            R->robotLocalPath.row(R->numLocalMovePoints) = R->robotPose;
+            targetTime = R->robotPose(2) - slice_time;
+        }
         while( targetTime < R->robotEdge->endNode->position(2)
                && nextNode != root && nextNode->rrtParentUsed
                && nextNode != nextNode->rrtParentEdge->endNode ) {

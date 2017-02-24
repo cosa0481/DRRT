@@ -1,4 +1,4 @@
-/* test.cpp
+/* largetest.cpp
  * Corin Sandford
  * Fall 2016
  * This file is made into an executable: 'test'
@@ -9,6 +9,7 @@
  */
 
 #include <DRRT/drrt.h>
+#include <DRRT/visualizer.h>
 
 using namespace std;
 
@@ -35,7 +36,7 @@ void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
 
 /// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
-shared_ptr<RobotData> RRTX(Problem p)
+shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 {
     // Used for "sensing" obstacles (should make input, from DRRT.jl)
     //double robotSensorRange = 20.0;
@@ -83,6 +84,9 @@ shared_ptr<RobotData> RRTX(Problem p)
     if(Q->S->spaceHasTime) {
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
+
+    shared_ptr<thread> vis_thread = make_shared<thread>(visualizer,kd_tree,robot);
+    vis = vis_thread;
 
     /// End Initialization
 
@@ -171,52 +175,55 @@ shared_ptr<RobotData> RRTX(Problem p)
             }
             prev_pose = robot->robotPose;
 
-            /// Sample free space
-            shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
-            shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
-            shared_ptr<double> closest_dist = make_shared<double>(INF);
+            if( i == 1 ) { printRRTxPath(robot->nextMoveTarget); }
+            if( !robot->moving ) {
+                /// Sample free space
+                shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
+                shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
+                shared_ptr<double> closest_dist = make_shared<double>(INF);
 
-            new_node = randNodeOrFromStack(Q->S);
-            if(new_node->kdInTree) continue;
+                new_node = randNodeOrFromStack(Q->S);
+                if(new_node->kdInTree) continue;
 
-            kd_tree->kdFindNearest(closest_node,closest_dist,
-                                  new_node->position);
+                kd_tree->kdFindNearest(closest_node,closest_dist,
+                                      new_node->position);
 
-            /// Saturate new node
-            this_dist = kd_tree->distanceFunction(new_node->position,
-                                                    closest_node->position);
-            if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
+                /// Saturate new node
+                this_dist = kd_tree->distanceFunction(new_node->position,
+                                                        closest_node->position);
+                if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
 
-                Edge::saturate(new_node->position, closest_node->position,
-                               Q->S->delta, this_dist);
-            }
+                    Edge::saturate(new_node->position, closest_node->position,
+                                   Q->S->delta, this_dist);
+                }
 
-            /// Check for obstacles
-            //bool explicitly_unsafe;
-            //explicitNodeCheck(explicitly_unsafe,Q->S,new_node)
-            //if(explicitly_unsafe) continue;
+                /// Check for obstacles
+                //bool explicitly_unsafe;
+                //explicitNodeCheck(explicitly_unsafe,Q->S,new_node)
+                //if(explicitly_unsafe) continue;
 
-            /// Extend graph
-            if(extend(kd_tree,Q,new_node,closest_node,
-                      Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
-                // Record data (kd-tree)
-                kdTree.row(kdTreePos++) = new_node->position;
-            }
+                /// Extend graph
+                if(extend(kd_tree,Q,new_node,closest_node,
+                          Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
+                    // Record data (kd-tree)
+                    kdTree.row(kdTreePos++) = new_node->position;
+                }
 
-            /// Make graph consistent
-            reduceInconsistency(Q,Q->S->moveGoal,Q->S->robotRadius,
-                                root,hyper_ball_rad);
-            if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
-                old_rrtLMC = Q->S->moveGoal->rrtLMC;
-            }
+                /// Make graph consistent
+                reduceInconsistency(Q,Q->S->moveGoal,Q->S->robotRadius,
+                                    root,hyper_ball_rad);
+                if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
+                    old_rrtLMC = Q->S->moveGoal->rrtLMC;
+                }
 
-            // If the difference between the first node and the root is
-            // > delta, then set its LMC to INF so it can be recalculated
-            // when the next node is added
-            /// In general this shouldn't happen because of saturate()
-            if(i == 1 && new_node->rrtParentUsed && (new_node->rrtLMC
-                   - new_node->rrtParentEdge->endNode->rrtLMC > Q->S->delta)) {
-                new_node->rrtLMC = INF;
+                // If the difference between the first node and the root is
+                // > delta, then set its LMC to INF so it can be recalculated
+                // when the next node is added
+                /// In general this shouldn't happen because of saturate()
+                if(i == 1 && new_node->rrtParentUsed && (new_node->rrtLMC
+                       - new_node->rrtParentEdge->endNode->rrtLMC > Q->S->delta)) {
+                    new_node->rrtLMC = INF;
+                }
             }
         }
     }
@@ -247,7 +254,7 @@ int main()
 
     Eigen::Vector3d start, goal;
     start << 0.0, 0.0, -3*PI/4;
-    goal << 50.0, 50.0, -3*PI/4;    // where the robot begins
+    goal << 150.0, 150.0, -3*PI/4;    // where the robot begins
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
@@ -268,7 +275,7 @@ int main()
 
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
-    double plan_time = 500.0;       // plan *only* for this long
+    double plan_time = 300.0;       // plan *only* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 10.0;            // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius
@@ -282,8 +289,11 @@ int main()
                               move_robot, wrap_vec, wrap_points_vec,
                               distance_function);
 
+    // Visualizer thread to join
+    shared_ptr<thread> visualizer_thread;
+
     /// Run RRTx
-    shared_ptr<RobotData> robot_data = RRTX(problem);
+    shared_ptr<RobotData> robot_data = RRTX(problem,visualizer_thread);
 
     /// Save data
     // Calculate and display distance traveled
@@ -331,6 +341,7 @@ int main()
     ofs.close();
 
     cout <<"Data written to kdTree.txt, kdEdge.txt, and robotPath.txt"<< endl;
+    visualizer_thread->join();
 
     return 0;
 }

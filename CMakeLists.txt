@@ -44,6 +44,7 @@ set( HDRS
                 include/DRRT/dubinsedge.h
                 include/DRRT/holedge.h
                 include/DRRT/drrt_distance_functions.h
+                include/DRRT/visualizer.h
 		)
 
 set( SRCS
@@ -56,6 +57,7 @@ set( SRCS
                 src/dubinsedge.cpp
                 src/holedge.cpp
                 src/drrt_distance_functions.cpp
+                src/visualizer.cpp
 		)
 
 
@@ -75,8 +77,8 @@ target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 #add_executable( jlisttest src/jlist.cpp ${HDRS} )
 #target_link_libraries( jlisttest ${LIBRARY_NAME} )
 
-add_executable( test src/test.cpp ${HDRS} )
-target_link_libraries( test ${LIBRARY_NAME} )
+add_executable( largetest src/largetest.cpp ${HDRS} )
+target_link_libraries( largetest ${LIBRARY_NAME} )
 
 add_executable( straighttest src/straighttest.cpp ${HDRS} )
 target_link_libraries( straighttest ${LIBRARY_NAME} )

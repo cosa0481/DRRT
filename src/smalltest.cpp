@@ -6,92 +6,20 @@
  */
 
 #include <DRRT/drrt.h>
-#include <SceneGraph/SceneGraph.h>
+#include <DRRT/visualizer.h>
 
 using namespace std;
 
-// Variables for saving data
+// Variables for saving data from Dubin's space
 int histPos = 0,
     kdTreePos = 0,
     kdEdgePos = 0;
+
 Eigen::MatrixXd rHist(MAXPATHNODES,3),
                 kdTree(MAXPATHNODES,3),
                 kdEdge(MAXPATHNODES,3);
+
 chrono::time_point<chrono::high_resolution_clock> startTime;
-
-/// VISUALIZER FUNCTION
-void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> R)
-{
-    /// Build display
-    // Create OpenGL window
-    pangolin::CreateWindowAndBind("RRTx",640,480);
-    SceneGraph::GLSceneGraph::ApplyPreferredGlSettings();
-
-    // Scenegraph to hold GLObjects and relative transformations
-    SceneGraph::GLSceneGraph glGraph;
-
-    // Define grid object
-    SceneGraph::GLGrid glGrid(50,2.0,true);
-    glGraph.AddChild(&glGrid);
-
-    // Define axis object
-    SceneGraph::GLAxis glAxis;
-    glAxis.SetPose(0,0,0,0,0,0);
-    glGraph.AddChild(&glAxis);
-
-    SceneGraph::GLText glText3d("3D Floating Text", -1,1,-1);
-    glGraph.AddChild(&glText3d);
-
-    // Define camera render object
-    pangolin::OpenGlRenderState stacks3d(
-                pangolin::ProjectionMatrix(640,480,420,420,320,240,0.1,1000),
-                pangolin::ModelViewLookAt(0,-2,-4, 0,1,0, pangolin::AxisNegZ));
-
-    // Define view for base container
-    pangolin::View view3d;
-
-    // Set view location on screen and add handler for updating of model view
-    // matrix (stacks3d)
-    view3d.SetBounds(0.0,1.0,0.0,1.0,640.f/480.0f)
-            .SetHandler(new SceneGraph::HandlerSceneGraph(
-                            glGraph,stacks3d,pangolin::AxisNegZ))
-            .SetDrawFunction(SceneGraph::ActivateDrawFunctor(
-                                 glGraph,stacks3d));
-
-    // Add view to base container as child
-    pangolin::DisplayBase().AddDisplay(view3d);
-
-    vector<std::shared_ptr<SceneGraph::GLAxis>> poses;
-    std::shared_ptr<SceneGraph::GLAxis> pose;
-
-    // Default hook for exiting: Esc
-    // Default hook for fullscreen: tab
-    while( !pangolin::ShouldQuit() ) {
-        // Clear screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Add K-D Tree nodes to the frame
-
-
-        // Update robot pose (x,y,z, r,p,y)
-        {
-            lock_guard<mutex> lock(R->robotMutex_);
-            pose = make_shared<SceneGraph::GLAxis>();
-            pose->SetPose(R->robotPose(0),R->robotPose(1),0.0,
-                         0.0,0.0,R->robotPose(2));
-        }
-        if( poses.size() == 0 || pose->GetPose() != poses.back()->GetPose() ) {
-            poses.push_back(pose);
-            glGraph.AddChild(poses.back().get());
-        }
-
-        // Swap frames and process events
-        pangolin::FinishFrame();
-
-        // Pause for a 1/60th of a second
-        this_thread::sleep_for(chrono::milliseconds(1000/60));
-    }
-}
 
 void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
 {
@@ -104,10 +32,9 @@ void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
     cout << leaf->position << endl;
 }
 
-
 /// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
-shared_ptr<RobotData> RRTX(Problem p)
+shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 {
     // Used for "sensing" obstacles (should make input, from DRRT.jl)
     //double robotSensorRange = 20.0;
@@ -156,8 +83,9 @@ shared_ptr<RobotData> RRTX(Problem p)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    thread visualizer_thread(visualizer,kd_tree,robot);
-    visualizer_thread.detach();
+    shared_ptr<thread> visualizer_thread
+            = make_shared<thread>(visualizer,kd_tree,robot);
+    vis = visualizer_thread;
 
     /// End Initialization
 
@@ -245,6 +173,8 @@ shared_ptr<RobotData> RRTX(Problem p)
                 break;
             }
             prev_pose = robot->robotPose;
+
+            if( i == 1 ) { printRRTxPath(robot->nextMoveTarget); }
 
             /// Sample free space
             shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
@@ -342,9 +272,9 @@ int main()
 
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
-    double plan_time = 10.0;        // plan *only* for this long
+    double plan_time = 50.0;        // plan *only* for this long
     double slice_time = 1.0/100;    // iteration time limit
-    double delta = 10.0;            // distance between graph nodes
+    double delta = 5.0;             // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
@@ -356,8 +286,10 @@ int main()
                               move_robot, wrap_vec, wrap_points_vec,
                               distance_function);
 
+    shared_ptr<thread> vis_thread;
+
     /// Run RRTx
-    shared_ptr<RobotData> robot_data = RRTX(problem);
+    shared_ptr<RobotData> robot_data = RRTX(problem, vis_thread);
 
     /// Save data
     // Calculate and display distance traveled
@@ -405,9 +337,7 @@ int main()
     ofs.close();
 
     cout <<"Data written to kdTree.txt, kdEdge.txt, and robotPath.txt"<< endl;
-
-    char done = 'w';
-    while( done != 'q' ) cin >> done;
+    vis_thread->join();
 
     return 0;
 }
