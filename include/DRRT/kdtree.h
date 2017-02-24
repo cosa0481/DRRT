@@ -40,7 +40,7 @@ public:
 
     KDTree(int _d)
         :   d(_d), distanceFunction(0), treeSize(0), numWraps(0)
-    {knodes = std::vector<std::shared_ptr<KDTreeNode>>(); }
+    { nodes = std::vector<std::shared_ptr<KDTreeNode>>(); }
 
     KDTree()
         :  d(0), distanceFunction(0), treeSize(0), numWraps(0)
