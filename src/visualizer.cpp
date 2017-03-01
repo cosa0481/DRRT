@@ -4,7 +4,8 @@
 using namespace std;
 
 /// VISUALIZER FUNCTION
-void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot)
+void visualizer(shared_ptr<KDTree> Tree,
+                shared_ptr<RobotData> Robot)
 {
     int resX = 800, resY = 600, ticks = 100;
     double spacing = 1.0; // straighttest:1.0 smalltest:1.0 largetest:5.0
@@ -27,6 +28,16 @@ void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot)
     SceneGraph::GLAxis glAxis;
     glAxis.SetPose(0,0,0,0,0,0);
     glGraph.AddChild(&glAxis);
+
+    // Draw any-angle best path
+    SceneGraph::GLLineStrip path;
+    path.SetReference(0,0,0);
+    for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
+        path.SetPoint(Robot->best_any_angle_path.at(i)(0),
+                      Robot->best_any_angle_path.at(i)(1),
+                      0);
+    }
+    glGraph.AddChild(&path);
 
     // Define camera render object
     pangolin::OpenGlRenderState stacks3d(

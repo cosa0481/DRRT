@@ -64,6 +64,8 @@ public:
     }
 
     // Functions
+    bool JlistContains(std::shared_ptr<KDTreeNode> &t,
+                       std::shared_ptr<JListNode> &i);
     void JlistPush( std::shared_ptr<KDTreeNode> &t );
     void JlistPush( std::shared_ptr<Edge> &e );
     void JlistPush( std::shared_ptr<KDTreeNode> &t, double k );

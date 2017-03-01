@@ -182,6 +182,10 @@ typedef struct RobotData{
     double timeAlongRobotEdge; // the current time that the robot "will be"
                               // along robotEdge (i.e. next time slice)
 
+    // Optimal path as determined by the Theta*
+    // Any Angle search algorithm
+    std::vector<Eigen::VectorXd> best_any_angle_path;
+
     // Constructor
     RobotData(Eigen::VectorXd rP,
               std::shared_ptr<KDTreeNode> nMT,
