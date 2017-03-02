@@ -45,6 +45,7 @@ set( HDRS
                 include/DRRT/holedge.h
                 include/DRRT/drrt_distance_functions.h
                 include/DRRT/visualizer.h
+                include/DRRT/obstacle.h
 		)
 
 set( SRCS
@@ -58,6 +59,7 @@ set( SRCS
                 src/holedge.cpp
                 src/drrt_distance_functions.cpp
                 src/visualizer.cpp
+                src/obstacle.cpp
 		)
 
 
