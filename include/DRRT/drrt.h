@@ -31,7 +31,6 @@ public:
     bool move_robot_flag;               // true -> drive robot
     Eigen::VectorXi wraps;              // wrapping dimensions (0=1st)
     Eigen::VectorXd wrap_points;        // points at which they wrap
-    double(*distance_function)(Eigen::VectorXd a,Eigen::VectorXd b);
 
     // Constructor
     Problem(std::string se_t,
@@ -44,8 +43,7 @@ public:
             double g_t,
             bool m_r_f,
             Eigen::VectorXi w,
-            Eigen::VectorXd w_p,
-            double(*d_f)(Eigen::VectorXd a,Eigen::VectorXd b))
+            Eigen::VectorXd w_p)
         :   search_type(se_t),
             c_space(c_s),
             planning_only_time(p_o_t),
@@ -56,8 +54,7 @@ public:
             goal_threshold(g_t),
             move_robot_flag(m_r_f),
             wraps(w),
-            wrap_points(w_p),
-            distance_function(d_f)
+            wrap_points(w_p)
     {}
 };
 
@@ -165,14 +162,30 @@ bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace> S,
 
 // Returns the min distance squared between the point and the segment
 // [startPoint, endPoint] assumes a 2D space
-double distanceSqrdPointToSegment(Eigen::VectorXd point,
-                                  Eigen::VectorXd startPoint,
-                                  Eigen::VectorXd endPoint);
+double DistanceSqrdPointToSegment(Eigen::VectorXd point,
+                                  Eigen::Vector2d startPoint,
+                                  Eigen::Vector2d endPoint);
+
+// This returns the distance of the closest point on the boundary
+// of the polygon to the point (assumes 2D space)
+double DistToPolygonSqrd(Eigen::VectorXd point, Eigen::MatrixX2d polygon);
 
 // All intput args represent points, this returns the minimum distance
 // between line segments [PA PB] and [QA QB] and assumes 2D space
-double segmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
+double SegmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
                        Eigen::VectorXd QA, Eigen::VectorXd QB);
+
+// Finds the transform of polygon to the approperiate position at
+// the time of the point, based on the obstacle's path through time
+// (Assumes obstacle type 6)
+Eigen::Vector2d FindTransformObjToTimeOfPoint(std::shared_ptr<Obstacle> O,
+                                              Eigen::Vector3d point);
+
+// Returns true if the point is in the polygon (open set of it anyway)
+// each row in polygon is a vertex and subsequent vertices define edges
+// Top and bottom rows of polygon also form an edge
+// Polygon does not have to be convex but should be simple
+bool PointInPolygon(Eigen::Vector2d point, Eigen::MatrixX2d polygon);
 
 // Returns the index of the first time coordinate (3rd dimension) smaller
 // than the time
@@ -190,6 +203,21 @@ int findIndexBeforeTime(Eigen::MatrixXd path, double timeToFind);
 bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
                        std::shared_ptr<Edge> edge);
 
+bool QuickCheck2D(std::shared_ptr<Obstacle> O, Eigen::Vector2d point,
+                  std::shared_ptr<CSpace> C);
+
+bool QuickCheck(std::shared_ptr<CSpace> C, Eigen::Vector2d point);
+
+
+bool ExplicitPointCheck2D(std::shared_ptr<CSpace> C,
+                          std::shared_ptr<Obstacle> O,
+                          Eigen::VectorXd point,
+                          double radius);
+
+bool ExplicitPointCheck(std::shared_ptr<Queue>& Q, Eigen::VectorXd point);
+
+bool ExplicitNodeCheck(std::shared_ptr<Queue>& Q,
+                       std::shared_ptr<KDTreeNode> node);
 
 /////////////////////// RRT Functions ///////////////////////
 // Functions used for RRT. Some of these are also used in RRT*

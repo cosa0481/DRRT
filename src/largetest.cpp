@@ -55,8 +55,8 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 
     /// KD-Tree
     shared_ptr<KDTree> kd_tree
-            = make_shared<KDTree>(p.c_space->d,p.wraps,p.wrap_points);
-    kd_tree->setDistanceFunction(p.distance_function);
+            = make_shared<KDTree>(Q->S->d,p.wraps,p.wrap_points);
+    kd_tree->setDistanceFunction(Q->S->distanceFunction);
 
     shared_ptr<KDTreeNode> root = make_shared<KDTreeNode>(Q->S->start);
     //explicitNodeCheck(S,root);
@@ -258,7 +258,10 @@ int main()
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
+    cspace->setDistanceFunction(distance_function);
 
+    cspace->obs_delta_ = -1.0;
+    cspace->collision_distance_ = 0.1;   // distance for collision
     cspace->robotRadius = 0.5;
     cspace->robotVelocity = 10.0;
     cspace->minTurningRadius = 1.0;
@@ -286,8 +289,7 @@ int main()
     // Create a new problem for RRTx
     Problem problem = Problem(alg_name, cspace, plan_time, slice_time, delta,
                               ball_const, change_thresh, goal_thresh,
-                              move_robot, wrap_vec, wrap_points_vec,
-                              distance_function);
+                              move_robot, wrap_vec, wrap_points_vec);
 
     // Visualizer thread to join
     shared_ptr<thread> visualizer_thread;

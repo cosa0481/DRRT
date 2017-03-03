@@ -14,41 +14,41 @@
 // associated with data)
 class ListNode {
 public:
-    std::shared_ptr<KDTreeNode> tnode;
-    ListNode* child;
-    double key = 0.0;
+    std::shared_ptr<Obstacle> obstacle_;
+    std::shared_ptr<ListNode> child_;
+    double key_ = 0.0;
 
     // Constructors
-    ListNode(std::shared_ptr<KDTreeNode> n) : tnode(n) {}
-    ListNode(){}
+    ListNode(std::shared_ptr<Obstacle> o) : obstacle_(o) {}
+    ListNode() : key_(-1.0) {}
 };
 
 // A simple list
 class List {
 public:
-    ListNode* front;
-    int length;
+    std::shared_ptr<ListNode> front_;
+    int length_;
 
     // Constructors
     List()
     {
-        ListNode* endNode = new ListNode();
-        endNode->child = endNode;
-        front = endNode;
-        length = 0;
+        std::shared_ptr<ListNode> endNode = std::make_shared<ListNode>();
+        endNode->child_ = endNode;
+        front_ = endNode;
+        length_ = 0;
     }
 
-    void listPush( std::shared_ptr<KDTreeNode> tnode );
-    void listPush( std::shared_ptr<KDTreeNode> tnode, double key );
-    std::shared_ptr<KDTreeNode> listTop();
-    void listTopKey( std::shared_ptr<KDTreeNode> n, double* k );
-    std::shared_ptr<KDTreeNode> listPop();
-    void listPopKey( std::shared_ptr<KDTreeNode> n, double* k );
+    void listPush(std::shared_ptr<Obstacle> o);
+    void listPush(std::shared_ptr<Obstacle> o, double key);
+    void listTop(std::shared_ptr<Obstacle>& o);
+    void listTopKey(std::shared_ptr<Obstacle>& o, double* k);
+    void listPop(std::shared_ptr<Obstacle>& o);
+    void listPopKey(std::shared_ptr<Obstacle>& o, double* k);
     void listEmpty();
     void listPrint();
 
     // Helper function
-    List listCopy( ListNode* example );
+    std::shared_ptr<List> listCopy( std::shared_ptr<ListNode> example );
 };
 
 

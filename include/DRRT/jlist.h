@@ -6,18 +6,7 @@
 #ifndef JLIST_H
 #define JLIST_H
 
-#include <vector>
-#include <string>
-#include <iostream>
-#include <math.h>
-#include <eigen3/Eigen/Eigen>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <cstdlib>
-#include <iomanip>
-#include <thread>
-#include <mutex>
+#include <DRRT/obstacle.h>
 
 class KDTreeNode;
 class Edge;

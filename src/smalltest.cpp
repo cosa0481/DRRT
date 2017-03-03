@@ -51,13 +51,13 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     Q->S->sampleStack = make_shared<JList>(true); // uses KDTreeNodes
     Q->S->delta = p.delta;
 
-    /// KD-Tree
+    /// K-D Tree
     shared_ptr<KDTree> kd_tree
-            = make_shared<KDTree>(p.c_space->d,p.wraps,p.wrap_points);
-    kd_tree->setDistanceFunction(p.distance_function);
+            = make_shared<KDTree>(Q->S->d,p.wraps,p.wrap_points);
+    kd_tree->setDistanceFunction(Q->S->distanceFunction);
 
     shared_ptr<KDTreeNode> root = make_shared<KDTreeNode>(Q->S->start);
-    //explicitNodeCheck(S,root);
+    ExplicitNodeCheck(Q,root);
     root->rrtTreeCost = 0.0;
     root->rrtLMC = 0.0;
     root->rrtParentEdge = Edge::newEdge(Q->S,kd_tree,root,root);
@@ -196,9 +196,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             }
 
             /// Check for obstacles
-            //bool explicitly_unsafe;
-            //explicitNodeCheck(explicitly_unsafe,Q->S,new_node)
-            //if(explicitly_unsafe) continue;
+            if(ExplicitNodeCheck(Q,new_node)) continue;
 
             /// Extend graph
             if(extend(kd_tree,Q,new_node,closest_node,
@@ -255,7 +253,10 @@ int main()
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
+    cspace->setDistanceFunction(distance_function);
 
+    cspace->obs_delta_ = -1.0;
+    cspace->collision_distance_ = 0.1;
     cspace->robotRadius = 0.5;
     cspace->robotVelocity = 10.0;
     cspace->minTurningRadius = 1.0;
@@ -283,8 +284,7 @@ int main()
     // Create a new problem for RRTx
     Problem problem = Problem(alg_name, cspace, plan_time, slice_time, delta,
                               ball_const, change_thresh, goal_thresh,
-                              move_robot, wrap_vec, wrap_points_vec,
-                              distance_function);
+                              move_robot, wrap_vec, wrap_points_vec);
 
     shared_ptr<thread> vis_thread;
 

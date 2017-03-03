@@ -10,11 +10,6 @@
 
 #include <DRRT/kdtreenode.h> // PI defined here
 
-// Infinity value for distance
-#define INF 1000000000000
-#define MAXPATHNODES 100000
-#define DELTA 10 // should be changed if delta is changed in executable
-
 class CSpace;
 class KDTree;
 
