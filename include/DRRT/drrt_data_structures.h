@@ -10,6 +10,7 @@
 
 class CSpace{
 public:
+    std::mutex cspace_mutex_;
     int d;                   // dimensions
     std::shared_ptr<List> obstacles; // a list of obstacles
     double obs_delta_;         // the granularity of obstacle checks on edges
@@ -68,6 +69,7 @@ public:
     double warmupTime;  // the amount of warm up time allowed (obstacles are
                         // ignored for warm up time)
     bool inWarmupTime;  // true if we are in the warm up time
+    bool warmup_time_just_ended; // true if the we just started moving
 
     // Constructor
     CSpace(int D, Eigen::VectorXd lower, Eigen::VectorXd upper,

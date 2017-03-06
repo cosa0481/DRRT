@@ -24,8 +24,8 @@ public:
 
     // Corstructor
     JListNode() : key(-1.0) {}
-    JListNode(std::shared_ptr<KDTreeNode> t) : node(t) {}
-    JListNode(std::shared_ptr<Edge> e) : edge(e) {}
+    JListNode(std::shared_ptr<KDTreeNode> &t) : node(t) {}
+    JListNode(std::shared_ptr<Edge> &e) : edge(e) {}
 };
 
 // A simple JList

@@ -1,5 +1,5 @@
 #include <DRRT/dubinsedge.h>
-#include <DRRT/kdtree.h>
+#include <DRRT/drrt.h>
 
 /////////////////////// Critical Functions ///////////////////////
 
@@ -57,7 +57,7 @@ void Edge::saturate(Eigen::VectorXd& nP,
 }
 
 /////////////////////// Virtual Edge Functions ///////////////////////
-bool DubinsEdge::validMove()
+bool DubinsEdge::ValidMove()
 {
     if( this->cspace->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
@@ -78,7 +78,8 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
         return this->endNode->position;
     }
 
-    // Find the piece of trajectory that contains the point at the desired distance
+    // Find the piece of trajectory that contains the point
+    // at the desired distance
     int i = 1;
     double thisDist = INF;
     bool timeInPath = this->trajectory.cols() > 3;
@@ -721,7 +722,7 @@ void DubinsEdge::calculateTrajectory()
          * trajectory is determined by the difference in time positions
          * of the end points. ALSO NOTE: This function is not responsible
          * for determining if it is possible for the robot to actually
-         * achieve this speed -- which is done in the function validMove().
+         * achieve this speed -- which is done in the function ValidMove().
          * FINALLY, we allso assume that the trajectory is sampled well
          * enough in "curvy" parts that the distance between points can
          * be approximated by the straight line distance between these
@@ -820,4 +821,29 @@ void DubinsEdge::calculateHoverTrajectory()
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//bool Edge::explicitEdgeCheck( std::shared_ptr<CSpace> S, Obstacle* obstacle ){}
+bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
+                                   std::shared_ptr<Obstacle> obstacle)
+{
+    // We know that all points in the Dubin's trajectory are within
+    // r*S->minTurningRadius of the 2D segment from startNode to endNode
+    // Thus, the edge is safe if a robot with this additional radius can
+    // traverse that segment
+    if(!ExplicitEdgeCheck2D(obstacle,
+                            this->startNode->position,
+                            this->endNode->position,
+                            S->robotRadius + 2*S->minTurningRadius))
+        return false;
+
+    // If the segment was in conflict then we need to do the full check
+    // check of the trajectory segments
+    // Could be improved using a function that can check arcs of the
+    // Dubin's path at once instead of just line segments stored in trajectory
+    for(int i = 2; i < this->trajectory.rows(); i++) {
+        if(ExplicitEdgeCheck2D(obstacle,
+                               this->trajectory.row(i-1),
+                               this->trajectory.row(i),
+                               S->robotRadius))
+            return true;
+    }
+    return false;
+}

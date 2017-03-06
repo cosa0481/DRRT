@@ -4,12 +4,12 @@
 using namespace std;
 
 /// VISUALIZER FUNCTION
-void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot)
+void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot, shared_ptr<Queue> Q)
 {
     int resX = 800, resY = 600, ticks = 100;
     double spacing = 1.0; // straighttest:1.0 smalltest:1.0 largetest:5.0
     double dist = 10; // straighttest:10 smalltest:10 largetest:20
-    double fov = 420;
+    double fov = 420; // field of view (this just worked best)
 
     /// Build display
     // Create OpenGL window
@@ -48,6 +48,29 @@ void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot)
 
     // Add view to base container as child
     pangolin::DisplayBase().AddDisplay(view3d);
+
+    // ASSUMING STATIC OBSTACLES FOR NOWbw
+    // For the obstacles
+    shared_ptr<List> obstacles;
+    shared_ptr<Obstacle> this_obstacle;
+    SceneGraph::GLLineStrip* polygon;
+    {
+        lock_guard<mutex> lock(Q->S->cspace_mutex_);
+        obstacles = Q->S->obstacles;
+    }
+    for(int i = 0; i < obstacles->length_; i++) {
+        obstacles->listPop(this_obstacle);
+        polygon = new SceneGraph::GLLineStrip();
+        for( int j = 0; j < this_obstacle->polygon_.rows(); j++) {
+            polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(0),
+                                              this_obstacle->polygon_.row(j)(1),
+                                              0));
+        }
+        polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(0)(0),
+                                          this_obstacle->polygon_.row(0)(1),
+                                          0));
+        glGraph.AddChild(polygon);
+    }
 
     // For the K-D Tree nodes
     vector<shared_ptr<KDTreeNode>> nodes;

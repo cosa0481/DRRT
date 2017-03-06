@@ -125,7 +125,7 @@ public:
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge
     // Dubin's edge version
-    virtual bool validMove()=0;
+    virtual bool ValidMove()=0;
 
     /* Returns the pose of a robot that is located dist along the edge
      * Note that 'dist' and 'far' are with respect to whatever type of
@@ -157,7 +157,8 @@ public:
     // Checks if the edge is in collision with a particular obstacle
     // Returns true if in collision
     // Dubin's edge version
-    //virtual bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle );
+    virtual bool ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
+                                   std::shared_ptr<Obstacle> obstacle)=0;
 
 };
 

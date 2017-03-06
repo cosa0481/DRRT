@@ -85,7 +85,8 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    shared_ptr<thread> vis_thread = make_shared<thread>(visualizer,kd_tree,robot);
+    shared_ptr<thread> vis_thread
+            = make_shared<thread>(visualizer,kd_tree,robot,Q);
     vis = vis_thread;
 
     /// End Initialization
@@ -137,7 +138,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             /// Move robot
             if(Q->S->timeElapsed > p.planning_only_time + p.slice_time) {
                 if(p.move_robot_flag) {
-                    moveRobot(Q,kd_tree,root,
+                    MoveRobot(Q,kd_tree,root,
                               p.slice_time,hyper_ball_rad,robot);
                     // Record data (robot path)
                     rHist.row(histPos++) = robot->robotPose;

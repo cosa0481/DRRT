@@ -20,7 +20,9 @@
 #define MAXPATHNODES 100000
 #define DELTA 10 // should be changed if delta is changed in executable
 
-class Obstacle
+class CSpace;
+
+class Obstacle : public std::enable_shared_from_this<Obstacle>
 {
 public:
 
@@ -76,6 +78,7 @@ public:
     // Constructors
     // Empty Obstacle
     Obstacle(int kind) : kind_(kind) {}
+
     // Ball
     Obstacle(int kind, Eigen::VectorXd position, double radius)
         : kind_(kind), start_time_(0.0), life_span_(INF),
@@ -145,8 +148,32 @@ public:
         span_ = Eigen::Vector2d(-1.0,-1.0);
     }
 
-    // Functions
-    static void ReadObstaclesFromFile(std::string obstacle_file);
+    // Read in obstacles from files
+    static void ReadObstaclesFromFile(std::string obstacle_file,
+                                      std::shared_ptr<CSpace> &C);
+    static void ReadDynamicObstaclesFromFile(std::string obstacle_file);
+    static void ReadDiscoverableObstaclesFromFile(std::string obstacle_file);
+    static void ReadDirectionalObstaclesFromFile(std::string obstacle_file);
+    static void ReadTimeObstaclesFromFile(std::string obstacle_file);
+    static void ReadDynamicTimeObstaclesFromFile(std::string obstacle_file);
+
+    // Moves obstacles around or remove them
+    static void UpdateObstacles(std::shared_ptr<CSpace>& C);
+    // Adds the obstacle to the CSpace
+    void AddObsToCSpace(std::shared_ptr<CSpace>& C);
+    // Decrease life of obstacle
+    void DecreaseLife() { this->life_span_ -= 1.0; }
+    // Get shared_ptr to this Obstacle
+    std::shared_ptr<Obstacle> GetPointer() { return shared_from_this(); }
+
+    // For obstacle type 7 (time obstacles with unknown paths to the robot)
+    // this is used to calculate the current path (for collision checking)
+    // from unknown_path (which describes how the obstacle moves vs time)
+    // based on current time. Note that times in the future are closer
+    // to S->start(3) for [x,y,theta,time]
+    void ChangeObstacleDirection(std::shared_ptr<CSpace> S,
+                                 double current_time);
+
 };
 
 #endif // OBSTACLE_H

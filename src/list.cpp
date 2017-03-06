@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void List::listPush(shared_ptr<Obstacle> o)
+void List::listPush(shared_ptr<Obstacle>& o)
 {
     shared_ptr<ListNode> newNode = make_shared<ListNode>(o);
     newNode->child_ = front_;
@@ -15,7 +15,7 @@ void List::listPush(shared_ptr<Obstacle> o)
     length_ += 1;
 }
 
-void List::listPush(shared_ptr<Obstacle> o, double k)
+void List::listPush(shared_ptr<Obstacle>& o, double k)
 {
     shared_ptr<ListNode> newNode = make_shared<ListNode>(o);
     newNode->child_ = front_;
@@ -79,6 +79,7 @@ void List::listEmpty()
 
 void List::listPrint()
 {
+    cout << "Printing Obstacles:" << endl;
     shared_ptr<ListNode> ptr = front_;
     while( ptr != ptr->child_ ) {
         cout << ptr->obstacle_->kind_ << endl;
