@@ -157,8 +157,7 @@ public:
     // Checks if the edge is in collision with a particular obstacle
     // Returns true if in collision
     // Dubin's edge version
-    virtual bool ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
-                                   std::shared_ptr<Obstacle> obstacle)=0;
+    virtual bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)=0;
 
 };
 

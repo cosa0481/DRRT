@@ -4,7 +4,9 @@
 using namespace std;
 
 /// VISUALIZER FUNCTION
-void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot, shared_ptr<Queue> Q)
+void visualizer(shared_ptr<KDTree> Tree,
+                shared_ptr<RobotData> Robot,
+                shared_ptr<Queue> Q)
 {
     int resX = 800, resY = 600, ticks = 100;
     double spacing = 1.0; // straighttest:1.0 smalltest:1.0 largetest:5.0
@@ -49,17 +51,17 @@ void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot, shared_ptr
     // Add view to base container as child
     pangolin::DisplayBase().AddDisplay(view3d);
 
-    // ASSUMING STATIC OBSTACLES FOR NOWbw
+    // ASSUMING STATIC OBSTACLES FOR NOW
     // For the obstacles
-    shared_ptr<List> obstacles;
+    List obstacles;
     shared_ptr<Obstacle> this_obstacle;
     SceneGraph::GLLineStrip* polygon;
     {
         lock_guard<mutex> lock(Q->S->cspace_mutex_);
-        obstacles = Q->S->obstacles;
+        obstacles = *Q->S->obstacles;
     }
-    for(int i = 0; i < obstacles->length_; i++) {
-        obstacles->listPop(this_obstacle);
+    for(int i = 0; i < obstacles.length_; i++) {
+        obstacles.listPop(this_obstacle);
         polygon = new SceneGraph::GLLineStrip();
         for( int j = 0; j < this_obstacle->polygon_.rows(); j++) {
             polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(0),
@@ -118,8 +120,8 @@ void visualizer(shared_ptr<KDTree> Tree, shared_ptr<RobotData> Robot, shared_ptr
         if( poses.size() == 0 || current_pose != poses.back() ) {
             poses.push_back(current_pose);
             pose = new SceneGraph::GLAxis();
-            pose->SetPose(current_pose(1),current_pose(0),0.0,
-                          0.0,0.0,PI/2 - current_pose(2));
+            pose->SetPose(poses.back()(1),poses.back()(0),0.0,
+                          0.0,0.0,PI/2 - poses.back()(2));
             glGraph.AddChild(pose);
         }
 

@@ -178,7 +178,7 @@ Eigen::Vector2d FindTransformObjToTimeOfPoint(std::shared_ptr<Obstacle> O,
 // each row in polygon is a vertex and subsequent vertices define edges
 // Top and bottom rows of polygon also form an edge
 // Polygon does not have to be convex but should be simple
-bool PointInPolygon(Eigen::Vector2d point, Eigen::MatrixX2d polygon);
+bool PointInPolygon(Eigen::VectorXd this_point, Eigen::MatrixX2d polygon);
 
 // Returns the index of the first time coordinate (3rd dimension) smaller
 // than the time
@@ -194,10 +194,10 @@ int FindIndexBeforeTime(Eigen::MatrixXd path, double timeToFind);
 // that are in conflict with the obstacle. Note that rangeList must
 // be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
 std::shared_ptr<JList> FindPointsInConflictWithObstacle(
-        std::shared_ptr<CSpace> S,
+        std::shared_ptr<CSpace> &S,
         std::shared_ptr<KDTree> Tree,
-        std::shared_ptr<Obstacle> O,
-        std::shared_ptr<KDTreeNode> root);
+        std::shared_ptr<Obstacle> &O,
+        std::shared_ptr<KDTreeNode> &root);
 
 // This adds the obstacle (checks for edge conflicts with the obstactle
 // and then puts the affected nodes into the appropriate heaps -collision-
@@ -230,24 +230,24 @@ bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace>& S,
 
 // Checks if the edge between the points is in collision with the obstacle
 // (the point is closer than robot radius to the edge)
-bool ExplicitEdgeCheck2D(std::shared_ptr<Obstacle> O,
+bool ExplicitEdgeCheck2D(std::shared_ptr<Obstacle> &O,
                          Eigen::VectorXd start_point,
                          Eigen::VectorXd end_point,
                          double radius);
 
 // Checks if the edge is in collision with any obstacles in the C-space
 // Returns true if there the edge is in collision
-bool ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
-                       std::shared_ptr<Edge> edge);
+bool ExplicitEdgeCheck(std::shared_ptr<CSpace> &S,
+                       std::shared_ptr<Edge> &edge);
 
-bool QuickCheck2D(std::shared_ptr<Obstacle> O, Eigen::Vector2d point,
-                  std::shared_ptr<CSpace> C);
+bool QuickCheck2D(std::shared_ptr<Obstacle> &O, Eigen::Vector2d point,
+                  std::shared_ptr<CSpace> &C);
 
-bool QuickCheck(std::shared_ptr<CSpace> C, Eigen::Vector2d point);
+bool QuickCheck(std::shared_ptr<CSpace> &C, Eigen::Vector2d point);
 
 
-bool ExplicitPointCheck2D(std::shared_ptr<CSpace> C,
-                          std::shared_ptr<Obstacle> O,
+bool ExplicitPointCheck2D(std::shared_ptr<CSpace> &C,
+                          std::shared_ptr<Obstacle> &O,
                           Eigen::VectorXd point,
                           double radius);
 
@@ -262,7 +262,7 @@ bool ExplicitNodeCheck(std::shared_ptr<Queue>& Q,
 
 // Takes care of inserting a new node in RRT
 // Returns true if successful
-bool extend(std::shared_ptr<KDTree> &Tree,
+bool Extend(std::shared_ptr<KDTree> &Tree,
             std::shared_ptr<Queue> &Q,
             std::shared_ptr<KDTreeNode> &newNode,
             std::shared_ptr<KDTreeNode> &closest_node,

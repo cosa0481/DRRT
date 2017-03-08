@@ -134,8 +134,7 @@ void HolEdge::calculateHoverTrajectory()
 
 }
 
-bool HolEdge::ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
-                                std::shared_ptr<Obstacle> obstacle)
+bool HolEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 {
     return false;
 }

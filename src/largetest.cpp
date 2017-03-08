@@ -204,7 +204,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 //if(explicitly_unsafe) continue;
 
                 /// Extend graph
-                if(extend(kd_tree,Q,new_node,closest_node,
+                if(Extend(kd_tree,Q,new_node,closest_node,
                           Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
                     // Record data (kd-tree)
                     kdTree.row(kdTreePos++) = new_node->position;

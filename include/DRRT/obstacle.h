@@ -102,12 +102,18 @@ public:
     }
 
     // Polygon
-    Obstacle(int kind, Eigen::MatrixX2d polygon)
+    Obstacle(int kind, Eigen::MatrixX2d polygon, bool cspace_has_theta)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
           obstacle_used_after_sense_(false), polygon_(polygon)
     {
-        Eigen::Vector2d pos;
+        Eigen::VectorXd pos;
+        if(cspace_has_theta) {
+            pos = Eigen::Vector3d();
+            pos(2) = 0.0;
+        } else {
+            pos = Eigen::Vector2d();
+        }
         pos(0) = (polygon.col(0).maxCoeff() + polygon.col(0).minCoeff())/2.0;
         pos(1) = (polygon.col(1).maxCoeff() + polygon.col(1).minCoeff())/2.0;
         position_ = pos;

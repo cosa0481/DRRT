@@ -27,8 +27,7 @@ public:
     Eigen::VectorXd poseAtTimeAlongEdge(double timeAlongEdge);
     void calculateTrajectory();
     void calculateHoverTrajectory();
-    bool ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
-                           std::shared_ptr<Obstacle> obstacle);
+    bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle);
 };
 
 #endif // HOLEDGE_H

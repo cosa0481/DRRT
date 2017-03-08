@@ -821,8 +821,7 @@ void DubinsEdge::calculateHoverTrajectory()
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
-                                   std::shared_ptr<Obstacle> obstacle)
+bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 {
     // We know that all points in the Dubin's trajectory are within
     // r*S->minTurningRadius of the 2D segment from startNode to endNode
@@ -831,19 +830,32 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<CSpace> S,
     if(!ExplicitEdgeCheck2D(obstacle,
                             this->startNode->position,
                             this->endNode->position,
-                            S->robotRadius + 2*S->minTurningRadius))
+                            this->cspace->robotRadius
+                            + 2*this->cspace->minTurningRadius))
         return false;
+
+//    std::cout << "robot cannot traverse edge:\n" << this->startNode->position
+//              << std::endl << "--" << std::endl << this->startNode->position << std::endl;
 
     // If the segment was in conflict then we need to do the full check
     // check of the trajectory segments
     // Could be improved using a function that can check arcs of the
     // Dubin's path at once instead of just line segments stored in trajectory
-    for(int i = 2; i < this->trajectory.rows(); i++) {
-        if(ExplicitEdgeCheck2D(obstacle,
-                               this->trajectory.row(i-1),
-                               this->trajectory.row(i),
-                               S->robotRadius))
-            return true;
+    for(int i = 1; i < this->trajectory.rows(); i++) {
+        if((this->trajectory.row(i)(0) > 0.001 || this->trajectory.row(i)(1) > 0.001
+            || this->trajectory.row(i)(0) < -0.001 || this->trajectory.row(i)(1) < -0.001)
+                && (this->trajectory.row(i-1)(0) != this->trajectory.row(i)(0)
+                || this->trajectory.row(i-1)(1) != this->trajectory.row(i)(1))) {
+            if(ExplicitEdgeCheck2D(obstacle,
+                                   this->trajectory.row(i-1),
+                                   this->trajectory.row(i),
+                                   this->cspace->robotRadius)) {
+//                std::cout << "specifically edge segment:" << endl;
+//                std::cout << "trajectory.row("<<i<<"):\n" << this->trajectory.row(i) << std::endl;
+//                std::cout << "trajectory.row("<<i-1<<"):\n" << this->trajectory.row(i-1) << std::endl;
+                return true;
+            }
+        }
     }
     return false;
 }

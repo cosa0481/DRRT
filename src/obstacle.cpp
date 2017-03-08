@@ -40,7 +40,7 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
                 line = "";
             }
             shared_ptr<Obstacle> static_polygon
-                    = make_shared<Obstacle>(3,polygon);
+                    = make_shared<Obstacle>(3,polygon,C->spaceHasTheta);
             static_polygon->AddObsToCSpace(C);
             getline(read_stream, line);
         }
