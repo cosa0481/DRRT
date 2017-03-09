@@ -20,6 +20,8 @@ public:
     Eigen::VectorXd start;   // 1xD vector containing start location
     Eigen::VectorXd goal;    // 1xD vector containing goal location
 
+    std::vector<std::shared_ptr<Edge>> collisions;
+
     double (*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b);
 
     /* Flags that indicate what type of search space we are using
@@ -92,6 +94,22 @@ public:
     void setDistanceFunction(double(*func)(Eigen::VectorXd a,
                                            Eigen::VectorXd b))
     { distanceFunction = func; }
+
+    // Add Edge to vizualizer
+    void AddVizEdge(std::shared_ptr<Edge> &edge)
+    {
+        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
+        this->collisions.push_back(edge);
+    }
+
+    // Remove Edge from vizualizer
+    void RemoveVizEdge(std::shared_ptr<Edge> &edge)
+    {
+        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
+        this->collisions.erase(
+                    std::remove(this->collisions.begin(),this->collisions.end(),edge),
+                    this->collisions.end());
+    }
 };
 
 typedef struct Queue{

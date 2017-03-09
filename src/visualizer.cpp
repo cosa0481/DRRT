@@ -13,6 +13,8 @@ void visualizer(shared_ptr<KDTree> Tree,
     double dist = 10; // straighttest:10 smalltest:10 largetest:20
     double fov = 420; // field of view (this just worked best)
 
+    bool show_collision_edges = false;
+
     /// Build display
     // Create OpenGL window
     pangolin::CreateWindowAndBind("RRTx",resX,resY);
@@ -66,11 +68,11 @@ void visualizer(shared_ptr<KDTree> Tree,
         for( int j = 0; j < this_obstacle->polygon_.rows(); j++) {
             polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(0),
                                               this_obstacle->polygon_.row(j)(1),
-                                              0));
+                                              0.0));
         }
         polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(0)(0),
                                           this_obstacle->polygon_.row(0)(1),
-                                          0));
+                                          0.0));
         glGraph.AddChild(polygon);
     }
 
@@ -79,6 +81,10 @@ void visualizer(shared_ptr<KDTree> Tree,
     Eigen::VectorXd kdnode;
     SceneGraph::GLBox* box;
     SceneGraph::GLAxis* axis;
+
+    // For edges
+    SceneGraph::GLLineStrip* edge;
+    vector<shared_ptr<Edge>> collisions;
 
     // For robot poses
     vector<Eigen::VectorXd> poses;
@@ -110,6 +116,23 @@ void visualizer(shared_ptr<KDTree> Tree,
                              0.0,0.0,PI/2 - kdnode(2));
             glGraph.AddChild(axis);
             Tree->removeVizNode(nodes.at(k));
+        }
+
+        /// Display collision lines
+        if(show_collision_edges) {
+            {
+                lock_guard<mutex> lock(Q->S->cspace_mutex_);
+                collisions = Q->S->collisions;
+            }
+            for(int p = 0; p < collisions.size(); p++) {
+                edge = new SceneGraph::GLLineStrip();
+                edge->SetPoint(Eigen::Vector3d(collisions.at(p)->startNode->position(0),
+                                               collisions.at(p)->startNode->position(1),0.0));
+                edge->SetPoint(Eigen::Vector3d(collisions.at(p)->endNode->position(0),
+                                               collisions.at(p)->endNode->position(1),0.0));
+                Q->S->RemoveVizEdge(collisions.at(p));
+                glGraph.AddChild(edge);
+            }
         }
 
         // Update robot pose (x,y,z, r,p,y)

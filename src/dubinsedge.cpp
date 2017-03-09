@@ -1,6 +1,8 @@
 #include <DRRT/dubinsedge.h>
 #include <DRRT/drrt.h>
 
+using namespace std;
+
 /////////////////////// Critical Functions ///////////////////////
 
 /////////////////////// Static Edge Functions ///////////////////////
@@ -841,11 +843,18 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     // check of the trajectory segments
     // Could be improved using a function that can check arcs of the
     // Dubin's path at once instead of just line segments stored in trajectory
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTime
+            = std::chrono::high_resolution_clock::now();
+    double time_start = getTimeNs(startTime);
+    double time_end;
+    int count = 0;
     for(int i = 1; i < this->trajectory.rows(); i++) {
         if((this->trajectory.row(i)(0) > 0.001 || this->trajectory.row(i)(1) > 0.001
             || this->trajectory.row(i)(0) < -0.001 || this->trajectory.row(i)(1) < -0.001)
                 && (this->trajectory.row(i-1)(0) != this->trajectory.row(i)(0)
                 || this->trajectory.row(i-1)(1) != this->trajectory.row(i)(1))) {
+//            std::cout << "row: " << i+1 << std::endl;
+            count++;
             if(ExplicitEdgeCheck2D(obstacle,
                                    this->trajectory.row(i-1),
                                    this->trajectory.row(i),
@@ -853,9 +862,23 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 //                std::cout << "specifically edge segment:" << endl;
 //                std::cout << "trajectory.row("<<i<<"):\n" << this->trajectory.row(i) << std::endl;
 //                std::cout << "trajectory.row("<<i-1<<"):\n" << this->trajectory.row(i-1) << std::endl;
+                time_end = getTimeNs(startTime);
+//                if(true) std::cout << "Check path: " << count << ": "
+//                                   << (time_end-time_start)/1000000000
+//                                   << std::endl;
+//                std::cout << "Obstacle:\n" << obstacle->position_ << std::endl
+//                          << "with radius: " << obstacle->radius_ << std::endl
+//                          << "in collision with this edge:\n"
+//                     << this->startNode->position << "\n--\n"
+//                     << this->endNode->position << std::endl;
+                std::shared_ptr<Edge> this_edge = this->getPointer();
+                this->cspace->AddVizEdge(this_edge);
                 return true;
             }
         }
     }
+    time_end = getTimeNs(startTime);
+//    if(true) std::cout << "Check path: " << count << ": "
+//                       << (time_end-time_start)/1000000000 << std::endl;
     return false;
 }

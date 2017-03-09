@@ -14,7 +14,7 @@ class CSpace;
 class KDTree;
 
 // Edge for a Dubin's state space
-class Edge{
+class Edge: public std::enable_shared_from_this<Edge> {
 public:
     std::shared_ptr<CSpace> cspace;
     std::shared_ptr<KDTree> tree;
@@ -53,14 +53,14 @@ public:
                      // only used if time is part of the state space
 
     // Constructor
-    Edge() : dist(-1) { trajectory.resize(MAXPATHNODES,3); }
+    Edge() : dist(-1) { trajectory = Eigen::MatrixXd::Zero(MAXPATHNODES,3); }
     Edge(std::shared_ptr<CSpace> &CS,
          std::shared_ptr<KDTree> &T,
          std::shared_ptr<KDTreeNode> &s,
          std::shared_ptr<KDTreeNode> &e)
         : cspace(CS), tree(T), startNode(s), endNode(e)
     {
-        trajectory.resize(MAXPATHNODES,3);
+        trajectory = Eigen::MatrixXd::Zero(MAXPATHNODES,3);
     }
 
 
@@ -121,6 +121,8 @@ public:
                          Eigen::VectorXd cP,
                          double delta,
                          double dist);
+
+    std::shared_ptr<Edge> getPointer() { return shared_from_this(); }
 
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge

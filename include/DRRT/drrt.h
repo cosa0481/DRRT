@@ -163,7 +163,7 @@ double DistanceSqrdPointToSegment(Eigen::VectorXd point,
 // of the polygon to the point (assumes 2D space)
 double DistToPolygonSqrd(Eigen::VectorXd point, Eigen::MatrixX2d polygon);
 
-// All intput args represent points, this returns the minimum distance
+// All input args represent points, this returns the minimum distance
 // between line segments [PA PB] and [QA QB] and assumes 2D space
 double SegmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
                        Eigen::VectorXd QA, Eigen::VectorXd QB);

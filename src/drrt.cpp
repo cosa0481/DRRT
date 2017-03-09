@@ -8,6 +8,8 @@
 
 using namespace std;
 
+bool timing = false;
+
 ///////////////////// Print Helpers ///////////////////////
 void error(string s) { cout << s << endl; }
 void error(int i) { cout << i << endl; }
@@ -199,6 +201,10 @@ double DistToPolygonSqrd(Eigen::VectorXd point, Eigen::MatrixX2d polygon)
 double SegmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
                        Eigen::VectorXd QA, Eigen::VectorXd QB)
 {
+    /// Timing
+    chrono::time_point<chrono::high_resolution_clock> startTime
+            = chrono::high_resolution_clock::now();
+    double time_start = getTimeNs(startTime);
     // Check if the points are definately not in collision by seeing
     // if both points of Q are on the same side of line containing P and vice versa
 
@@ -265,6 +271,8 @@ double SegmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
     distances(2) = DistanceSqrdPointToSegment(QA,PA_pos,PB_pos);
     distances(3) = DistanceSqrdPointToSegment(QB,PA_pos,PB_pos);
 
+    double time_end = getTimeNs(startTime);
+    if(timing) cout << "SegmentDistSqrd: " << (time_end - time_start)/1000000000 << endl;
     return distances.minCoeff();
 }
 
@@ -373,12 +381,12 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<CSpace> &S,
         } else if(!S->spaceHasTime && S->spaceHasTheta) {
             // Dubin's robot without time [x,y,theta]
             search_range = S->robotRadius + O->radius_ + PI; // + S->delta
-            cout << "search_range: " << search_range << endl;
+//            cout << "search_range: " << search_range << endl;
             Eigen::Vector3d obs_center_dubins;
             obs_center_dubins << O->position_(0), O->position_(1), PI;
-            cout << "about point:\n" << obs_center_dubins << endl;
+//            cout << "about point:\n" << obs_center_dubins << endl;
             Tree->kdFindWithinRange(node_list,search_range,obs_center_dubins);
-            cout << "number of points in conflict: " << node_list->length << endl;
+//            cout << "number of points in conflict: " << node_list->length << endl;
         } else {
             cout << "Error: This type of obstacle not coded for this space"
                  << endl;
@@ -449,7 +457,7 @@ void AddNewObstacle(shared_ptr<KDTree> Tree,
     // For all nodes that might be in conflict
     shared_ptr<KDTreeNode> this_node;
     shared_ptr<double> key = make_shared<double>(0);
-    cout << "points in conflict: " << node_list->length << endl;
+//    cout << "points in conflict: " << node_list->length << endl;
     while(node_list->length > 0) {
 //        cout << "point in conflict: " << endl;
         Tree->popFromRangeList(node_list,this_node,key);
@@ -517,7 +525,7 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
     // For all nodes that might be in conflict
     shared_ptr<KDTreeNode> this_node = make_shared<KDTreeNode>();
     shared_ptr<double> key = make_shared<double>(0);
-    cout << "points in conflict: " << node_list->length << endl;
+//    cout << "points in conflict: " << node_list->length << endl;
     while(node_list->length > 0) {
 //        cout << "point in conflict: " << endl;
         Tree->popFromRangeList(node_list,this_node,key);
@@ -636,6 +644,11 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
                          Eigen::VectorXd end_point,
                          double radius)
 {
+    /// For timing
+    double time_start, time_end;
+    chrono::time_point<chrono::high_resolution_clock> startTime
+            = chrono::high_resolution_clock::now();
+
     if(!O->obstacle_used_ || O->life_span_ <= 0) return false;
 
     // Do a quick check to see if any points on the obstacle might be closer
@@ -644,9 +657,13 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
 
         // Calculate distance squared from center of the obstacle to the edge
         // projected into the first two dimensions
+        time_start = getTimeNs(startTime);
         double dist_sqrd = DistanceSqrdPointToSegment(O->position_,
                                                       start_point.head(2),
                                                       end_point.head(2));
+        time_end = getTimeNs(startTime);
+        if(timing) cout << "\tDistanceSqrdPointToSegment: "
+                        << (time_end - time_start)/1000000000 << endl;
 //        cout << "obs:\n" << O->position_.head(2) << endl;
 //        cout << "line:\n" << start_point.head(2) << endl << "--" << endl
 //             << end_point.head(2) << endl;
@@ -662,17 +679,25 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
         if(O->polygon_.rows() < 2) return false;
 
         // Start with the last point vs the first point
+        time_start = getTimeNs(startTime);
         Eigen::Vector2d A = O->polygon_.row(O->polygon_.rows()-1);
         Eigen::Vector2d B;
+        double seg_dist_sqrd;
         for(int i = 0; i < O->polygon_.rows(); i++) {
             B = O->polygon_.row(i);
-            if(SegmentDistSqrd(start_point,end_point,A,B) < pow(radius,2)) {
+            seg_dist_sqrd = SegmentDistSqrd(start_point,end_point,A,B);
+            if(seg_dist_sqrd < pow(radius,2)) {
                 // There is a collision with the 2d projection of the obstacle
+//                cout << "p_edge -- traj_edge: " << sqrt(seg_dist_sqrd)
+//                     << "\n<\nradius:" << radius << endl;
                 if(O->kind_ == 5);
                 else return true;
             }
             A = B;
         }
+        time_end = getTimeNs(startTime);
+        if(timing) cout << "\tCheckingEdges: "
+                        << (time_end - time_start)/1000000000 << endl;
     } else if(O->kind_ == 6 || O->kind_ == 7) {
         // Must check all edges of obstacle path that
         // overlap with robot edge in time
@@ -981,7 +1006,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
             double hyper_ball_rad,
             shared_ptr<KDTreeNode> &move_goal)
 {
-    cout << "Extend" << endl;
+    //cout << "Extend" << endl;
     /// For timing
     chrono::time_point<chrono::high_resolution_clock> startTime
             = chrono::high_resolution_clock::now();
@@ -994,7 +1019,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
     time_start = getTimeNs(startTime);
     Tree->kdFindWithinRange(node_list, hyper_ball_rad, new_node->position);
     time_end = getTimeNs(startTime);
-    cout << "\tkdFindWithinRange: " << (time_end - time_start)/1000000000 << endl;
+    if(timing) cout << "\tkdFindWithinRange: " << (time_end - time_start)/1000000000 << endl;
 
     // Try to find and link to best parent. This also saves
     // the edges from new_node to the neighbors in the field
@@ -1003,7 +1028,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
     time_start = getTimeNs(startTime);
     findBestParent( Q->S, Tree, new_node, node_list, closest_node, true );
     time_end = getTimeNs(startTime);
-    cout << "\tfindBestParent: " << (time_end - time_start)/1000000000 << endl;
+    if(timing) cout << "\tfindBestParent: " << (time_end - time_start)/1000000000 << endl;
 
     // If no parent was fonud then ignore this node
     if( !new_node->rrtParentUsed ) {
@@ -1015,7 +1040,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
     time_start = getTimeNs(startTime);
     Tree->kdInsert(new_node);
     time_end = getTimeNs(startTime);
-    cout << "\tkdInsert: " << (time_end - time_start)/1000000000 << endl;
+    if(timing) cout << "\tkdInsert: " << (time_end - time_start)/1000000000 << endl;
 
     // Second pass, if there was a parent, then link with neighbors
     // and rewire neighbors that would do better to use new_node as
@@ -1041,7 +1066,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
             time_start = getTimeNs(startTime);
             makeNeighborOf( near_node, new_node, near_node->tempEdge );
             time_end = getTimeNs(startTime);
-            cout << "\tmakeNeighborOf: " << (time_end - time_start)/1000000000 << endl;
+            if(timing) cout << "\tmakeNeighborOf: " << (time_end - time_start)/1000000000 << endl;
 
         }
 
@@ -1052,12 +1077,12 @@ bool Extend(shared_ptr<KDTree> &Tree,
         time_start = getTimeNs(startTime);
         this_edge->calculateTrajectory();
         time_end = getTimeNs(startTime);
-        cout << "\tcalculateTrajectory: " << (time_end - time_start)/1000000000 << endl;
+        if(timing) cout << "\tcalculateTrajectory: " << (time_end - time_start)/1000000000 << endl;
 
         time_start = getTimeNs(startTime);
         bool edge_is_safe = !ExplicitEdgeCheck(Q->S,this_edge);
         time_end = getTimeNs(startTime);
-        cout << "\tExplicitEdgeCheck: " << (time_end - time_start)/1000000000 << endl;
+        if(timing) cout << "\tExplicitEdgeCheck: " << (time_end - time_start)/1000000000 << endl;
         if( this_edge->ValidMove()
                 && edge_is_safe ) {
             // Add to initial in neighbor list of newnode
@@ -1066,7 +1091,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
             time_start = getTimeNs(startTime);
             makeInitialInNeighborOf( new_node, near_node, this_edge );
             time_end = getTimeNs(startTime);
-            cout << "\tmakeInitialNeighborOf: " << (time_end - time_start)/1000000000 << endl;
+            if(timing) cout << "\tmakeInitialNeighborOf: " << (time_end - time_start)/1000000000 << endl;
 
             // Add to current neighbor list of new_node
             // (allows info propogation from new_node to nearNode and
@@ -1100,7 +1125,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
             }
         }
         time_end = getTimeNs(startTime);
-        cout << "\tRewiringNeighbors: " << (time_end - time_start)/1000000000 << endl;
+        if(timing) cout << "\tRewiringNeighbors: " << (time_end - time_start)/1000000000 << endl;
 
         list_item = list_item->child; // iterate through list
     }
@@ -1123,7 +1148,7 @@ void findBestParent(shared_ptr<CSpace> &S,
                     shared_ptr<KDTreeNode>& closestNode,
                     bool saveAllEdges)
 {
-    cout << "findBestParent" << endl;
+   // cout << "findBestParent" << endl;
     /// For function duration testing
     double time_start, time_end; // in nanoseconds
     chrono::time_point<chrono::high_resolution_clock> startTime
@@ -1154,7 +1179,7 @@ void findBestParent(shared_ptr<CSpace> &S,
         time_start = getTimeNs(startTime);
         thisEdge->calculateTrajectory();
         time_end = getTimeNs(startTime);
-        cout << "\t\tcalculateTrajectory: " << (time_end - time_start)/1000000000 << endl;
+        if(timing) cout << "\t\tcalculateTrajectory: " << (time_end - time_start)/1000000000 << endl;
 
         if( saveAllEdges ) nearNode->tempEdge = thisEdge;
 
@@ -1163,7 +1188,7 @@ void findBestParent(shared_ptr<CSpace> &S,
         time_start = getTimeNs(startTime);
         bool edge_is_safe = !ExplicitEdgeCheck(S,thisEdge);
         time_end = getTimeNs(startTime);
-        cout << "\t\tExplicitEdgeCheck: " << (time_end - time_start)/1000000000 << endl;
+        if(timing) cout << "\t\tExplicitEdgeCheck: " << (time_end - time_start)/1000000000 << endl;
         if(!edge_is_safe || !thisEdge->ValidMove()) {
             if(saveAllEdges) nearNode->tempEdge->dist = INF;
             listItem = listItem->child; // iterate through list
@@ -1178,7 +1203,7 @@ void findBestParent(shared_ptr<CSpace> &S,
             time_start = getTimeNs(startTime);
             makeParentOf(nearNode,newNode,thisEdge,Tree->root);
             time_end = getTimeNs(startTime);
-            cout << "\t\tmakeParentOf: " << (time_end - time_start)/1000000000 << endl;
+            if(timing) cout << "\t\tmakeParentOf: " << (time_end - time_start)/1000000000 << endl;
         }
         listItem = listItem->child; // iterate thorugh list
     }
