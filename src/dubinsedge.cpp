@@ -864,7 +864,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 //                std::cout << "trajectory.row("<<i-1<<"):\n" << this->trajectory.row(i-1) << std::endl;
                 time_end = getTimeNs(startTime);
 //                if(true) std::cout << "Check path: " << count << ": "
-//                                   << (time_end-time_start)/1000000000
+//                                   << (time_end-time_start)/MICROSECOND
 //                                   << std::endl;
 //                std::cout << "Obstacle:\n" << obstacle->position_ << std::endl
 //                          << "with radius: " << obstacle->radius_ << std::endl
@@ -879,6 +879,6 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     }
     time_end = getTimeNs(startTime);
 //    if(true) std::cout << "Check path: " << count << ": "
-//                       << (time_end-time_start)/1000000000 << std::endl;
+//                       << (time_end-time_start)/MICROSECOND << " ms" << std::endl;
     return false;
 }

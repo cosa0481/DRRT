@@ -10,7 +10,7 @@
 
 using namespace std;
 
-bool timingex = false;
+bool timingex = true;
 
 // Variables for saving data from Dubin's space
 int histPos = 0,
@@ -277,7 +277,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                               p.slice_time,hyper_ball_rad,robot);
                     time_end = getTimeNs(startTime);
                     if(timingex) cout << "MoveRobot: "
-                                      << (time_end - time_start)/1000000000
+                                      << (time_end - time_start)/MICROSECOND
                                       << endl;
                     // Record data (robot path)
                     rHist.row(histPos++) = robot->robotPose;
@@ -299,7 +299,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                 root, hyper_ball_rad);
             time_end = getTimeNs(startTime);
             if(timingex) cout << "reduceInconsistency: "
-                              << (time_end - time_start)/1000000000 << endl;
+                              << (time_end - time_start)/MICROSECOND << " ms" << endl;
             if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
                 old_rrtLMC = Q->S->moveGoal->rrtLMC;
             }
@@ -329,7 +329,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 new_node = randNodeOrFromStack(Q->S);
                 time_end = getTimeNs(startTime);
                 if(timingex) cout << "randNodeOrFromStack: "
-                                  << (time_end - time_start)/1000000000 << endl;
+                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
                 if(new_node->kdInTree) continue;
 
                 time_start = getTimeNs(startTime);
@@ -337,7 +337,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                       new_node->position);
                 time_end = getTimeNs(startTime);
                 if(timingex) cout << "kdFindNearest: "
-                                  << (time_end - time_start)/1000000000 << endl;
+                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
                 /// Saturate new node
                 this_dist = kd_tree->distanceFunction(new_node->position,
@@ -348,7 +348,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                    Q->S->delta, this_dist);
                     time_end = getTimeNs(startTime);
                     if(timingex) cout << "saturate: "
-                                      << (time_end - time_start)/1000000000
+                                      << (time_end - time_start)/MICROSECOND
                                       << endl;
                 }
 
@@ -357,7 +357,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 if(ExplicitNodeCheck(Q,new_node)) continue;
                 time_end = getTimeNs(startTime);
                 if(timingex) cout << "ExplicitNodeCheck: "
-                                  << (time_end - time_start)/1000000000 << endl;
+                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
                 /// Extend graph
                 time_start = getTimeNs(startTime);
@@ -368,7 +368,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 }
                 time_end = getTimeNs(startTime);
                 if(timingex) cout << "Extend: "
-                                  << (time_end - time_start)/1000000000 << endl;
+                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
                 /// Make graph consistent
                 time_start = getTimeNs(startTime);
@@ -376,7 +376,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                     root,hyper_ball_rad);
                 time_end = getTimeNs(startTime);
                 if(timingex) cout << "reduceInconsistency2: "
-                                  << (time_end - time_start)/1000000000 << endl;
+                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
                 if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
                     old_rrtLMC = Q->S->moveGoal->rrtLMC;
                 }
@@ -393,7 +393,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //            }
                 iter_end = getTimeNs(startTime);
                 cout << "Iteration: "
-                     << (iter_end - iter_start)/1000000000 << endl;
+                     << (iter_end - iter_start)/MICROSECOND << " ms" << endl;
         }
     }
     printRRTxPath(Q->S->goalNode);
