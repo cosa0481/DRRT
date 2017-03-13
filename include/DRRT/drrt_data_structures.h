@@ -3,7 +3,6 @@
 
 #include <DRRT/list.h>
 #include <DRRT/heap.h>
-#include <DRRT/edge.h>
 /// Include implementation of edge here
 #include <DRRT/dubinsedge.h>
 //#include <DRRT/holedge.h>

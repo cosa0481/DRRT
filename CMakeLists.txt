@@ -11,6 +11,7 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" )
 find_package( Eigen3 REQUIRED )
 find_package( Pangolin REQUIRED )
 find_package( SceneGraph REQUIRED )
+find_package( CUDA REQUIRED )
 
 set( _INCLUDE_DIRS
 		${CMAKE_BINARY_DIR}
@@ -23,6 +24,7 @@ set( _INCLUDE_DIRS
 set( _LIBRARIES
                 ${Pangolin_LIBRARIES}
                 ${SceneGraph_LIBRARIES}
+                ${CUDA_LIBRARIES}
 		)
 
 # Expose these for third parties
