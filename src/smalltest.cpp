@@ -85,7 +85,9 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     }
 
     /// Save the path to vector of anyangle path lines
+    /// Path in form b*y = a*x + c
     vector<Eigen::Vector3d> lines;
+    double angle, x = 0, y = 0;
     vector<Eigen::VectorXd> path = theta_star(Q->S);
     path.push_back(Q->S->goal);
     robot->best_any_angle_path = path;
@@ -97,11 +99,17 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         if(i==0) continue;
         current_point = path.at(i);
         prev_point = path.at(i-1);
-        path_a = (current_point(1)-prev_point(1))/(current_point(0)-prev_point(0));
+        path_a = (current_point(1)-prev_point(1))
+                /(current_point(0)-prev_point(0));
         path_b = -1;
         path_c = min(abs(current_point(1)),abs(prev_point(1)));
         lines.push_back(Eigen::Vector3d(path_a,path_b,path_c));
+        angle = atan2(prev_point(1)-current_point(1),
+                      prev_point(0)-current_point(0));
+        x += cos(angle);
+        y += sin(angle);
     }
+    double avg_theta = atan2(y,x); // Average heading of path
 
     vis = make_shared<thread>(visualizer, kd_tree, robot);
 
@@ -123,6 +131,11 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     double old_rrtLMC, current_distance, move_distance, this_dist;
     Eigen::Vector3d prev_pose;
     shared_ptr<Edge> prev_edge;
+
+    // For importance sampling
+    double f_uniform = 0.7;     // proportion to sample X_free
+    double position_bias;       // cartesian bias
+    double theta_bias = PI/10;  // orientation bias
 
     current_distance = kd_tree->distanceFunction(robot->robotPose,
                                                 root->position);
@@ -201,10 +214,22 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             bool importance_sampling = true;
             while(importance_sampling) {
                 new_node = randNodeOrFromStack(Q->S);
+
                 if(new_node->kdInTree) continue;
 
                 kd_tree->kdFindNearest(closest_node,closest_dist,
                                       new_node->position);
+
+                /// Saturate new node
+                this_dist = kd_tree->distanceFunction(new_node->position,
+                                                        closest_node->position);
+                if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
+                    Edge::saturate(new_node->position, closest_node->position,
+                                   Q->S->delta, this_dist);
+                }
+
+                /// Do importance sampling f_uniform*100% of the time
+                if(randDouble(0,1) > f_uniform) break;
 
                 if(kd_tree->distanceFunction(new_node->position,
                                              kd_tree->root->position)
@@ -218,30 +243,27 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                                     kd_tree->root->position))
                     continue;
 
-                /// Importance sample
+                /// Theta bias
+                new_node->position(2) = randDouble(avg_theta-theta_bias,
+                                                   avg_theta+theta_bias);
+
+                /// Position bias
                 double x = new_node->position(0);
                 double y = new_node->position(1);
                 double dist = INF;
                 double min = INF;
+                position_bias = hyper_ball_rad;
                 for(int j = 0; j < lines.size(); j++) {
                     dist = abs(lines.at(j)(0)*x
                                + lines.at(j)(1)*y
                                + lines.at(j)(2))
-                    / sqrt(lines.at(j)(0)*lines.at(j)(0)
-                           + lines.at(j)(1)*lines.at(j)(1));
+                    / sqrt(pow(lines.at(j)(0),2)
+                           + pow(lines.at(j)(1),2));
                     if(dist < min) min = dist;
                 }
-                if(min > hyper_ball_rad) continue;
+                if(min > position_bias) continue;
 
                 importance_sampling = false;
-            }
-
-            /// Saturate new node
-            this_dist = kd_tree->distanceFunction(new_node->position,
-                                                    closest_node->position);
-            if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
-                Edge::saturate(new_node->position, closest_node->position,
-                               Q->S->delta, this_dist);
             }
 
             /// Check for obstacles

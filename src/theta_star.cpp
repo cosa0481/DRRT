@@ -3,14 +3,12 @@
 shared_ptr<BinaryHeap> open_set;
 shared_ptr<JList> closed_set;
 
-double dist_func(Eigen::VectorXd a, Eigen::VectorXd b)
+// This is the same as the main distance function
+double dist_func(Eigen::Vector2d a, Eigen::Vector2d b)
 {
     Eigen::ArrayXd temp = a.head(2) - b.head(2);
     temp = temp*temp;
-    return sqrt( temp.sum()
-                 + pow( min( abs(a(2)-b(2)),
-                                  min(a(2),b(2)) + 2.0*PI
-                                    - max(a(2),b(2)) ), 2 ) );
+    return sqrt(temp.sum());
 }
 
 vector<Eigen::VectorXd> theta_star(shared_ptr<CSpace> C)
@@ -113,11 +111,6 @@ vector<Eigen::VectorXd> theta_star(shared_ptr<CSpace> C)
                 this_item = this_item->child;
             }
             Tree->emptyRangeList(node_list);
-//            if(this_node->position == Eigen::Vector3d(20,20,angle)) {
-//                cout << "20,20 Out Neighbors: " << this_node << endl;
-//                cout << this_node->position << endl;
-//                this_node->rrtNeighborsOut->JlistPrint();
-//            }
         }
     }
 
@@ -135,7 +128,6 @@ vector<Eigen::VectorXd> theta_star(shared_ptr<CSpace> C)
     shared_ptr<Edge> neighbor_edge;
     while(open_set->indexOfLast > 0) {
         open_set->popHeap(node);
-//        cout << "node: " << node << "\n" << node->position << endl;
         if(node == start) {
             cout << "Reached goal" << endl;
             return get_path(node);
@@ -171,7 +163,6 @@ bool update_vertex(shared_ptr<CSpace> C,
                    shared_ptr<KDTreeNode> &node,
                    shared_ptr<KDTreeNode> &neighbor)
 {
-//    cout << "update_vertex(\n" << node->position << "\n,\n" << neighbor->position << "\n)" << endl;
     shared_ptr<Edge> this_edge;
     if( node->rrtParentUsed ) {
         this_edge = Edge::newEdge(C,Tree,node->rrtParentEdge->endNode,neighbor);

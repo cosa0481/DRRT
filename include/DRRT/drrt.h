@@ -191,6 +191,9 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
                        std::shared_ptr<Edge> edge);
 
 
+bool lineCheck(std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2);
+
 /////////////////////// RRT Functions ///////////////////////
 // Functions used for RRT. Some of these are also used in RRT*
 // RRT#, and RRTx

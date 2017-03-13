@@ -60,6 +60,11 @@ Eigen::VectorXd randPointDefault( std::shared_ptr<CSpace> S )
         first = rand * S->width(i);
         second(i) = S->lowerBounds(i) + first;
     }
+
+    /// TEMPORARY HACK
+    while(second(2) > 2*PI) second(2) -= 2*PI;
+    while(second(2) < -2*PI) second(2) += 2*PI;
+    ///
     return second;
 }
 
@@ -295,6 +300,18 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
 //        obstacleListNode = obstacleListNode->child; // iterate
 //    }
     return false;
+}
+
+bool lineCheck(std::shared_ptr<CSpace> S,
+               std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2) {
+    double saved_theta1 = node1->position(2);
+    double saved_theta2 = node2->position(2);
+    node1->position(2) = 0;
+    node2->position(2) = 0;
+    std::shared_ptr<Edge> edge = std::make_shared<Edge>(node1,node2);
+    edge->calculateTrajectory();
+    return explicitEdgeCheck(S,edge);
 }
 
 /////////////////////// RRT Functions ///////////////////////
