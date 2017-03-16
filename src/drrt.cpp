@@ -302,16 +302,22 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
     return false;
 }
 
-bool lineCheck(std::shared_ptr<CSpace> S,
+bool LineCheck(std::shared_ptr<CSpace> S,
+               std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> node1,
                std::shared_ptr<KDTreeNode> node2) {
     double saved_theta1 = node1->position(2);
     double saved_theta2 = node2->position(2);
-    node1->position(2) = 0;
-    node2->position(2) = 0;
-    std::shared_ptr<Edge> edge = std::make_shared<Edge>(node1,node2);
+    double theta = std::atan2(node2->position(1)-node1->postion(1),
+                              node2->position(0)-node1->position(0));
+    node1->position(2) = theta;
+    node2->position(2) = theta;
+    std::shared_ptr<Edge> edge = Edge::newEdge(S,Tree,node1,node2);
     edge->calculateTrajectory();
-    return explicitEdgeCheck(S,edge);
+    bool unsafe = explicitEdgeCheck(S,edge);
+    node1->position(2) = saved_theta1;
+    node2->position(2) = saved_theta2;
+    return unsafe;
 }
 
 /////////////////////// RRT Functions ///////////////////////

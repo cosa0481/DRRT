@@ -4,9 +4,9 @@ shared_ptr<BinaryHeap> open_set;
 shared_ptr<JList> closed_set;
 
 // This is the same as the main distance function
-double dist_func(Eigen::Vector2d a, Eigen::Vector2d b)
+double dist_func(Eigen::VectorXd a, Eigen::VectorXd b)
 {
-    Eigen::ArrayXd temp = a.head(2) - b.head(2);
+    Eigen::ArrayXd temp = a - b;
     temp = temp*temp;
     return sqrt(temp.sum());
 }
@@ -63,7 +63,7 @@ vector<Eigen::VectorXd> theta_star(shared_ptr<CSpace> C)
             this_point(2) = angle;
             new_node = make_shared<KDTreeNode>(this_point);
             new_node->rrtLMC
-                = Tree->distanceFunction(new_node->position,start->position);
+                = Tree->distanceFunction(new_node->position.head(2),start->position.head(2));
             Tree->kdInsert(new_node);
             Tree->removeVizNode(new_node); // Not visualizing
         }

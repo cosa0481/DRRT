@@ -191,7 +191,9 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
                        std::shared_ptr<Edge> edge);
 
 
-bool lineCheck(std::shared_ptr<KDTreeNode> node1,
+bool LineCheck(std::shared_ptr<CSpace> S,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> node1,
                std::shared_ptr<KDTreeNode> node2);
 
 /////////////////////// RRT Functions ///////////////////////
