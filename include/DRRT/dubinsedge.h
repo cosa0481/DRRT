@@ -4,7 +4,6 @@
 // #include <DRRT/edge.h> to make a new type of edge
 #include <DRRT/edge.h>
 
-
 // #include this file in drrt_data_structures.h
 // Remember to implement Edge::newEdge(Eigen::VectorXd,Eigen::VectorXd)
 

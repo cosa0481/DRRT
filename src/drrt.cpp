@@ -661,6 +661,7 @@ bool checkNeighborsForEdgeProblems(shared_ptr<CSpace>& S,
 bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
                          Eigen::VectorXd start_point,
                          Eigen::VectorXd end_point,
+                         double dist_sqrd,
                          double radius)
 {
     /// For timing
@@ -676,7 +677,7 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
 
         // Calculate distance squared from center of the obstacle to the edge
         // projected into the first two dimensions
-        double dist_sqrd = DistanceSqrdPointToSegment(O->position_,
+        if(dist_sqrd == -1) DistanceSqrdPointToSegment(O->position_,
                                                       start_point.head(2),
                                                       end_point.head(2));
 

@@ -233,6 +233,7 @@ bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace>& S,
 bool ExplicitEdgeCheck2D(std::shared_ptr<Obstacle> &O,
                          Eigen::VectorXd start_point,
                          Eigen::VectorXd end_point,
+                         double dist_sqrd,
                          double radius);
 
 // Checks if the edge is in collision with any obstacles in the C-space
