@@ -86,6 +86,14 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
+    shared_ptr<ListNode> os;
+    {
+        lock_guard<mutex> lock(Q->S->cspace_mutex_);
+        os = Q->S->obstacles->front_;
+    }
+    os->obstacle_->obstacle_used_ = true;
+    AddNewObstacle(kd_tree,Q,os->obstacle_,root,robot);
+
     /// Save the path to vector of anyangle path lines
     /// Path in form b*y = a*x + c
     vector<Eigen::Vector3d> lines;
@@ -113,7 +121,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     }
     double avg_theta = atan2(y,x); // Average heading of path
 
-    vis = make_shared<thread>(visualizer, kd_tree, robot);
+    vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
 
     /// End Initialization
 
@@ -135,7 +143,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     Eigen::Vector3d prev_pose;
     shared_ptr<Edge> prev_edge;
     shared_ptr<ListNode> list_item;
-    bool removed, added;
+    bool /*removed,*/ added;
     shared_ptr<Obstacle> obstacle;
 
     {
@@ -425,7 +433,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             }
 
             /// Extend graph
-            if(extend(kd_tree,Q,new_node,closest_node,
+            if(Extend(kd_tree,Q,new_node,closest_node,
                       Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
                 // Record data (kd-tree)
                 kdTree.row(kdTreePos++) = new_node->position;

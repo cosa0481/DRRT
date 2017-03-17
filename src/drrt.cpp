@@ -430,30 +430,8 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<CSpace> &S,
             // Makey query pose the middle of the edge, and add 1/2 edge length
             // through the C-Space to the base_search_range (overestimate)
 
-<<<<<<< HEAD
             if(O->path_.rows() == 1) j = 1;
             else j = i+1;
-=======
-bool LineCheck(std::shared_ptr<CSpace> S,
-               std::shared_ptr<KDTree> Tree,
-               std::shared_ptr<KDTreeNode> node1,
-               std::shared_ptr<KDTreeNode> node2) {
-    double saved_theta1 = node1->position(2);
-    double saved_theta2 = node2->position(2);
-    double theta = std::atan2(node2->position(1)-node1->postion(1),
-                              node2->position(0)-node1->position(0));
-    node1->position(2) = theta;
-    node2->position(2) = theta;
-    std::shared_ptr<Edge> edge = Edge::newEdge(S,Tree,node1,node2);
-    edge->calculateTrajectory();
-    bool unsafe = explicitEdgeCheck(S,edge);
-    node1->position(2) = saved_theta1;
-    node2->position(2) = saved_theta2;
-    return unsafe;
-}
-
-/////////////////////// RRT Functions ///////////////////////
->>>>>>> theta_star
 
             temp = O->path_.row(i);
             temp1 = O->path_.row(j);
@@ -683,6 +661,24 @@ bool checkNeighborsForEdgeProblems(shared_ptr<CSpace>& S,
         listItem = listItem->child; // iterate
     }
     return false;
+}
+
+bool LineCheck(std::shared_ptr<CSpace> S,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2) {
+    double saved_theta1 = node1->position(2);
+    double saved_theta2 = node2->position(2);
+    double theta = std::atan2(node2->position(1)-node1->position(1),
+                              node2->position(0)-node1->position(0));
+    node1->position(2) = theta;
+    node2->position(2) = theta;
+    std::shared_ptr<Edge> edge = Edge::newEdge(S,Tree,node1,node2);
+    edge->calculateTrajectory();
+    bool unsafe = ExplicitEdgeCheck(S,edge);
+    node1->position(2) = saved_theta1;
+    node2->position(2) = saved_theta2;
+    return unsafe;
 }
 
 bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,

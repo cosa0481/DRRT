@@ -98,16 +98,19 @@ vector<Eigen::VectorXd> theta_star(shared_ptr<CSpace> C)
                 angle = -PI + i/sqrt(i*i+j*j);
             }
             Tree->getNodeAt(Eigen::Vector3d(i,j,angle), this_node);
+            // This sholud get all eight neighbors of the node
+            // since the tree is built at grid points with spacing 1
             Tree->kdFindWithinRange(node_list,2,this_node->position);
 
             this_item = node_list->front;
             for( int k = 0; k < node_list->length; k++ ) {
                 near_node = this_item->node;
                 near_edge = Edge::newEdge(C,Tree,this_node,near_node);
-                near_edge->calculateTrajectory();
-                if( near_edge->validMove() && !explicitEdgeCheck(C,near_edge)) {
+                //near_edge->calculateTrajectory();
+                //if( near_edge->ValidMove() && !ExplicitEdgeCheck(C,near_edge)) {
+//                    cout << "Making Neighbor" << endl;
                     makeNeighborOf(near_node,this_node,near_edge);
-                }
+                //}
                 this_item = this_item->child;
             }
             Tree->emptyRangeList(node_list);
@@ -167,7 +170,7 @@ bool update_vertex(shared_ptr<CSpace> C,
     if( node->rrtParentUsed ) {
         this_edge = Edge::newEdge(C,Tree,node->rrtParentEdge->endNode,neighbor);
         this_edge->calculateTrajectory();
-        if(this_edge->validMove() && !explicitEdgeCheck(C,this_edge)) {
+        if(this_edge->ValidMove() && !ExplicitEdgeCheck(C,this_edge)) {
             if(neighbor->rrtLMC
                     > node->rrtParentEdge->endNode->rrtLMC + this_edge->dist) {
                 neighbor->rrtLMC
