@@ -2,6 +2,7 @@
 #define DIST_SQRD_POINT_TO_SEGMENT_CUH
 
 #include <stdio.h>
+#include <iostream>
 #include <vector>
 
 std::vector<double> CalcDistanceSquaredPointToSegment(

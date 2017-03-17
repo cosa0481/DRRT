@@ -41,66 +41,72 @@ std::vector<double> CalcDistanceSquaredPointToSegment(
 {
     // Number of threads to use
     int grid_dim = 1;
-    int block_dim = starts.size();
+    int block_dim = starts[0].size();
 
     // Host memory pointers
-    double* h_qp_x = NULL;
-    *h_qp_x = query_point[0];
-    double* h_qp_y = NULL;
-    *h_qp_y = query_point[1];
-    double* h_start_x = NULL;
-    double* h_start_y = NULL;
-    double* h_end_x = NULL;
-    double* h_end_y = NULL;
-    for(int i = 0; i < (int)starts.size(); i++) {
-        h_start_x[i] = starts.at(i).at(0);
-        h_start_y[i] = starts.at(i).at(1);
-        h_end_x[i] = ends.at(i).at(0);
-        h_end_y[i] = ends.at(i).at(1);
+//    std::cout << "host pointers" << std::endl;
+    double* h_qp_x = nullptr;
+    h_qp_x = &(query_point[0]);
+    double* h_qp_y = nullptr;
+    h_qp_y = &(query_point[1]);
+    std::vector<double> h_start_x;
+    std::vector<double> h_start_y;
+    std::vector<double> h_end_x;
+    std::vector<double> h_end_y;
+    for(int i = 0; i < block_dim; i++) {
+        h_start_x.push_back(starts[i][0]);
+        h_start_y.push_back(starts[i][1]);
+        h_end_x.push_back(ends[i][0]);
+        h_end_y.push_back(ends[i][1]);
     }
-    double* h_dist = NULL;
+    double h_dist[block_dim];
 
     // Device memory pointers
-    double* d_qp_x;
-    double* d_qp_y;
-    double* d_start_x;
-    double* d_start_y;
-    double* d_end_x;
-    double* d_end_y;
-    double* d_dist;
+//    std::cout << "device pointers" << std::endl;
+    double* d_qp_x = nullptr;
+    double* d_qp_y = nullptr;
+    double* d_start_x = nullptr;
+    double* d_start_y = nullptr;
+    double* d_end_x = nullptr;
+    double* d_end_y = nullptr;
+    double* d_dist = nullptr;
 
     // Allocate Device memory
+//    std::cout << "cudaMalloc" << std::endl;
     cudaMalloc((void**) &d_qp_x, sizeof(double));
     cudaMalloc((void**) &d_qp_y, sizeof(double));
-    cudaMalloc((void**) &d_start_x, sizeof(double) * starts.size());
-    cudaMalloc((void**) &d_start_y, sizeof(double) * starts.size());
-    cudaMalloc((void**) &d_end_x, sizeof(double) * ends.size());
-    cudaMalloc((void**) &d_end_y, sizeof(double) * ends.size());
+    cudaMalloc((void**) &d_start_x, sizeof(double) * h_start_x.size());
+    cudaMalloc((void**) &d_start_y, sizeof(double) * h_start_y.size());
+    cudaMalloc((void**) &d_end_x, sizeof(double) * h_end_x.size());
+    cudaMalloc((void**) &d_end_y, sizeof(double) * h_end_y.size());
     cudaMalloc((void**) &d_dist, sizeof(double) * block_dim);
 
     // Transfer structures to Device
+//    std::cout << "cudaMemcpyHostToDevice" << std::endl;
     cudaMemcpy(d_qp_x, h_qp_x, sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_qp_y, h_qp_y, sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_start_x, h_start_x, sizeof(double) * starts.size(),
+    cudaMemcpy(d_start_x, &h_start_x[0], sizeof(double) * h_start_x.size(),
                                cudaMemcpyHostToDevice);
-    cudaMemcpy(d_start_y, h_start_y, sizeof(double) * starts.size(),
+    cudaMemcpy(d_start_y, &h_start_y[0], sizeof(double) * h_start_y.size(),
                                cudaMemcpyHostToDevice);
-    cudaMemcpy(d_end_x, h_end_x, sizeof(double) * ends.size(),
+    cudaMemcpy(d_end_x, &h_end_x[0], sizeof(double) * h_end_x.size(),
                                cudaMemcpyHostToDevice);
-    cudaMemcpy(d_end_y, h_end_y, sizeof(double) * ends.size(),
+    cudaMemcpy(d_end_y, &h_end_y[0], sizeof(double) * h_end_y.size(),
                                cudaMemcpyHostToDevice);
 
     // Launch kernel
+//    std::cout << "kernel" << std::endl;
     CUDADistanceSquaredPointToSegment<<<grid_dim,block_dim>>>(d_qp_x,
-                                                                  d_qp_y,
-                                                                  d_start_x,
-                                                                  d_start_y,
-                                                                  d_end_x,
-                                                                  d_end_y,
-                                                                  d_dist);
+                                                              d_qp_y,
+                                                              d_start_x,
+                                                              d_start_y,
+                                                              d_end_x,
+                                                              d_end_y,
+                                                              d_dist);
 
     // Transfer result back to Host
-    cudaMemcpy(h_dist, d_dist, sizeof(double) * block_dim,
+//    std::cout << "cudaMemcpyDeviceToHost" << std::endl;
+    cudaMemcpy(&h_dist[0], d_dist, sizeof(double) * block_dim,
                                cudaMemcpyDeviceToHost);
 
     // Put results into vector and return for use

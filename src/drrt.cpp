@@ -8,7 +8,7 @@
 
 using namespace std;
 
-bool timing = true;
+bool timing = false;
 int seg_dist_sqrd = 0;
 int dist_sqrd_point_seg = 0;
 
@@ -677,9 +677,14 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
 
         // Calculate distance squared from center of the obstacle to the edge
         // projected into the first two dimensions
-        if(dist_sqrd == -1) DistanceSqrdPointToSegment(O->position_,
+        if(dist_sqrd == -1) {
+            cout << "DistanceSqrdPointToSegment" << endl;
+            DistanceSqrdPointToSegment(O->position_,
                                                       start_point.head(2),
                                                       end_point.head(2));
+        } else {
+            cout << "CUDA got it" << endl;
+        }
 
 //        cout << "obs:\n" << O->position_.head(2) << endl;
 //        cout << "line:\n" << start_point.head(2) << endl << "--" << endl

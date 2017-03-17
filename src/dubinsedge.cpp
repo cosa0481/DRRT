@@ -872,9 +872,8 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
             segment_ends.push_back(temp);
             temp.clear();
         }
-        cout << "Add check: " << segment_ends.at(0).at(0)
-             << ", " << segment_ends.at(0).at(1) << endl;
     }
+
     // Use CUDA to calculate these distances all at once for the segments
     // that make up this edge
     temp.clear();
@@ -883,36 +882,37 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     vector<double> point_to_segment_sqrd_dists
             = CalcDistanceSquaredPointToSegment(temp,
                                                 segment_starts, segment_ends);
+
     Eigen::MatrixXd traj;
-    traj.resize(MAXPATHNODES,this->cspace->d);
-    for(int i = 1; i < point_to_segment_sqrd_dists.size(); i++) {
-        double* vec_pointer;
-        *vec_pointer = segment_starts[0][0];
-        Eigen::Map<Eigen::VectorXd> start_point(vec_pointer,
-                                                segment_starts.size());
-        traj.row(i-1) = start_point;
-        *vec_pointer = segment_ends[0][0];
-        Eigen::Map<Eigen::VectorXd> end_point(vec_pointer,
-                                              segment_starts.size());
-        traj.row(i) = end_point;
+    Eigen::Vector2d start;
+    Eigen::Vector2d end;
+    traj.resize(segment_starts[0].size(),2);
+    for(int i = 1; i < segment_starts[0].size(); i++) {
+        start(0) = segment_starts[i-1][0];
+        start(1) = segment_starts[i-1][1];
+        traj.row(i-1) = start;
+        end(0) = segment_ends[i-1][0];
+        end(1) = segment_ends[i-1][1];
+        traj.row(i-1) = end;
     }
-    for(int i = 1; i < point_to_segment_sqrd_dists.size(); i++) {
+
+    for(int i = 1; i < traj.rows(); i++) {
         if(ExplicitEdgeCheck2D(obstacle,
                                traj.row(i-1),
                                traj.row(i),
-                               point_to_segment_sqrd_dists.at(i),
+                               point_to_segment_sqrd_dists[i],
                                this->cspace->robotRadius)) {
             time_end = getTimeNs(startTime);
             std::shared_ptr<Edge> this_edge = this->getPointer();
             this->cspace->AddVizEdge(this_edge);
-            if(true) std::cout << "CUDACheckPath: " << count << ": "
+            if(true) std::cout << "CheckPath: " << count << ":true" << ": "
                                << (time_end-time_start)/MICROSECOND << " ms"
                                << std::endl;
             return true;
         }
     }
     time_end = getTimeNs(startTime);
-    if(true) std::cout << "Check path: " << count << ":false" << ": "
+    if(true) std::cout << "CheckPath: " << count << ":false" << ": "
                        << (time_end-time_start)/MICROSECOND << " ms"
                        << std::endl;
     return false;

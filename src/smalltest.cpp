@@ -10,7 +10,7 @@
 
 using namespace std;
 
-bool timingex = true;
+bool timingex = false;
 
 // Variables for saving data from Dubin's space
 int histPos = 0,
@@ -34,7 +34,7 @@ void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
     cout << leaf->position << endl;
 }
 
-/// AlGORITHM CONTROL FUNCTION
+/// ALGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
 shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 {
