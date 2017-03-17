@@ -53,17 +53,21 @@ public:
     }
 
     // Functions
-    void JlistPush(std::shared_ptr<KDTreeNode> &t);
-    void JlistPush(std::shared_ptr<Edge> &e);
-    void JlistPush(std::shared_ptr<KDTreeNode> &t, double k);
-    void JlistPush(std::shared_ptr<Edge> &e, double k);
-    void JlistTop(std::shared_ptr<KDTreeNode> &t);
-    void JlistTop(std::shared_ptr<Edge> &e);
-    void JlistTopKey(std::shared_ptr<KDTreeNode> &n, std::shared_ptr<double> k);
-    void JlistTopKey(std::shared_ptr<Edge> &e, std::shared_ptr<double> k );
-    void JlistPop(std::shared_ptr<KDTreeNode> &t);
-    void JlistPop(std::shared_ptr<Edge> &e);
-    void JlistPopKey(std::shared_ptr<KDTreeNode> &n, std::shared_ptr<double> k);
+    bool JlistContains(std::shared_ptr<KDTreeNode> &t,
+                       std::shared_ptr<JListNode> &i);
+    void JlistPush( std::shared_ptr<KDTreeNode> &t );
+    void JlistPush( std::shared_ptr<Edge> &e );
+    void JlistPush( std::shared_ptr<KDTreeNode> &t, double k );
+    void JlistPush( std::shared_ptr<Edge> &e, double k );
+    void JlistTop( std::shared_ptr<KDTreeNode> &t );
+    void JlistTop( std::shared_ptr<Edge> &e );
+    void JlistTopKey(std::shared_ptr<KDTreeNode> &n,
+                     std::shared_ptr<double> k );
+    void JlistTopKey( std::shared_ptr<Edge> &e, std::shared_ptr<double> k );
+    void JlistPop( std::shared_ptr<KDTreeNode> &t );
+    void JlistPop( std::shared_ptr<Edge> &e );
+    void JlistPopKey(std::shared_ptr<KDTreeNode> &n,
+                     std::shared_ptr<double> k);
     void JlistPopKey(std::shared_ptr<Edge> &e, std::shared_ptr<double> k);
     bool JlistRemove(std::shared_ptr<JListNode> &node);
     void JlistPrint();

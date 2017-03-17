@@ -193,7 +193,6 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 this_dist = kd_tree->distanceFunction(new_node->position,
                                                         closest_node->position);
                 if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
-
                     Edge::saturate(new_node->position, closest_node->position,
                                    Q->S->delta, this_dist);
                 }

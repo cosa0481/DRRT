@@ -256,6 +256,11 @@ bool ExplicitPointCheck(std::shared_ptr<Queue>& Q, Eigen::VectorXd point);
 bool ExplicitNodeCheck(std::shared_ptr<Queue>& Q,
                        std::shared_ptr<KDTreeNode> node);
 
+bool LineCheck(std::shared_ptr<CSpace> S,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2);
+
 /////////////////////// RRT Functions ///////////////////////
 // Functions used for RRT. Some of these are also used in RRT*
 // RRT#, and RRTx

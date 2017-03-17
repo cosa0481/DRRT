@@ -7,10 +7,11 @@
 
 #include <DRRT/drrt.h>
 #include <DRRT/visualizer.h>
+#include <DRRT/theta_star.h>
 
 using namespace std;
 
-bool timingex = true;
+bool timingex = false;
 
 // Variables for saving data from Dubin's space
 int histPos = 0,
@@ -85,13 +86,39 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    shared_ptr<thread> visualizer_thread
-            = make_shared<thread>(visualizer,kd_tree,robot,Q);
-    vis = visualizer_thread;
+    /// Save the path to vector of anyangle path lines
+    /// Path in form b*y = a*x + c
+    vector<Eigen::Vector3d> lines;
+    double angle, x = 0, y = 0;
+    vector<Eigen::VectorXd> path = theta_star(Q->S);
+    path.push_back(Q->S->goal);
+    robot->best_any_angle_path = path;
+    cout << "Path: " << endl;
+    double path_a, path_b, path_c;
+    Eigen::VectorXd current_point, prev_point;
+    for( int i = 0; i < path.size(); i++ ) {
+        cout << path.at(i) << endl << endl;
+        if(i==0) continue;
+        current_point = path.at(i);
+        prev_point = path.at(i-1);
+        path_a = (current_point(1)-prev_point(1))
+                /(current_point(0)-prev_point(0));
+        path_b = -1;
+        path_c = min(abs(current_point(1)),abs(prev_point(1)));
+        lines.push_back(Eigen::Vector3d(path_a,path_b,path_c));
+        angle = atan2(prev_point(1)-current_point(1),
+                      prev_point(0)-current_point(0));
+        x += cos(angle);
+        y += sin(angle);
+    }
+    double avg_theta = atan2(y,x); // Average heading of path
+
+    vis = make_shared<thread>(visualizer, kd_tree, robot);
 
     /// End Initialization
 
     /// Main loop
+    cout << "RRTx Main Loop" << endl;
     startTime = chrono::high_resolution_clock::now();
     double slice_counter = 0;
     double slice_start
@@ -116,7 +143,12 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         prev_pose = robot->robotPose;
     }
 
-    current_distance = kd_tree->distanceFunction(prev_pose,
+    // For importance sampling
+    double f_uniform = 0.7;     // proportion to sample X_free
+    double position_bias;       // cartesian bias
+    double theta_bias = PI/10;  // orientation bias
+
+    current_distance = kd_tree->distanceFunction(robot->robotPose,
                                                 root->position);
 
     int i = 0;
@@ -319,25 +351,20 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             }
             prev_pose = robot->robotPose;
 
-//            if(Q->S->timeElapsed < p.planning_only_time + p.slice_time) {
-                /// Sample free space
-                shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
-                shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
-                shared_ptr<double> closest_dist = make_shared<double>(INF);
 
-                time_start = getTimeNs(startTime);
+            /// Sample free space
+            shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
+            shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
+            shared_ptr<double> closest_dist = make_shared<double>(INF);
+
+            bool importance_sampling = true;
+            while(importance_sampling) {
                 new_node = randNodeOrFromStack(Q->S);
-                time_end = getTimeNs(startTime);
-                if(timingex) cout << "randNodeOrFromStack: "
-                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
+
                 if(new_node->kdInTree) continue;
 
-                time_start = getTimeNs(startTime);
                 kd_tree->kdFindNearest(closest_node,closest_dist,
                                       new_node->position);
-                time_end = getTimeNs(startTime);
-                if(timingex) cout << "kdFindNearest: "
-                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
                 /// Saturate new node
                 this_dist = kd_tree->distanceFunction(new_node->position,
@@ -353,47 +380,76 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 }
 
                 /// Check for obstacles
-                time_start = getTimeNs(startTime);
+                //time_start = getTimeNs(startTime);
                 if(ExplicitNodeCheck(Q,new_node)) continue;
-                time_end = getTimeNs(startTime);
+                //time_end = getTimeNs(startTime);
                 if(timingex) cout << "ExplicitNodeCheck: "
                                   << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
-                /// Extend graph
-                time_start = getTimeNs(startTime);
-                if(Extend(kd_tree,Q,new_node,closest_node,
-                          Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
-                    // Record data (kd-tree)
-                    kdTree.row(kdTreePos++) = new_node->position;
-                }
-                time_end = getTimeNs(startTime);
-                if(timingex) cout << "Extend: "
-                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
+                /// Do importance sampling f_uniform*100% of the time
+                if(randDouble(0,1) > f_uniform) break;
 
-                /// Make graph consistent
-                time_start = getTimeNs(startTime);
-                reduceInconsistency(Q,Q->S->moveGoal,Q->S->robotRadius,
-                                    root,hyper_ball_rad);
-                time_end = getTimeNs(startTime);
-                if(timingex) cout << "reduceInconsistency2: "
-                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
-                if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
-                    old_rrtLMC = Q->S->moveGoal->rrtLMC;
-                }
+                if(kd_tree->distanceFunction(new_node->position,
+                                             kd_tree->root->position)
+                        > kd_tree->distanceFunction(Q->S->goalNode->position,
+                                                    kd_tree->root->position))
+                    continue;
 
-                // If the difference between the first node and the root is
-                // > delta, then set its LMC to INF so it can be recalculated
-                // when the next node is added
-                /// In general this shouldn't happen because of saturate()
-                if(i == 1 && new_node->rrtParentUsed && (new_node->rrtLMC
-                       - new_node->rrtParentEdge->endNode->rrtLMC
-                                                         > Q->S->delta)) {
-                    new_node->rrtLMC = INF;
+                if(kd_tree->distanceFunction(new_node-> position,
+                                             Q->S->goalNode->position)
+                        > kd_tree->distanceFunction(Q->S->goalNode->position,
+                                                    kd_tree->root->position))
+                    continue;
+
+                /// Theta bias
+                new_node->position(2) = randDouble(avg_theta-theta_bias,
+                                                   avg_theta+theta_bias);
+
+                /// Position bias
+                double x = new_node->position(0);
+                double y = new_node->position(1);
+                double dist = INF;
+                double min = INF;
+                position_bias = hyper_ball_rad;
+                for(int j = 0; j < lines.size(); j++) {
+                    dist = abs(lines.at(j)(0)*x
+                               + lines.at(j)(1)*y
+                               + lines.at(j)(2))
+                    / sqrt(pow(lines.at(j)(0),2)
+                           + pow(lines.at(j)(1),2));
+                    if(dist < min) min = dist;
                 }
-//            }
-                iter_end = getTimeNs(startTime);
-                cout << "Iteration: "
-                     << (iter_end - iter_start)/MICROSECOND << " ms" << endl;
+                if(min > position_bias) continue;
+
+                importance_sampling = false;
+            }
+
+            /// Extend graph
+            if(extend(kd_tree,Q,new_node,closest_node,
+                      Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
+                // Record data (kd-tree)
+                kdTree.row(kdTreePos++) = new_node->position;
+            }
+
+            /// Make graph consistent
+            reduceInconsistency(Q,Q->S->moveGoal,Q->S->robotRadius,
+                                root,hyper_ball_rad);
+            if(Q->S->moveGoal->rrtLMC != old_rrtLMC) {
+                old_rrtLMC = Q->S->moveGoal->rrtLMC;
+            }
+
+            // If the difference between the first node and the root is
+            // > delta, then set its LMC to INF so it can be recalculated
+            // when the next node is added
+            /// In general this shouldn't happen because of saturate()
+            if(i == 1 && new_node->rrtParentUsed && (new_node->rrtLMC
+                   - new_node->rrtParentEdge->endNode->rrtLMC > Q->S->delta)) {
+                new_node->rrtLMC = INF;
+            }
+
+            iter_end = getTimeNs(startTime);
+            cout << "Iteration: "
+                 << (iter_end - iter_start)/MICROSECOND << " ms" << endl;
         }
     }
     printRRTxPath(Q->S->goalNode);

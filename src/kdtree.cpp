@@ -49,6 +49,37 @@ void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
     }
 }
 
+void KDTree::getNodeAt(Eigen::VectorXd pos,
+                       std::shared_ptr<KDTreeNode>& node)
+{
+    std::shared_ptr<KDTreeNode> parent = this->root;
+    node = parent;
+    while( true ) {
+        if(pos(parent->kdSplit) < parent->position(parent->kdSplit)) {
+            // Traverse tree to the left
+            if( parent->position == pos ) {
+                // The node gets inserted as the left child of the parent
+                node = parent;
+                break;
+            }
+            if(!parent->kdChildLExist) std::cout << "no left child" << std::endl;
+            parent = parent->kdChildL;
+            continue;
+        }
+        else {
+            // Traverse tree to the right
+            if( parent->position == pos ) {
+                // The node gets inserted as the right child of the parent
+                node = parent;
+                break;
+            }
+            if(!parent->kdChildRExist) std::cout << "no right child" << std::endl;
+            parent = parent->kdChildR;
+            continue;
+        }
+    }
+}
+
 bool KDTree::kdInsert(std::shared_ptr<KDTreeNode>& node)
 {
     if( node->kdInTree ) return false;

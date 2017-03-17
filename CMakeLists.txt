@@ -46,6 +46,7 @@ set( HDRS
                 include/DRRT/drrt_distance_functions.h
                 include/DRRT/visualizer.h
                 include/DRRT/obstacle.h
+                include/DRRT/theta_star.h
 		)
 
 set( SRCS
@@ -60,6 +61,7 @@ set( SRCS
                 src/drrt_distance_functions.cpp
                 src/visualizer.cpp
                 src/obstacle.cpp
+                src/theta_star.cpp
 		)
 
 

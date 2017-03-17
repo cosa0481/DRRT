@@ -20,42 +20,46 @@ void Edge::saturate(Eigen::VectorXd& nP,
                     double delta,
                     double dist)
 {
-    if( nP.cols() == 3 ) {
-        // First scale non-theta dimensions
-        nP.head(2) = cP.head(2) +
-                ( nP.head(2) - cP.head(2) ) * delta / dist;
+    // First scale non-theta dimensions
+    nP.head(2) = cP.head(2) +
+            ( nP.head(2) - cP.head(2) ) * delta / dist;
 
-        // Saturate theta in the shorter of the
-        // two directions that it can go
-        if( std::abs( nP(2) - cP(2) ) < PI ) {
-            // Saturate in the normal way
-            nP(2) = cP(2) +
-                    (nP(2) - cP(2)) * delta / dist;
-        } else {
-            // Saturate in the opposite way
-            if( nP(2) < PI ) {
-                nP(2) = nP(2) + 2*PI;
-            } else {
-                nP(2) = nP(2) - 2*PI;
-            }
+    while(nP(2) < -2*PI) nP(2) += 2*PI;
+    while(nP(2) > 2*PI) nP(2) -= 2*PI;
 
-            // Now saturate
-            nP(2) = cP(2) +
-                    (nP(2) - cP(2)) * delta / dist;
+    std::cout << "modded theta: " << nP(2) << std::endl;
 
-            // Finally, wrap back to the identity that is on [0 2pi]
-            // Is this really wrapping?
+//    // Saturate theta in the shorter of the
+//    // two directions that it can go
+//    if( std::abs( nP(2) - cP(2) ) < PI ) {
+//        // Saturate in the normal way
+//        nP(2) = cP(2) +
+//                (nP(2) - cP(2)) * delta / dist;
+//    } else {
+//        // Saturate in the opposite way
+//        if( nP(2) < PI ) {
+//            nP(2) = nP(2) + 2*PI;
+//        } else {
+//            nP(2) = nP(2) - 2*PI;
+//        }
 
-            Eigen::Vector2d minVec;
-            minVec(0) = nP(3);
-            minVec(1) = 2*PI;
-            Eigen::Vector2d maxVec;
-            maxVec(0) = minVec.minCoeff();
-            maxVec(1) = 0.0;
+//        // Now saturate
+//        nP(2) = cP(2) +
+//                (nP(2) - cP(2)) * delta / dist;
 
-            nP(2) = maxVec.maxCoeff();
-        }
-    }
+//        // Finally, wrap back to the identity that is on [0 2pi]
+//        // Is this really wrapping?
+
+//        Eigen::Vector2d minVec;
+//        minVec(0) = nP(2);
+//        minVec(1) = 2*PI;
+//        Eigen::Vector2d maxVec;
+//        maxVec(0) = minVec.minCoeff();
+//        maxVec(1) = 0.0;
+
+//        nP(2) = maxVec.maxCoeff();
+//        std::cout << "Saturated theta: " << nP(2) << std::endl;
+//    }
 }
 
 /////////////////////// Virtual Edge Functions ///////////////////////

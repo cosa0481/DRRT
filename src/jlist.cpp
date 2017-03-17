@@ -7,6 +7,20 @@
 #include <DRRT/kdtreenode.h>
 #include <DRRT/edge.h>
 
+bool JList::JlistContains(std::shared_ptr<KDTreeNode> &t,
+                          std::shared_ptr<JListNode> &i)
+{
+    std::shared_ptr<JListNode> ptr = front;
+    while( ptr != ptr->child ) {
+        if( t == ptr->node ) {
+            i = ptr;
+            return true;
+        }
+        ptr = ptr->child;
+    }
+    return false;
+}
+
 void JList::JlistPush( std::shared_ptr<KDTreeNode> &t )
 {
     std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( t );
