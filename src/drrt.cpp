@@ -468,15 +468,14 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<CSpace> &S,
 }
 
 void AddNewObstacle(shared_ptr<KDTree> Tree,
-                    shared_ptr<Queue> &Q,
+                    shared_ptr<Queue> &queue,
                     shared_ptr<Obstacle> &O,
-                    shared_ptr<KDTreeNode> root,
-                    shared_ptr<RobotData> &R)
+                    shared_ptr<KDTreeNode> root)
 {
     cout << "AddNewObstacle" << endl;
     // Find all points in conflict with the obstacle
     shared_ptr<JList> node_list
-            = FindPointsInConflictWithObstacle(Q->S,Tree,O,root);
+            = FindPointsInConflictWithObstacle(queue->S,Tree,O,root);
 
     // For all nodes that might be in conflict
     shared_ptr<KDTreeNode> this_node;
@@ -520,16 +519,12 @@ void AddNewObstacle(shared_ptr<KDTree> Tree,
             this_node->rrtParentEdge->dist = INF;
             this_node->rrtParentUsed = false;
 
-            verifyInOSQueue(Q,this_node);
+            verifyInOSQueue(queue,this_node);
         }
     }
 
     // Clean up
     Tree->emptyRangeList(node_list);
-
-    // Now check the robot's current move to its target
-    if(R->robotEdgeUsed && R->robotEdge->ExplicitEdgeCheck(O))
-        R->currentMoveInvalid = true;
 }
 
 void RemoveObstacle(std::shared_ptr<KDTree> Tree,
@@ -667,17 +662,27 @@ bool LineCheck(std::shared_ptr<CSpace> S,
                std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> node1,
                std::shared_ptr<KDTreeNode> node2) {
+    // Save the actual angles of these nodes
     double saved_theta1 = node1->position(2);
     double saved_theta2 = node2->position(2);
+    // Calculate the angle between the two nodes
     double theta = std::atan2(node2->position(1)-node1->position(1),
                               node2->position(0)-node1->position(0));
+    // Make these nodes point in the same direction
     node1->position(2) = theta;
     node2->position(2) = theta;
+    // Find the trajectory between them (should be a straight line)
     std::shared_ptr<Edge> edge = Edge::newEdge(S,Tree,node1,node2);
     edge->calculateTrajectory();
+    // Check if this straight line is valid
+//    cout << "check edge:\n" << edge->startNode->position << "\n--\n"
+//         << edge->endNode->position << endl;
     bool unsafe = ExplicitEdgeCheck(S,edge);
+//    cout << "line of sight: " << !unsafe << endl;
+    // Restore the nodes' original angles
     node1->position(2) = saved_theta1;
     node2->position(2) = saved_theta2;
+    // Return true if there this edge is unsafe and there is no line of sight
     return unsafe;
 }
 
@@ -725,6 +730,7 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
         for(int i = 0; i < O->polygon_.rows(); i++) {
             B = O->polygon_.row(i);
             seg_dist_sqrd = SegmentDistSqrd(start_point,end_point,A,B);
+//            cout << "dist between edge and polygon edge: " << sqrt(seg_dist_sqrd) << endl;
             if(seg_dist_sqrd < pow(radius,2)) {
                 // There is a collision with the 2d projection of the obstacle
 //                cout << "p_edge -- traj_edge: " << sqrt(seg_dist_sqrd)
@@ -815,7 +821,7 @@ bool ExplicitEdgeCheck(shared_ptr<CSpace> &S,
                        shared_ptr<Edge> &edge)
 {
     // If ignoring obstacles
-    if( S->inWarmupTime ) return false;
+    //if( S->inWarmupTime ) return false;
 
     shared_ptr<ListNode> obstacle_list_node;
     int length;

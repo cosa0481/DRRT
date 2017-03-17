@@ -86,23 +86,16 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    shared_ptr<ListNode> os;
-    {
-        lock_guard<mutex> lock(Q->S->cspace_mutex_);
-        os = Q->S->obstacles->front_;
-    }
-    os->obstacle_->obstacle_used_ = true;
-    AddNewObstacle(kd_tree,Q,os->obstacle_,root,robot);
-
     /// Save the path to vector of anyangle path lines
     /// Path in form b*y = a*x + c
     vector<Eigen::Vector3d> lines;
     double angle, x = 0, y = 0;
-    vector<Eigen::VectorXd> path = theta_star(Q->S);
+    vector<Eigen::VectorXd> path = theta_star(Q);
     path.push_back(Q->S->goal);
     robot->best_any_angle_path = path;
     cout << "Path: " << endl;
     double path_a, path_b, path_c;
+    vector<double> avg_thetas;
     Eigen::VectorXd current_point, prev_point;
     for( int i = 0; i < path.size(); i++ ) {
         cout << path.at(i) << endl << endl;
@@ -113,13 +106,13 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 /(current_point(0)-prev_point(0));
         path_b = -1;
         path_c = min(abs(current_point(1)),abs(prev_point(1)));
-        lines.push_back(Eigen::Vector3d(path_a,path_b,path_c));
+        lines.insert(lines.begin(), Eigen::Vector3d(path_a,path_b,path_c));
         angle = atan2(prev_point(1)-current_point(1),
                       prev_point(0)-current_point(0));
         x += cos(angle);
         y += sin(angle);
+        avg_thetas.push_back(atan2(y,x));
     }
-    double avg_theta = atan2(y,x); // Average heading of path
 
     vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
 
@@ -152,7 +145,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     }
 
     // For importance sampling
-    double f_uniform = 0.7;     // proportion to sample X_free
+    double f_uniform = 0.95;     // proportion to importance sample
     double position_bias;       // cartesian bias
     double theta_bias = PI/10;  // orientation bias
 
@@ -256,7 +249,10 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 cout << "time to add" << endl;
                 /// Adding this causes program to slow considerably
                 obstacle->obstacle_used_ = true;
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
                 added = true;
             } else if(obstacle->sensible_obstacle_
                       && obstacle->obstacle_used_after_sense_
@@ -266,8 +262,11 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 // Place to add
                 cout << "place to add" << endl;
                 obstacle->obstacle_used_ = true;
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
                 obstacle->sensible_obstacle_ = false;
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
                 added = true;
             } else if(Q->S->spaceHasTime
                       && obstacle->next_direction_change_time_ > robot_pose(3)
@@ -278,14 +277,20 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 cout << "direction change" << endl;
                 obstacle->obstacle_used_ = true;
                 obstacle->ChangeObstacleDirection(Q->S,robot_pose(3));
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
                 obstacle->last_direction_change_time_ = robot_pose(3);
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
             } else if(Q->S->warmup_time_just_ended
                       && obstacle->obstacle_used_) {
                 // Warm up time is over, so we need to treat all obstacles
                 // as if they have just been added
 //                cout << "finished warm up time" << endl;
-//                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+//                AddNewObstacle(kd_tree,Q,obstacle,root);
+                // Now check the robot's current move to its target
+//                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+//                    robot->currentMoveInvalid = true;
 //                added = true;
             }
             list_item = list_item->child_;
@@ -409,25 +414,47 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                                     kd_tree->root->position))
                     continue;
 
+                // Find the current node closest line
+                double dist_node_to_path;
+                double min_dist_node_to_path = INF;
+                int min_dist_node_to_path_index = 0;
+                for(int i = 1; i < robot->best_any_angle_path.size(); i++) {
+                    dist_node_to_path = DistanceSqrdPointToSegment(new_node->position,
+                                             robot->best_any_angle_path.at(i-1).head(2),
+                                             robot->best_any_angle_path.at(i).head(2));
+                    if(dist_node_to_path < min_dist_node_to_path) {
+                        min_dist_node_to_path = dist_node_to_path;
+                        min_dist_node_to_path_index = i-1;
+                    }
+                }
+
                 /// Theta bias
-                new_node->position(2) = randDouble(avg_theta-theta_bias,
-                                                   avg_theta+theta_bias);
+                new_node->position(2) = randDouble(avg_thetas[min_dist_node_to_path_index]-theta_bias,
+                                                   avg_thetas[min_dist_node_to_path_index]+theta_bias);
 
                 /// Position bias
                 double x = new_node->position(0);
                 double y = new_node->position(1);
                 double dist = INF;
-                double min = INF;
-                position_bias = hyper_ball_rad;
-                for(int j = 0; j < lines.size(); j++) {
-                    dist = abs(lines.at(j)(0)*x
-                               + lines.at(j)(1)*y
-                               + lines.at(j)(2))
-                    / sqrt(pow(lines.at(j)(0),2)
-                           + pow(lines.at(j)(1),2));
-                    if(dist < min) min = dist;
-                }
-                if(min > position_bias) continue;
+//                double min = INF;
+                position_bias = hyper_ball_rad/2;
+                dist = abs(lines.at(min_dist_node_to_path_index)(0)*x
+                           + lines.at(min_dist_node_to_path_index)(1)*y
+                           + lines.at(min_dist_node_to_path_index)(2))
+                        / sqrt(pow(lines.at(min_dist_node_to_path_index)(0),2)
+                               +pow(lines.at(min_dist_node_to_path_index)(1),2));
+//                for(int j = 0; j < lines.size(); j++) {
+//                    dist = abs(lines.at(j)(0)*x
+//                               + lines.at(j)(1)*y
+//                               + lines.at(j)(2))
+//                    / sqrt(pow(lines.at(j)(0),2)
+//                           + pow(lines.at(j)(1),2));
+//                    if(dist < min) {
+//                        cout << "line: " << j << endl;
+//                        min = dist;
+//                    }
+//                }
+                if(dist/*min*/ > position_bias) continue;
 
                 importance_sampling = false;
             }

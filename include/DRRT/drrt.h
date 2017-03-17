@@ -202,10 +202,9 @@ std::shared_ptr<JList> FindPointsInConflictWithObstacle(
 // This adds the obstacle (checks for edge conflicts with the obstactle
 // and then puts the affected nodes into the appropriate heaps -collision-
 void AddNewObstacle(std::shared_ptr<KDTree> Tree,
-                    std::shared_ptr<Queue>& Q,
+                    std::shared_ptr<Queue> &queue,
                     std::shared_ptr<Obstacle>& O,
-                    std::shared_ptr<KDTreeNode> root,
-                    std::shared_ptr<RobotData>& R);
+                    std::shared_ptr<KDTreeNode> root);
 
 // This removes the obstacle (checks for edge conflicts with the obstacle
 // and then puts the affected nodes into the appropriate heaps)

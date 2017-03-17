@@ -109,7 +109,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     Eigen::Vector3d prev_pose;
     shared_ptr<Edge> prev_edge;
     shared_ptr<ListNode> list_item;
-    bool removed, added;
+    bool /*removed,*/ added;
     shared_ptr<Obstacle> obstacle;
 
     {
@@ -414,7 +414,10 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 cout << "time to add" << endl;
                 /// Adding this causes assertion failed index >=0 && index < size()
                 obstacle->obstacle_used_ = true;
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
                 added = true;
             } else if(obstacle->sensible_obstacle_
                       && obstacle->obstacle_used_after_sense_
@@ -424,7 +427,10 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 // Place to add
                 cout << "place to add" << endl;
                 obstacle->obstacle_used_ = true;
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
                 obstacle->sensible_obstacle_ = false;
                 added = true;
             } else if(Q->S->spaceHasTime
@@ -435,13 +441,19 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 cout << "direction change" << endl;
                 obstacle->obstacle_used_ = true;
                 obstacle->ChangeObstacleDirection(Q->S,robot_pose(3));
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
                 obstacle->last_direction_change_time_ = robot_pose(3);
             } else if(Q->S->warmup_time_just_ended && obstacle->obstacle_used_) {
                 // Warm up time is over, so we need to treat all obstacles
                 // as if they have just been added
                 cout << "finished warm up time" << endl;
-                AddNewObstacle(kd_tree,Q,obstacle,root,robot);
+                AddNewObstacle(kd_tree,Q,obstacle,root);
+                // Now check the robot's current move to its target
+                if(robot->robotEdgeUsed && robot->robotEdge->ExplicitEdgeCheck(obstacle))
+                    robot->currentMoveInvalid = true;
                 added = true;
             }
             list_item = list_item->child_;

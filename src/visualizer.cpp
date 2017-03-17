@@ -36,8 +36,8 @@ void visualizer(shared_ptr<KDTree> Tree,
     SceneGraph::GLLineStrip path;
     path.SetReference(0,0,0);
     for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
-        path.SetPoint(Robot->best_any_angle_path.at(i)(0),
-                      Robot->best_any_angle_path.at(i)(1),
+        path.SetPoint(Robot->best_any_angle_path.at(i)(1),
+                      Robot->best_any_angle_path.at(i)(0),
                       0);
     }
     glGraph.AddChild(&path);

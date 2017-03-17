@@ -27,7 +27,7 @@ void Edge::saturate(Eigen::VectorXd& nP,
     while(nP(2) < -2*PI) nP(2) += 2*PI;
     while(nP(2) > 2*PI) nP(2) -= 2*PI;
 
-    std::cout << "modded theta: " << nP(2) << std::endl;
+    ///std::cout << "modded theta: " << nP(2) << std::endl;
 
 //    // Saturate theta in the shorter of the
 //    // two directions that it can go
@@ -837,8 +837,10 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
                             this->startNode->position,
                             this->endNode->position,
                             this->cspace->robotRadius
-                            + 2*this->cspace->minTurningRadius))
+                            + 2*this->cspace->minTurningRadius)) {
+//        std::cout << "Returning false" << std::endl;
         return false;
+    }
 
 //    std::cout << "robot cannot traverse edge:\n" << this->startNode->position
 //              << std::endl << "--" << std::endl << this->startNode->position << std::endl;
@@ -847,10 +849,10 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     // check of the trajectory segments
     // Could be improved using a function that can check arcs of the
     // Dubin's path at once instead of just line segments stored in trajectory
-    std::chrono::time_point<std::chrono::high_resolution_clock> startTime
-            = std::chrono::high_resolution_clock::now();
-    double time_start = getTimeNs(startTime);
-    double time_end;
+//    std::chrono::time_point<std::chrono::high_resolution_clock> startTime
+//            = std::chrono::high_resolution_clock::now();
+    //double time_start = getTimeNs(startTime);
+    //double time_end;
     int count = 0;
     for(int i = 1; i < this->trajectory.rows(); i++) {
         if((this->trajectory.row(i)(0) > 0.001 || this->trajectory.row(i)(1) > 0.001
@@ -866,7 +868,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 //                std::cout << "specifically edge segment:" << endl;
 //                std::cout << "trajectory.row("<<i<<"):\n" << this->trajectory.row(i) << std::endl;
 //                std::cout << "trajectory.row("<<i-1<<"):\n" << this->trajectory.row(i-1) << std::endl;
-                time_end = getTimeNs(startTime);
+                //time_end = getTimeNs(startTime);
 //                if(true) std::cout << "Check path: " << count << ": "
 //                                   << (time_end-time_start)/MICROSECOND
 //                                   << std::endl;
@@ -881,7 +883,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
             }
         }
     }
-    time_end = getTimeNs(startTime);
+    //time_end = getTimeNs(startTime);
 //    if(true) std::cout << "Check path: " << count << ": "
 //                       << (time_end-time_start)/MICROSECOND << " ms" << std::endl;
     return false;
