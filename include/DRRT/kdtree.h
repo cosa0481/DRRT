@@ -61,6 +61,10 @@ public:
     void printTree(std::shared_ptr<KDTreeNode> node,
                    int indent=0, char type=' ');
 
+    // Gets node in tree at position if present
+    void getNodeAt(Eigen::VectorXd pos,
+                   std::shared_ptr<KDTreeNode>& node);
+
     // Inserts a new node into the tree
     bool kdInsert(std::shared_ptr<KDTreeNode> &node);
 

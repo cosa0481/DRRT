@@ -10,14 +10,19 @@
 
 class CSpace{
 public:
+    std::mutex cspace_mutex_;
     int d;                   // dimensions
-    List obstacles;          // a list of obstacles
-    double obsDelta;         // the granularity of obstacle checks on edges
+    std::shared_ptr<List> obstacles; // a list of obstacles
+    double obs_delta_;         // the granularity of obstacle checks on edges
     Eigen::VectorXd lowerBounds;   // 1xD vector containing the lower bounds
     Eigen::VectorXd upperBounds;   // 1xD vector containing the upper bounds
     Eigen::VectorXd width;   // 1xD vector containing upperBounds-lowerBounds
     Eigen::VectorXd start;   // 1xD vector containing start location
     Eigen::VectorXd goal;    // 1xD vector containing goal location
+
+    std::vector<std::shared_ptr<Edge>> collisions;
+
+    double (*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b);
 
     /* Flags that indicate what type of search space we are using
      * (these are mostly here to reduce the amount of duplicate code
@@ -28,6 +33,8 @@ public:
     bool spaceHasTime;  // if true then the 3rd dimension of the space is time
     bool spaceHasTheta; // if true then the 4th dimension of the space
                         // is theta in particular a Dubin's system is used
+
+    double collision_distance_; // distance underwhich a collision would occur
 
     // Stuff for sampling functions
     double pGoal;  // the probabality that the goal is sampled
@@ -45,7 +52,7 @@ public:
     double timeElapsed; // elapsed time since started (where time spent saving
                         // experimental data has been removed)
 
-    //Obstacle* obstacleToRemove;    // an obstacle to remove
+    std::shared_ptr<Obstacle> obstacleToRemove; // an obstacle to remove
 
     double robotRadius;       // robot radius
     double robotVelocity;     // robot velocity (used for Dubins w/o time)
@@ -64,14 +71,16 @@ public:
     double warmupTime;  // the amount of warm up time allowed (obstacles are
                         // ignored for warm up time)
     bool inWarmupTime;  // true if we are in the warm up time
+    bool warmup_time_just_ended; // true if the we just started moving
 
     // Constructor
-    CSpace(int D, /*float ObsDelta,*/
-           Eigen::VectorXd lower, Eigen::VectorXd upper,
+    CSpace(int D, Eigen::VectorXd lower, Eigen::VectorXd upper,
            Eigen::VectorXd startpoint, Eigen::VectorXd endpoint)
         : d(D), lowerBounds(lower), upperBounds(upper),
           start(startpoint), goal(endpoint)
     {
+        obstacles = std::make_shared<List>();
+
         hypervolume = 0.0; // flag indicating that this needs to be calculated
         inWarmupTime = false;
         warmupTime = 0.0; // default value for time for build
@@ -79,6 +88,27 @@ public:
         Eigen::ArrayXd upper_array = upper;
         Eigen::ArrayXd lower_array = lower;
         width = upper_array - lower_array;
+    }
+
+    // Setter for distanceFunction
+    void setDistanceFunction(double(*func)(Eigen::VectorXd a,
+                                           Eigen::VectorXd b))
+    { distanceFunction = func; }
+
+    // Add Edge to vizualizer
+    void AddVizEdge(std::shared_ptr<Edge> &edge)
+    {
+        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
+        this->collisions.push_back(edge);
+    }
+
+    // Remove Edge from vizualizer
+    void RemoveVizEdge(std::shared_ptr<Edge> &edge)
+    {
+        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
+        this->collisions.erase(
+                    std::remove(this->collisions.begin(),this->collisions.end(),edge),
+                    this->collisions.end());
     }
 };
 
@@ -181,6 +211,10 @@ typedef struct RobotData{
 
     double timeAlongRobotEdge; // the current time that the robot "will be"
                               // along robotEdge (i.e. next time slice)
+
+    // Optimal path as determined by the Theta*
+    // Any Angle search algorithm
+    std::vector<Eigen::VectorXd> best_any_angle_path;
 
     // Constructor
     RobotData(Eigen::VectorXd rP,

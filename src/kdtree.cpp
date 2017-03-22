@@ -49,15 +49,43 @@ void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
     }
 }
 
+void KDTree::getNodeAt(Eigen::VectorXd pos,
+                       std::shared_ptr<KDTreeNode>& node)
+{
+    std::shared_ptr<KDTreeNode> parent = this->root;
+    node = parent;
+    while( true ) {
+        if(pos(parent->kdSplit) < parent->position(parent->kdSplit)) {
+            // Traverse tree to the left
+            if( parent->position == pos ) {
+                // The node gets inserted as the left child of the parent
+                node = parent;
+                break;
+            }
+            if(!parent->kdChildLExist) std::cout << "no left child" << std::endl;
+            parent = parent->kdChildL;
+            continue;
+        }
+        else {
+            // Traverse tree to the right
+            if( parent->position == pos ) {
+                // The node gets inserted as the right child of the parent
+                node = parent;
+                break;
+            }
+            if(!parent->kdChildRExist) std::cout << "no right child" << std::endl;
+            parent = parent->kdChildR;
+            continue;
+        }
+    }
+}
+
 bool KDTree::kdInsert(std::shared_ptr<KDTreeNode>& node)
 {
     if( node->kdInTree ) return false;
     node->kdInTree = true;
     // Add node to visualizer
-    {
-        std::lock_guard<std::mutex> lock(this->treeMutex_);
-        this->nodes.push_back(node);
-    }
+    addVizNode(node);
 
     if( this->treeSize == 0 ) {
         this->root = node;
@@ -763,6 +791,7 @@ void KDTree::kdFindWithinRange(std::shared_ptr<JList> &S,
                                double range,
                                Eigen::VectorXd queryPoint)
 {
+//    std::cout << "kdFindWithinRange" << std::endl;
     // Insert root node in list if it is within range
     double distToRoot
             = this->distanceFunction(queryPoint, this->root->position);
@@ -770,6 +799,8 @@ void KDTree::kdFindWithinRange(std::shared_ptr<JList> &S,
 
     // Find nodes within range
     kdFindWithinRangeInSubtree(this->root, range, queryPoint, S);
+
+//    std::cout << "Found " << S->length << " points in Range " << range << std::endl;
 
     if(this->numWraps > 0) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
@@ -784,6 +815,8 @@ void KDTree::kdFindWithinRange(std::shared_ptr<JList> &S,
             kdFindWithinRangeInSubtree(this->root, range, thisGhostPoint, S);
         }
     }
+
+//    std::cout << "Found " << S->length << " points" << std::endl;
 }
 
 void KDTree::kdFindMoreWithinRange(std::shared_ptr<JList> &L,

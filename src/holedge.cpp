@@ -19,7 +19,7 @@ void Edge::saturate(Eigen::VectorXd& nP,
 }
 
 /////////////////////// Virtual Edge Functions ///////////////////////
-bool HolEdge::validMove()
+bool HolEdge::ValidMove()
 {
     if( this->cspace->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
@@ -132,4 +132,9 @@ void HolEdge::calculateTrajectory()
 void HolEdge::calculateHoverTrajectory()
 {
 
+}
+
+bool HolEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
+{
+    return false;
 }

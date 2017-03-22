@@ -7,6 +7,20 @@
 #include <DRRT/kdtreenode.h>
 #include <DRRT/edge.h>
 
+bool JList::JlistContains(std::shared_ptr<KDTreeNode> &t,
+                          std::shared_ptr<JListNode> &i)
+{
+    std::shared_ptr<JListNode> ptr = front;
+    while( ptr != ptr->child ) {
+        if( t == ptr->node ) {
+            i = ptr;
+            return true;
+        }
+        ptr = ptr->child;
+    }
+    return false;
+}
+
 void JList::JlistPush( std::shared_ptr<KDTreeNode> &t )
 {
     std::shared_ptr<JListNode> newNode = std::make_shared<JListNode>( t );
@@ -77,17 +91,19 @@ void JList::JlistTop( std::shared_ptr<KDTreeNode> &t )
 {
     if( length == 0 ) {
         // Jlist is empty
-        *t = KDTreeNode();
+        t = std::make_shared<KDTreeNode>();
+    } else {
+        t = front->node;
     }
-    t = front->node;
 }
 
 void JList::JlistTop( std::shared_ptr<Edge> &e ) {
     if( length == 0 ) {
         // Jlist is empty
         e->dist = -1;
+    } else {
+        e = front->edge;
     }
-    e = front->edge;
 }
 
 void JList::JlistTopKey( std::shared_ptr<KDTreeNode> &t,
@@ -95,11 +111,12 @@ void JList::JlistTopKey( std::shared_ptr<KDTreeNode> &t,
 {
     if( length == 0 ) {
         // Jlist is empty
-        *t = KDTreeNode();
+        t = std::make_shared<KDTreeNode>();
         *k = -1.0;
+    } else {
+        t = front->node;
+        *k = front->key;
     }
-    t = front->node;
-    *k = front->key;
 }
 
 void JList::JlistTopKey( std::shared_ptr<Edge> &e, std::shared_ptr<double> k )
@@ -108,33 +125,34 @@ void JList::JlistTopKey( std::shared_ptr<Edge> &e, std::shared_ptr<double> k )
         // Jlist is empty
         e->dist = -1;
         *k = -1.0;
+    } else {
+        e = front->edge;
+        *k = front->key;
     }
-    e = front->edge;
-    *k = front->key;
 }
 
 void JList::JlistPop( std::shared_ptr<KDTreeNode> &t )
 {
     if( length == 0 ) {
         // Jlist is empty
-        *t = KDTreeNode();
+        t = std::make_shared<KDTreeNode>();
+    } else {
+        std::shared_ptr<JListNode> oldTop = front;
+        if( length > 1 ) {
+            front->child->parent = front->parent;
+            front = front->child;
+        } else if( length == 1 ) {
+            back = bound;
+            front = bound;
+        }
+
+        length -= 1;
+
+        oldTop->child = oldTop; // added in case Jlist nodes hang around after this
+        oldTop->parent = oldTop;
+
+        t = oldTop->node;
     }
-
-    std::shared_ptr<JListNode> oldTop = front;
-    if( length > 1 ) {
-        front->child->parent = front->parent;
-        front = front->child;
-    } else if( length == 1 ) {
-        back = bound;
-        front = bound;
-    }
-
-    length -= 1;
-
-    oldTop->child = oldTop; // added in case Jlist nodes hang around after this
-    oldTop->parent = oldTop;
-
-    t = oldTop->node;
 }
 
 void JList::JlistPop( std::shared_ptr<Edge> &e )
@@ -142,23 +160,23 @@ void JList::JlistPop( std::shared_ptr<Edge> &e )
     if( length == 0 ) {
         // Jlist is empty
         e->dist = -1;
+    } else {
+        std::shared_ptr<JListNode> oldTop = front;
+        if( length > 1 ) {
+            front->child->parent = front->parent;
+            front = front->child;
+        } else if( length == 1 ) {
+            back = bound;
+            front = bound;
+        }
+
+        length -= 1;
+
+        oldTop->child = oldTop; // added in case Jlist nodes hang around after this
+        oldTop->parent = oldTop;
+
+        e = oldTop->edge;
     }
-
-    std::shared_ptr<JListNode> oldTop = front;
-    if( length > 1 ) {
-        front->child->parent = front->parent;
-        front = front->child;
-    } else if( length == 1 ) {
-        back = bound;
-        front = bound;
-    }
-
-    length -= 1;
-
-    oldTop->child = oldTop; // added in case Jlist nodes hang around after this
-    oldTop->parent = oldTop;
-
-    e = oldTop->edge;
 }
 
 void JList::JlistPopKey( std::shared_ptr<KDTreeNode> &n,
@@ -166,26 +184,26 @@ void JList::JlistPopKey( std::shared_ptr<KDTreeNode> &n,
 {
     if( length == 0 ) {
         // Jlist is empty
-        *n = KDTreeNode();
+        n = std::make_shared<KDTreeNode>();
         *k = -1.0;
+    } else {
+        std::shared_ptr<JListNode> oldTop = front;
+        if( length > 1 ) {
+            front->child->parent = front->parent;
+            front = front->child;
+        } else if( length == 1 ) {
+            back = bound;
+            front = bound;
+        }
+
+        length -= 1;
+
+        oldTop->child = oldTop;
+        oldTop->parent = oldTop;
+
+        n = oldTop->node;
+        *k = oldTop->key;
     }
-
-    std::shared_ptr<JListNode> oldTop = front;
-    if( length > 1 ) {
-        front->child->parent = front->parent;
-        front = front->child;
-    } else if( length == 1 ) {
-        back = bound;
-        front = bound;
-    }
-
-    length -= 1;
-
-    oldTop->child = oldTop;
-    oldTop->parent = oldTop;
-
-    n = oldTop->node;
-    *k = oldTop->key;
 }
 
 void JList::JlistPopKey(std::shared_ptr<Edge> &e, std::shared_ptr<double> k)
@@ -194,24 +212,24 @@ void JList::JlistPopKey(std::shared_ptr<Edge> &e, std::shared_ptr<double> k)
         // Jlist is empty
         e->dist = -1;
         *k = -1.0;
+    } else {
+        std::shared_ptr<JListNode> oldTop = front;
+        if( length > 1 ) {
+            front->child->parent = front->parent;
+            front = front->child;
+        } else if( length == 1 ) {
+            back = bound;
+            front = bound;
+        }
+
+        length -= 1;
+
+        oldTop->child = oldTop;
+        oldTop->parent = oldTop;
+
+        e = oldTop->edge;
+        *k = oldTop->key;
     }
-
-    std::shared_ptr<JListNode> oldTop = front;
-    if( length > 1 ) {
-        front->child->parent = front->parent;
-        front = front->child;
-    } else if( length == 1 ) {
-        back = bound;
-        front = bound;
-    }
-
-    length -= 1;
-
-    oldTop->child = oldTop;
-    oldTop->parent = oldTop;
-
-    e = oldTop->edge;
-    *k = oldTop->key;
 }
 
 // Removes node from the list

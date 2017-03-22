@@ -10,16 +10,11 @@
 
 #include <DRRT/kdtreenode.h> // PI defined here
 
-// Infinity value for distance
-#define INF 1000000000000
-#define MAXPATHNODES 100000
-#define DELTA 10 // should be changed if delta is changed in executable
-
 class CSpace;
 class KDTree;
 
 // Edge for a Dubin's state space
-class Edge{
+class Edge: public std::enable_shared_from_this<Edge> {
 public:
     std::shared_ptr<CSpace> cspace;
     std::shared_ptr<KDTree> tree;
@@ -58,14 +53,14 @@ public:
                      // only used if time is part of the state space
 
     // Constructor
-    Edge() : dist(-1) { trajectory.resize(MAXPATHNODES,3); }
+    Edge() : dist(-1) { trajectory = Eigen::MatrixXd::Zero(MAXPATHNODES,3); }
     Edge(std::shared_ptr<CSpace> &CS,
          std::shared_ptr<KDTree> &T,
          std::shared_ptr<KDTreeNode> &s,
          std::shared_ptr<KDTreeNode> &e)
         : cspace(CS), tree(T), startNode(s), endNode(e)
     {
-        trajectory.resize(MAXPATHNODES,3);
+        trajectory = Eigen::MatrixXd::Zero(MAXPATHNODES,3);
     }
 
 
@@ -127,10 +122,12 @@ public:
                          double delta,
                          double dist);
 
+    std::shared_ptr<Edge> getPointer() { return shared_from_this(); }
+
     // Returns true if the dynamics of the robot in the space will
     // allow a robot to follow the edge
     // Dubin's edge version
-    virtual bool validMove()=0;
+    virtual bool ValidMove()=0;
 
     /* Returns the pose of a robot that is located dist along the edge
      * Note that 'dist' and 'far' are with respect to whatever type of
@@ -162,7 +159,7 @@ public:
     // Checks if the edge is in collision with a particular obstacle
     // Returns true if in collision
     // Dubin's edge version
-    //virtual bool explicitEdgeCheck( std::shared_ptr<CSpace> S, std::shared_ptr<Edge> edge, Obstacle* obstacle );
+    virtual bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)=0;
 
 };
 

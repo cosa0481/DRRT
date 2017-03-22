@@ -31,7 +31,6 @@ public:
     bool move_robot_flag;               // true -> drive robot
     Eigen::VectorXi wraps;              // wrapping dimensions (0=1st)
     Eigen::VectorXd wrap_points;        // points at which they wrap
-    double(*distance_function)(Eigen::VectorXd a,Eigen::VectorXd b);
 
     // Constructor
     Problem(std::string se_t,
@@ -44,8 +43,7 @@ public:
             double g_t,
             bool m_r_f,
             Eigen::VectorXi w,
-            Eigen::VectorXd w_p,
-            double(*d_f)(Eigen::VectorXd a,Eigen::VectorXd b))
+            Eigen::VectorXd w_p)
         :   search_type(se_t),
             c_space(c_s),
             planning_only_time(p_o_t),
@@ -56,8 +54,7 @@ public:
             goal_threshold(g_t),
             move_robot_flag(m_r_f),
             wraps(w),
-            wrap_points(w_p),
-            distance_function(d_f)
+            wrap_points(w_p)
     {}
 };
 
@@ -146,18 +143,11 @@ std::shared_ptr<KDTreeNode> randNodeOrFromStack(std::shared_ptr<CSpace> &S);
 std::shared_ptr<KDTreeNode> randNodeInTimeOrFromStack(
         std::shared_ptr<CSpace> S);
 
-// Returns random point from within the obstacle -collision-
-//std::shared_ptr<KDTreeNode> randomSampleObs( CSpace S, std::shared_ptr<KDTree> KD, Obstacle* O );
-
-// Adds obstacle to the C-Space -collision-
-//void addObsToCSpace( CSpace C, Obstacle* O );
-
-// Makes sure that node can, in fact, reach all neighbors
-// Returns true if there is an edge problem
-// (used for error checking) -collision-
-// MISSING IMPLEMENTATION OF EXPLICITEDGECHECK(CSpace,KDTreeNode,KDTreeNode)
-bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace> S,
-                                   std::shared_ptr<KDTreeNode> thisNode);
+// Returns random point from within the obstacle to the CSpace
+// sampleStack (resides after QuickCheck2D in drrt.cpp so this can use it)
+void RandomSampleObs(std::shared_ptr<CSpace> &S,
+                     std::shared_ptr<KDTree> Tree,
+                     std::shared_ptr<Obstacle> &O);
 
 
 /////////////////////// Geometric Functions ///////////////////////
@@ -165,31 +155,110 @@ bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace> S,
 
 // Returns the min distance squared between the point and the segment
 // [startPoint, endPoint] assumes a 2D space
-double distanceSqrdPointToSegment(Eigen::VectorXd point,
-                                  Eigen::VectorXd startPoint,
-                                  Eigen::VectorXd endPoint);
+double DistanceSqrdPointToSegment(Eigen::VectorXd point,
+                                  Eigen::Vector2d startPoint,
+                                  Eigen::Vector2d endPoint);
 
-// All intput args represent points, this returns the minimum distance
+// This returns the distance of the closest point on the boundary
+// of the polygon to the point (assumes 2D space)
+double DistToPolygonSqrd(Eigen::VectorXd point, Eigen::MatrixX2d polygon);
+
+// All input args represent points, this returns the minimum distance
 // between line segments [PA PB] and [QA QB] and assumes 2D space
-double segmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
+double SegmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
                        Eigen::VectorXd QA, Eigen::VectorXd QB);
+
+// Finds the transform of polygon to the approperiate position at
+// the time of the point, based on the obstacle's path through time
+// (Assumes obstacle type 6)
+Eigen::Vector2d FindTransformObjToTimeOfPoint(std::shared_ptr<Obstacle> O,
+                                              Eigen::Vector3d point);
+
+// Returns true if the point is in the polygon (open set of it anyway)
+// each row in polygon is a vertex and subsequent vertices define edges
+// Top and bottom rows of polygon also form an edge
+// Polygon does not have to be convex but should be simple
+bool PointInPolygon(Eigen::VectorXd this_point, Eigen::MatrixX2d polygon);
 
 // Returns the index of the first time coordinate (3rd dimension) smaller
 // than the time
 // TODO: replace with binary search
-int findIndexBeforeTime(Eigen::MatrixXd path, double timeToFind);
+int FindIndexBeforeTime(Eigen::MatrixXd path, double timeToFind);
 
 
 /////////////////////// Collision Checking Functions ///////////////////////
 // Collision checking, etc. This includus certificate stuff that is currently
 // unused, but could be added later with little difficulty
 
+// This returns a -rangeList- (see KDTree code) containing all points
+// that are in conflict with the obstacle. Note that rangeList must
+// be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
+std::shared_ptr<JList> FindPointsInConflictWithObstacle(
+        std::shared_ptr<CSpace> &S,
+        std::shared_ptr<KDTree> Tree,
+        std::shared_ptr<Obstacle> &O,
+        std::shared_ptr<KDTreeNode> &root);
+
+// This adds the obstacle (checks for edge conflicts with the obstactle
+// and then puts the affected nodes into the appropriate heaps -collision-
+void AddNewObstacle(std::shared_ptr<KDTree> Tree,
+                    std::shared_ptr<Queue> &queue,
+                    std::shared_ptr<Obstacle>& O,
+                    std::shared_ptr<KDTreeNode> root);
+
+// This removes the obstacle (checks for edge conflicts with the obstacle
+// and then puts the affected nodes into the appropriate heaps)
+void RemoveObstacle(std::shared_ptr<KDTree> Tree,
+                    std::shared_ptr<Queue>& Q,
+                    std::shared_ptr<Obstacle>& O,
+                    std::shared_ptr<KDTreeNode> root,
+                    double hyper_ball_rad, double time_elapsed,
+                    std::shared_ptr<KDTreeNode>& move_goal );
+
+// Checks all nodes in the heap to see if there are edge problems -collision-
+// Returns true if there are edge problems
+bool checkHeapForEdgeProblems(std::shared_ptr<Queue> &Q,
+                              std::shared_ptr<KDTree> Tree);
+
+// Makes sure that node can, in fact, reach all neighbors
+// Returns true if there is an edge problem
+// (used for error checking) -collision-
+bool checkNeighborsForEdgeProblems(std::shared_ptr<CSpace>& S,
+                                   std::shared_ptr<KDTreeNode> thisNode,
+                                   std::shared_ptr<KDTree> Tree);
+
+// Checks if the edge between the points is in collision with the obstacle
+// (the point is closer than robot radius to the edge)
+bool ExplicitEdgeCheck2D(std::shared_ptr<Obstacle> &O,
+                         Eigen::VectorXd start_point,
+                         Eigen::VectorXd end_point,
+                         double radius);
+
 // Checks if the edge is in collision with any obstacles in the C-space
 // Returns true if there the edge is in collision
-// MISSING IMPLEMENTATION OF EXPLICITEDGECHECK(CSpace,KDTreeNode,KDTreeNode)
-bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
-                       std::shared_ptr<Edge> edge);
+bool ExplicitEdgeCheck(std::shared_ptr<CSpace> &S,
+                       std::shared_ptr<Edge> &edge);
 
+bool QuickCheck2D(std::shared_ptr<Obstacle> &O, Eigen::Vector2d point,
+                  std::shared_ptr<CSpace> &C);
+
+bool QuickCheck(std::shared_ptr<CSpace> &C, Eigen::Vector2d point);
+
+
+bool ExplicitPointCheck2D(std::shared_ptr<CSpace> &C,
+                          std::shared_ptr<Obstacle> &O,
+                          Eigen::VectorXd point,
+                          double radius);
+
+bool ExplicitPointCheck(std::shared_ptr<Queue>& Q, Eigen::VectorXd point);
+
+bool ExplicitNodeCheck(std::shared_ptr<Queue>& Q,
+                       std::shared_ptr<KDTreeNode> node);
+
+bool LineCheck(std::shared_ptr<CSpace> S,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2);
 
 /////////////////////// RRT Functions ///////////////////////
 // Functions used for RRT. Some of these are also used in RRT*
@@ -197,7 +266,7 @@ bool explicitEdgeCheck(std::shared_ptr<CSpace> S,
 
 // Takes care of inserting a new node in RRT
 // Returns true if successful
-bool extend(std::shared_ptr<KDTree> &Tree,
+bool Extend(std::shared_ptr<KDTree> &Tree,
             std::shared_ptr<Queue> &Q,
             std::shared_ptr<KDTreeNode> &newNode,
             std::shared_ptr<KDTreeNode> &closest_node,
@@ -223,32 +292,12 @@ void findBestParent(std::shared_ptr<CSpace> &S,
                     std::shared_ptr<KDTreeNode> &closestNode,
                     bool saveAllEdges );
 
-// Takes care of inserting a new node in RRT*
-// Uses above implementation of extend with Q = rrtStarQueue
-
 
 /////////////////////// RRT# Functions ///////////////////////
 // Functions used for RRT#. Some of these are also used in RRTx
-// This includes priority heap related key functions **(these are in heap.h)** etc.
-
-// Checks all nodes in the heap to see if there are edge problems -collision-
-// Returns true if there are edge problems
-bool checkHeapForEdgeProblems(std::shared_ptr<Queue> &Q);
 
 // Resets the neighbor iterator
 void resetNeighborIterator(std::shared_ptr<RRTNodeNeighborIterator> &It);
-
-// Returns the JListNode containing the next neighbor of the node
-// for which this iterator was created
-//std::shared_ptr<JListNode> nextOutNeighbor(
-//        std::shared_ptr<RRTNodeNeighborIterator> It,
-//        std::shared_ptr<Queue> Q);
-
-// Returns the JListNode containing the next neighbor of the node
-// for which this iterator was created
-//std::shared_ptr<JListNode> nextInNeighbor(
-//        std::shared_ptr<RRTNodeNeighborIterator> It,
-//        std::shared_ptr<Queue> Q);
 
 // Links an edge -from- node -to- newNeighbor
 // Edge should already be populated correctly.
@@ -273,23 +322,12 @@ void makeInitialInNeighborOf(std::shared_ptr<KDTreeNode> &newNeighbor,
                              std::shared_ptr<KDTreeNode> &node,
                              std::shared_ptr<Edge> &edge);
 
-// Recalculates LMC based on neighbors that this node can reach
-// Note the first argument in unused but necessary for the multiple
-// dispatch that is used to differentiate between RRT* and RRT#
-// Returns true if successful
-//bool recalculateLMC(std::shared_ptr<Queue> Q,
-//                    std::shared_ptr<KDTreeNode> node,
-//                    std::shared_ptr<KDTreeNode> root);
-
 // Updates the priority queue (adds node if necessary, does not if not)
 // Returns true if node is added
 void updateQueue(std::shared_ptr<Queue> &Q,
                  std::shared_ptr<KDTreeNode> &newNode,
                  std::shared_ptr<KDTreeNode> &root,
                  double hyperBallRad);
-
-// Takes care of inserting a new node in RRT#
-// Uses above implementation of extend with Q = rrtSharpQueue
 
 // Propogates cost information through the graph
 void reduceInconsistency(std::shared_ptr<Queue> &Q,
@@ -358,15 +396,12 @@ bool rewire( std::shared_ptr<Queue> &Q,
              double hyperBallRad,
              double changeThresh);
 
-// Propogates cost information through the graph
-// Uses above implementation with Q = rrtXQueue
-
 // Propogates orphan status to all nodes in the basin(s) of attraction
 // of the nodes in Q.OS stack (that have higher cost). This also takes
 // the robot to remember if node the robot was moving at is one of the
 // nodes that has become an orphan. Returns true if successful.
 bool propogateDescendants(std::shared_ptr<Queue> &Q,
-                          std::shared_ptr<KDTree> &Tree,
+                          std::shared_ptr<KDTree> Tree,
                           std::shared_ptr<RobotData> &R);
 
 /* If C-Space has a time dimension, add a sequence of descendents
@@ -397,46 +432,11 @@ void findNewTarget(std::shared_ptr<CSpace> &S,
  * has lost connectivity with the graph due to dynamic obstacles breaking
  * the first edge of its path
  */
-void moveRobot(std::shared_ptr<Queue> &Q,
+void MoveRobot(std::shared_ptr<Queue> &Q,
                std::shared_ptr<KDTree> &Tree,
                std::shared_ptr<KDTreeNode> &root,
                double slice_time,
                double hyperBallRad,
                std::shared_ptr<RobotData> &R);
-
-// This returns a -rangeList- (see KDTree code) containing all points
-// that are in conflict with the obstacle. Note that rangeList must
-// be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
-/*std::shared_ptr<JList> findPointsInConflictWithObstacle( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree,
-                                         Obstacle* O, std::shared_ptr<KDTreeNode> root );*/
-
-// This adds the obstacle (checks for edge conflicts with the obstactle
-// and then puts the affected nodes into the appropriate heaps -collision-
-/*void addNewObstacle( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q, Obstacle* O,
-                     std::shared_ptr<KDTreeNode> root, int fileCounter, RobotData* R );*/
-
-// This removes the obstacle (checks for edge conflicts with the obstacle
-// and then puts the affected nodes into the appropriate heaps)
-/*void removeObstacle( std::shared_ptr<CSpace> S, std::shared_ptr<KDTree> Tree, std::shared_ptr<Queue> Q, Obstacle* O,
-                     std::shared_ptr<KDTreeNode> root, double hyperBallRad,
-                     double timeElapsed, std::shared_ptr<KDTreeNode> moveGoal );*/
-
-
-/////////////////////// main (despite the name) ///////////////////////
-// The following now calls RRT, RRT*, RRT#, and RRTx.
-// Behaviour is determined by parameters passed in, note that RRT# vs
-// (RRT* and RRT) helper functions above are called correctly using
-// Julia's multiple dispatch, where the ype of the queue being used is
-// different for each algorithm
-
-// S is the CSpace, the algorithm runs until either N nodes have been
-// sampled or TimeOut seconds pass, delta is the saturation distance,
-// ballConstant is the ball constant
-//void RRTX(std::shared_ptr<CSpace> S, double total_planning_time,
-//          double slice_time, double delta, double ballConstant,
-//          double changeThresh, std::string searchType, bool MoveRobotFlag,
-//          double(*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b),
-//          double goal_threshold
-//           /* "statsArgs..." ???*/);
 
 #endif // DRRT_H

@@ -55,8 +55,8 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 
     /// KD-Tree
     shared_ptr<KDTree> kd_tree
-            = make_shared<KDTree>(p.c_space->d,p.wraps,p.wrap_points);
-    kd_tree->setDistanceFunction(p.distance_function);
+            = make_shared<KDTree>(Q->S->d,p.wraps,p.wrap_points);
+    kd_tree->setDistanceFunction(Q->S->distanceFunction);
 
     shared_ptr<KDTreeNode> root = make_shared<KDTreeNode>(Q->S->start);
     //explicitNodeCheck(S,root);
@@ -85,7 +85,8 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    shared_ptr<thread> vis_thread = make_shared<thread>(visualizer,kd_tree,robot);
+    shared_ptr<thread> vis_thread
+            = make_shared<thread>(visualizer,kd_tree,robot,Q);
     vis = vis_thread;
 
     /// End Initialization
@@ -137,7 +138,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             /// Move robot
             if(Q->S->timeElapsed > p.planning_only_time + p.slice_time) {
                 if(p.move_robot_flag) {
-                    moveRobot(Q,kd_tree,root,
+                    MoveRobot(Q,kd_tree,root,
                               p.slice_time,hyper_ball_rad,robot);
                     // Record data (robot path)
                     rHist.row(histPos++) = robot->robotPose;
@@ -192,7 +193,6 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 this_dist = kd_tree->distanceFunction(new_node->position,
                                                         closest_node->position);
                 if(this_dist > Q->S->delta && new_node != Q->S->goalNode) {
-
                     Edge::saturate(new_node->position, closest_node->position,
                                    Q->S->delta, this_dist);
                 }
@@ -203,7 +203,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 //if(explicitly_unsafe) continue;
 
                 /// Extend graph
-                if(extend(kd_tree,Q,new_node,closest_node,
+                if(Extend(kd_tree,Q,new_node,closest_node,
                           Q->S->delta,hyper_ball_rad,Q->S->moveGoal)) {
                     // Record data (kd-tree)
                     kdTree.row(kdTreePos++) = new_node->position;
@@ -258,7 +258,10 @@ int main()
 
     shared_ptr<CSpace> cspace
             = make_shared<CSpace>(dims,lbound,ubound,start,goal);
+    cspace->setDistanceFunction(distance_function);
 
+    cspace->obs_delta_ = -1.0;
+    cspace->collision_distance_ = 0.1;   // distance for collision
     cspace->robotRadius = 0.5;
     cspace->robotVelocity = 10.0;
     cspace->minTurningRadius = 1.0;
@@ -286,8 +289,7 @@ int main()
     // Create a new problem for RRTx
     Problem problem = Problem(alg_name, cspace, plan_time, slice_time, delta,
                               ball_const, change_thresh, goal_thresh,
-                              move_robot, wrap_vec, wrap_points_vec,
-                              distance_function);
+                              move_robot, wrap_vec, wrap_points_vec);
 
     // Visualizer thread to join
     shared_ptr<thread> visualizer_thread;

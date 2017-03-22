@@ -5,104 +5,109 @@
 
 #include <DRRT/list.h>
 
-void List::listPush( std::shared_ptr<KDTreeNode> tnode )
+using namespace std;
+
+void List::listPush(shared_ptr<Obstacle>& o)
 {
-    ListNode* newNode = new ListNode( tnode );
-    newNode->child = front;
-    front = newNode;
-    length += 1;
+    shared_ptr<ListNode> newNode = make_shared<ListNode>(o);
+    newNode->child_ = front_;
+    front_ = newNode;
+    length_ += 1;
 }
 
-void List::listPush( std::shared_ptr<KDTreeNode> tnode, double key )
+void List::listPush(shared_ptr<Obstacle>& o, double k)
 {
-    ListNode* newNode = new ListNode( tnode );
-    newNode->child = front;
-    newNode->key = key;
-    front = newNode;
-    length += 1;
+    shared_ptr<ListNode> newNode = make_shared<ListNode>(o);
+    newNode->child_ = front_;
+    newNode->key_ = k;
+    front_ = newNode;
+    length_ += 1;
 }
 
-std::shared_ptr<KDTreeNode> List::listTop()
+void List::listTop(shared_ptr<Obstacle>& o)
 {
-    if( front == front->child ) {
+    if( front_ == front_->child_ ) {
         // List is empty
-        return std::make_shared<KDTreeNode>(-1);
+        o = make_shared<Obstacle>(-1);
     }
-    return front->tnode;
+    o = front_->obstacle_;
 }
 
-void List::listTopKey( std::shared_ptr<KDTreeNode> n, double* k )
+void List::listTopKey(shared_ptr<Obstacle>& o, double* k)
 {
-    if( front == front->child ) {
+    if( front_ == front_->child_ ) {
         // List is empty
-        n = std::make_shared<KDTreeNode>(-1);
+        o = make_shared<Obstacle>(-1);
         *k = -1;
     }
-    n = front->tnode;
-    *k = front->key;
+    o = front_->obstacle_;
+    *k = front_->key_;
 }
 
-std::shared_ptr<KDTreeNode> List::listPop()
+void List::listPop(shared_ptr<Obstacle>& o)
 {
-    if( front == front->child ) {
+    if( front_ == front_->child_ ) {
         // List is empty
-        return std::make_shared<KDTreeNode>(-1);
+        o = make_shared<Obstacle>(-1);
     }
-    ListNode* oldTop = front;
-    front = front->child;
-    length -= 1;
-    return oldTop->tnode;
+    shared_ptr<ListNode> oldTop = front_;
+    front_ = front_->child_;
+    length_ -= 1;
+    o = oldTop->obstacle_;
 }
 
-void List::listPopKey( std::shared_ptr<KDTreeNode> n, double* k )
+void List::listPopKey(shared_ptr<Obstacle>& o, double* k)
 {
-    if( front == front->child ) {
+    if( front_ == front_->child_ ) {
         // List is empty
-        n = std::make_shared<KDTreeNode>(-1);
+        o = make_shared<Obstacle>(-1);
         *k = -1;
     }
-    ListNode* oldTop = front;
-    front = front->child;
-    length -= 1;
-    n = oldTop->tnode;
-    k = &oldTop->key;
+    shared_ptr<ListNode> oldTop = front_;
+    front_ = front_->child_;
+    length_ -= 1;
+    o = oldTop->obstacle_;
+    k = &oldTop->key_;
 }
 
 void List::listEmpty()
 {
-    while( listPop()->dist != -1 );
+    shared_ptr<Obstacle> temp = make_shared<Obstacle>(-1);
+    listPop(temp);
+    while( temp->kind_ != -1 ) listPop(temp);
 }
 
 void List::listPrint()
 {
-    ListNode* ptr = front;
-    while( ptr != ptr->child ) {
-        std::cout << ptr->tnode->dist << std::endl;
-        ptr = ptr->child;
+    cout << "Printing Obstacles:" << endl;
+    shared_ptr<ListNode> ptr = front_;
+    while( ptr != ptr->child_ ) {
+        cout << ptr->obstacle_->kind_ << endl;
+        ptr = ptr->child_;
     }
 }
 
-List List::listCopy( ListNode* example )
+shared_ptr<List> List::listCopy(shared_ptr<ListNode> example)
 {
-    List newList = List();
-    ListNode* ptr = front;
-    ListNode* newfront = new ListNode( example->tnode );
-    newList.front = newfront;
-    ListNode* new_ptr = newList.front;
+    shared_ptr<List> newList = make_shared<List>();
+    shared_ptr<ListNode> ptr = front_;
+    shared_ptr<ListNode> newfront_ = make_shared<ListNode>( example->obstacle_ );
+    newList->front_ = newfront_;
+    shared_ptr<ListNode> new_ptr = newList->front_;
 
-    while( ptr != ptr->child ) {
-        ListNode* newNode = new ListNode( example->tnode );
-        new_ptr->child = newNode;
-        new_ptr->tnode = ptr->tnode;
-        new_ptr->key = ptr->key;
+    while( ptr != ptr->child_ ) {
+        shared_ptr<ListNode> newNode = make_shared<ListNode>( example->obstacle_ );
+        new_ptr->child_ = newNode;
+        new_ptr->obstacle_ = ptr->obstacle_;
+        new_ptr->key_ = ptr->key_;
 
-        new_ptr = new_ptr->child;
-        ptr = ptr->child;
+        new_ptr = new_ptr->child_;
+        ptr = ptr->child_;
     }
-    new_ptr->child = new_ptr;
-    new_ptr->tnode = ptr->tnode;
-    new_ptr->key = ptr->key;
-    newList.length = length;
+    new_ptr->child_ = new_ptr;
+    new_ptr->obstacle_ = ptr->obstacle_;
+    new_ptr->key_ = ptr->key_;
+    newList->length_ = length_;
 
     return newList;
 }
@@ -112,43 +117,43 @@ int main()
 {
     List L = List();
 
-    std::shared_ptr<KDTreeNode> a = new KDTreeNode(1);
-    std::shared_ptr<KDTreeNode> b = new KDTreeNode(2);
-    std::shared_ptr<KDTreeNode> c = new KDTreeNode(3);
+    shared_ptr<Obstacle> a = new Obstacle(1);
+    shared_ptr<Obstacle> b = new Obstacle(2);
+    shared_ptr<Obstacle> c = new Obstacle(3);
 
     L.listPush(a,1);
     L.listPush(b,2);
     L.listPush(c,3);
 
     L.listPrint();
-    std::cout << "list printed" << std::endl;
+    cout << "list printed" << endl;
 
     L.listEmpty();
-    std::cout << "list emptied" << std::endl;
+    cout << "list emptied" << endl;
 
     L.listPrint();
-    std::cout << "list printed" << std::endl;
+    cout << "list printed" << endl;
 
     L.listPush(a,1);
     L.listPush(b,2);
 
     L.listPrint();
-    std::cout << "list printed" << std::endl;
+    cout << "list printed" << endl;
 
-    std::cout << "-- copy:" << std::endl;
-    List L2 = L.listCopy( L.front );
+    cout << "-- copy:" << endl;
+    List L2 = L.listCopy( L.front_ );
     L2.listPrint();
 
-    std::cout << "-- original:" << std::endl;
+    cout << "-- original:" << endl;
     L.listPrint();
 
-    std::cout << "L.length =?= L2.length" << " : " << L.length << " =?= " << L2.length << std::endl;
+    cout << "L.length_ =?= L2.length_" << " : " << L.length_ << " =?= " << L2.length_ << endl;
 
     L.listPush(c,3);
     L2.listPush(c,3);
     L.listPrint();
-    std::cout << "list printed" << std::endl;
+    cout << "list printed" << endl;
     L2.listPrint();
-    std::cout << "list2 printed" << std::endl;
-    std::cout << "L.length =?= L2.length" << " : " << L.length << " =?= " << L2.length << std::endl;
+    cout << "list2 printed" << endl;
+    cout << "L.length_ =?= L2.length_" << " : " << L.length_ << " =?= " << L2.length_ << endl;
 }*/

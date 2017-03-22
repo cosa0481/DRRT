@@ -1,5 +1,7 @@
 #include <DRRT/dubinsedge.h>
-#include <DRRT/kdtree.h>
+#include <DRRT/drrt.h>
+
+using namespace std;
 
 /////////////////////// Critical Functions ///////////////////////
 
@@ -18,46 +20,50 @@ void Edge::saturate(Eigen::VectorXd& nP,
                     double delta,
                     double dist)
 {
-    if( nP.cols() == 3 ) {
-        // First scale non-theta dimensions
-        nP.head(2) = cP.head(2) +
-                ( nP.head(2) - cP.head(2) ) * delta / dist;
+    // First scale non-theta dimensions
+    nP.head(2) = cP.head(2) +
+            ( nP.head(2) - cP.head(2) ) * delta / dist;
 
-        // Saturate theta in the shorter of the
-        // two directions that it can go
-        if( std::abs( nP(2) - cP(2) ) < PI ) {
-            // Saturate in the normal way
-            nP(2) = cP(2) +
-                    (nP(2) - cP(2)) * delta / dist;
-        } else {
-            // Saturate in the opposite way
-            if( nP(2) < PI ) {
-                nP(2) = nP(2) + 2*PI;
-            } else {
-                nP(2) = nP(2) - 2*PI;
-            }
+    while(nP(2) < -2*PI) nP(2) += 2*PI;
+    while(nP(2) > 2*PI) nP(2) -= 2*PI;
 
-            // Now saturate
-            nP(2) = cP(2) +
-                    (nP(2) - cP(2)) * delta / dist;
+    ///std::cout << "modded theta: " << nP(2) << std::endl;
 
-            // Finally, wrap back to the identity that is on [0 2pi]
-            // Is this really wrapping?
+//    // Saturate theta in the shorter of the
+//    // two directions that it can go
+//    if( std::abs( nP(2) - cP(2) ) < PI ) {
+//        // Saturate in the normal way
+//        nP(2) = cP(2) +
+//                (nP(2) - cP(2)) * delta / dist;
+//    } else {
+//        // Saturate in the opposite way
+//        if( nP(2) < PI ) {
+//            nP(2) = nP(2) + 2*PI;
+//        } else {
+//            nP(2) = nP(2) - 2*PI;
+//        }
 
-            Eigen::Vector2d minVec;
-            minVec(0) = nP(3);
-            minVec(1) = 2*PI;
-            Eigen::Vector2d maxVec;
-            maxVec(0) = minVec.minCoeff();
-            maxVec(1) = 0.0;
+//        // Now saturate
+//        nP(2) = cP(2) +
+//                (nP(2) - cP(2)) * delta / dist;
 
-            nP(2) = maxVec.maxCoeff();
-        }
-    }
+//        // Finally, wrap back to the identity that is on [0 2pi]
+//        // Is this really wrapping?
+
+//        Eigen::Vector2d minVec;
+//        minVec(0) = nP(2);
+//        minVec(1) = 2*PI;
+//        Eigen::Vector2d maxVec;
+//        maxVec(0) = minVec.minCoeff();
+//        maxVec(1) = 0.0;
+
+//        nP(2) = maxVec.maxCoeff();
+//        std::cout << "Saturated theta: " << nP(2) << std::endl;
+//    }
 }
 
 /////////////////////// Virtual Edge Functions ///////////////////////
-bool DubinsEdge::validMove()
+bool DubinsEdge::ValidMove()
 {
     if( this->cspace->spaceHasTime ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
@@ -78,7 +84,8 @@ Eigen::VectorXd DubinsEdge::poseAtDistAlongEdge(double distAlongEdge)
         return this->endNode->position;
     }
 
-    // Find the piece of trajectory that contains the point at the desired distance
+    // Find the piece of trajectory that contains the point
+    // at the desired distance
     int i = 1;
     double thisDist = INF;
     bool timeInPath = this->trajectory.cols() > 3;
@@ -721,7 +728,7 @@ void DubinsEdge::calculateTrajectory()
          * trajectory is determined by the difference in time positions
          * of the end points. ALSO NOTE: This function is not responsible
          * for determining if it is possible for the robot to actually
-         * achieve this speed -- which is done in the function validMove().
+         * achieve this speed -- which is done in the function ValidMove().
          * FINALLY, we allso assume that the trajectory is sampled well
          * enough in "curvy" parts that the distance between points can
          * be approximated by the straight line distance between these
@@ -820,4 +827,64 @@ void DubinsEdge::calculateHoverTrajectory()
 
 /////////////////////// Collision Checking Functions ///////////////////////
 
-//bool Edge::explicitEdgeCheck( std::shared_ptr<CSpace> S, Obstacle* obstacle ){}
+bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
+{
+    // We know that all points in the Dubin's trajectory are within
+    // r*S->minTurningRadius of the 2D segment from startNode to endNode
+    // Thus, the edge is safe if a robot with this additional radius can
+    // traverse that segment
+    if(!ExplicitEdgeCheck2D(obstacle,
+                            this->startNode->position,
+                            this->endNode->position,
+                            this->cspace->robotRadius
+                            + 2*this->cspace->minTurningRadius)) {
+//        std::cout << "Returning false" << std::endl;
+        return false;
+    }
+
+//    std::cout << "robot cannot traverse edge:\n" << this->startNode->position
+//              << std::endl << "--" << std::endl << this->startNode->position << std::endl;
+
+    // If the segment was in conflict then we need to do the full check
+    // check of the trajectory segments
+    // Could be improved using a function that can check arcs of the
+    // Dubin's path at once instead of just line segments stored in trajectory
+//    std::chrono::time_point<std::chrono::high_resolution_clock> startTime
+//            = std::chrono::high_resolution_clock::now();
+    //double time_start = getTimeNs(startTime);
+    //double time_end;
+    int count = 0;
+    for(int i = 1; i < this->trajectory.rows(); i++) {
+        if((this->trajectory.row(i)(0) > 0.001 || this->trajectory.row(i)(1) > 0.001
+            || this->trajectory.row(i)(0) < -0.001 || this->trajectory.row(i)(1) < -0.001)
+                && (this->trajectory.row(i-1)(0) != this->trajectory.row(i)(0)
+                || this->trajectory.row(i-1)(1) != this->trajectory.row(i)(1))) {
+//            std::cout << "row: " << i+1 << std::endl;
+            count++;
+            if(ExplicitEdgeCheck2D(obstacle,
+                                   this->trajectory.row(i-1),
+                                   this->trajectory.row(i),
+                                   this->cspace->robotRadius)) {
+//                std::cout << "specifically edge segment:" << endl;
+//                std::cout << "trajectory.row("<<i<<"):\n" << this->trajectory.row(i) << std::endl;
+//                std::cout << "trajectory.row("<<i-1<<"):\n" << this->trajectory.row(i-1) << std::endl;
+                //time_end = getTimeNs(startTime);
+//                if(true) std::cout << "Check path: " << count << ": "
+//                                   << (time_end-time_start)/MICROSECOND
+//                                   << std::endl;
+//                std::cout << "Obstacle:\n" << obstacle->position_ << std::endl
+//                          << "with radius: " << obstacle->radius_ << std::endl
+//                          << "in collision with this edge:\n"
+//                     << this->startNode->position << "\n--\n"
+//                     << this->endNode->position << std::endl;
+                std::shared_ptr<Edge> this_edge = this->getPointer();
+                this->cspace->AddVizEdge(this_edge);
+                return true;
+            }
+        }
+    }
+    //time_end = getTimeNs(startTime);
+//    if(true) std::cout << "Check path: " << count << ": "
+//                       << (time_end-time_start)/MICROSECOND << " ms" << std::endl;
+    return false;
+}

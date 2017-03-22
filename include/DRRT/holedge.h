@@ -22,11 +22,12 @@ public:
             std::shared_ptr<KDTreeNode> end)
         : Edge(cspace,tree,start,end) {}
 
-    bool validMove();
+    bool ValidMove();
     Eigen::VectorXd poseAtDistAlongEdge(double distAlongEdge);
     Eigen::VectorXd poseAtTimeAlongEdge(double timeAlongEdge);
     void calculateTrajectory();
     void calculateHoverTrajectory();
+    bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle);
 };
 
 #endif // HOLEDGE_H

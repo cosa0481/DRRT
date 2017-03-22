@@ -6,18 +6,7 @@
 #ifndef JLIST_H
 #define JLIST_H
 
-#include <vector>
-#include <string>
-#include <iostream>
-#include <math.h>
-#include <eigen3/Eigen/Eigen>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <cstdlib>
-#include <iomanip>
-#include <thread>
-#include <mutex>
+#include <DRRT/obstacle.h>
 
 class KDTreeNode;
 class Edge;
@@ -35,8 +24,8 @@ public:
 
     // Corstructor
     JListNode() : key(-1.0) {}
-    JListNode(std::shared_ptr<KDTreeNode> t) : node(t) {}
-    JListNode(std::shared_ptr<Edge> e) : edge(e) {}
+    JListNode(std::shared_ptr<KDTreeNode> &t) : node(t) {}
+    JListNode(std::shared_ptr<Edge> &e) : edge(e) {}
 };
 
 // A simple JList
@@ -64,6 +53,8 @@ public:
     }
 
     // Functions
+    bool JlistContains(std::shared_ptr<KDTreeNode> &t,
+                       std::shared_ptr<JListNode> &i);
     void JlistPush( std::shared_ptr<KDTreeNode> &t );
     void JlistPush( std::shared_ptr<Edge> &e );
     void JlistPush( std::shared_ptr<KDTreeNode> &t, double k );
@@ -78,7 +69,7 @@ public:
     void JlistPopKey(std::shared_ptr<KDTreeNode> &n,
                      std::shared_ptr<double> k);
     void JlistPopKey(std::shared_ptr<Edge> &e, std::shared_ptr<double> k);
-    bool JlistRemove(std::shared_ptr<JListNode> &node );
+    bool JlistRemove(std::shared_ptr<JListNode> &node);
     void JlistPrint();
     Eigen::Matrix<double, Eigen::Dynamic, 2> JlistAsMatrix();
     void JlistEmpty();
