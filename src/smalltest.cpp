@@ -86,11 +86,11 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         addOtherTimesToRoot(Q->S,kd_tree,goal,root,Q->type);
     }
 
-    /// Save the path to vector of anyangle path lines
-    /// Path in form b*y = a*x + c
+    // Store and print the path
+    // Path in form -b*y = a*x + c
     vector<Eigen::Vector3d> lines;
     double angle, x = 0, y = 0;
-    vector<Eigen::VectorXd> path = theta_star(Q);
+    vector<Eigen::VectorXd> path = ThetaStar(Q);
     path.push_back(Q->S->goal);
     robot->best_any_angle_path = path;
     cout << "Path: " << endl;

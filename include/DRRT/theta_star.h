@@ -3,18 +3,16 @@
 
 #include <DRRT/drrt.h>
 
-using namespace std;
+double DistFunc(Eigen::VectorXd a, Eigen::VectorXd b);
 
-double dist_func(Eigen::VectorXd a, Eigen::VectorXd b);
+std::vector<Eigen::VectorXd> ThetaStar(std::shared_ptr<Queue> queue);
 
-std::vector<Eigen::VectorXd> theta_star(std::shared_ptr<Queue> Q);
+bool UpdateVertex(std::shared_ptr<Queue> queue,
+                  std::shared_ptr<KDTree> tree,
+                  std::shared_ptr<KDTreeNode> &node,
+                  std::shared_ptr<KDTreeNode> &neighbor,
+                  std::shared_ptr<KDTreeNode> &min_neighbor);
 
-bool update_vertex(std::shared_ptr<Queue> Q,
-                   std::shared_ptr<KDTree> Tree,
-                   std::shared_ptr<KDTreeNode> &node,
-                   std::shared_ptr<KDTreeNode> &neighbor,
-                   shared_ptr<KDTreeNode> &min_neighbor);
-
-std::vector<Eigen::VectorXd> get_path(std::shared_ptr<KDTreeNode> &node);
+std::vector<Eigen::VectorXd> GetPath(std::shared_ptr<KDTreeNode> &node);
 
 #endif // THETA_STAR_H
