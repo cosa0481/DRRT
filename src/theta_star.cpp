@@ -35,6 +35,7 @@ vector<Eigen::VectorXd> theta_star(shared_ptr<Queue> Q)
     {
         lock_guard<mutex> lock(Q->S->cspace_mutex_);
         osnode = Q->S->obstacles->front_;
+        // below takes care of add loop in main
         osnode->obstacle_->obstacle_used_ = true;
         AddNewObstacle(Tree,Q,osnode->obstacle_,Tree->root);
     }

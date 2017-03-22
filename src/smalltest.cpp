@@ -136,7 +136,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     Eigen::Vector3d prev_pose;
     shared_ptr<Edge> prev_edge;
     shared_ptr<ListNode> list_item;
-    bool /*removed,*/ added;
+    bool removed, added;
     shared_ptr<Obstacle> obstacle;
 
     {
@@ -145,7 +145,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     }
 
     // For importance sampling
-    double f_uniform = 0.95;     // proportion to importance sample
+    double f_uniform = 0.9;     // proportion to importance sample
     double position_bias;       // cartesian bias
     double theta_bias = PI/10;  // orientation bias
 
@@ -173,59 +173,59 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         //Obstacle::UpdateObstacles(Q->S);
 
 
-//        // Remove obstacles
-//        {
-//            lock_guard<mutex> lock(Q->S->cspace_mutex_);
-//            list_item = Q->S->obstacles->front_;
-//        }
-//        removed = false;
-//        while(list_item != list_item->child_) {
-//            obstacle = list_item->obstacle_;
+        // Remove obstacles
+        {
+            lock_guard<mutex> lock(Q->S->cspace_mutex_);
+            list_item = Q->S->obstacles->front_;
+        }
+        removed = false;
+        while(list_item != list_item->child_) {
+            obstacle = list_item->obstacle_;
 
-//            if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
-//                    && (obstacle->start_time_ + obstacle->life_span_
-//                        <= Q->S->timeElapsed)) {
-//                // Time to remove obstacle
-//                cout << "time to remove" << endl;
-//                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
-//                               Q->S->timeElapsed,Q->S->moveGoal);
-//                removed = true;
-//            } else if(obstacle->sensible_obstacle_
-//                      && !obstacle->obstacle_used_after_sense_
-//                      && (Q->S->distanceFunction(prev_pose,
-//                                                 obstacle->position_)
-//                          < robot_sensor_range + obstacle->radius_)) {
-//                // Place to remove obstacle
-//                // The space that used to be in this obstacle was never
-//                // sampled so there will be a hole in the graph where it used
-//                // to be.
-//                // So require that the next few samples come from that space
-//                cout << "place to remove" << endl;
-//                RandomSampleObs(Q->S,kd_tree,obstacle);
-//                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
-//                               Q->S->timeElapsed,Q->S->moveGoal);
-//                obstacle->sensible_obstacle_ = false;
-//                obstacle->start_time_ = INF;
-//                removed = true;
+            if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
+                    && (obstacle->start_time_ + obstacle->life_span_
+                        <= Q->S->timeElapsed)) {
+                // Time to remove obstacle
+                cout << "time to remove" << endl;
+                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
+                               Q->S->timeElapsed,Q->S->moveGoal);
+                removed = true;
+            } else if(obstacle->sensible_obstacle_
+                      && !obstacle->obstacle_used_after_sense_
+                      && (Q->S->distanceFunction(prev_pose,
+                                                 obstacle->position_)
+                          < robot_sensor_range + obstacle->radius_)) {
+                // Place to remove obstacle
+                // The space that used to be in this obstacle was never
+                // sampled so there will be a hole in the graph where it used
+                // to be.
+                // So require that the next few samples come from that space
+                cout << "place to remove" << endl;
+                RandomSampleObs(Q->S,kd_tree,obstacle);
+                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
+                               Q->S->timeElapsed,Q->S->moveGoal);
+                obstacle->sensible_obstacle_ = false;
+                obstacle->start_time_ = INF;
+                removed = true;
 
-//            } else if(Q->S->spaceHasTime
-//                      && (obstacle->next_direction_change_time_ > prev_pose(2))
-//                      && obstacle->last_direction_change_time_ != prev_pose(2)) {
-//                cout << "direction change" << endl;
-//                // A moving obstacle with unknown path is changing direction,
-//                // so remove its old anticipated trajectory
-//                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
-//                               Q->S->timeElapsed,Q->S->moveGoal);
-//                obstacle->obstacle_used_ = true;
-//                removed = true;
-//            }
-//            list_item = list_item->child_;
-//        }
-//        if(removed) {
-//            cout << "Obstacle Removed" << endl;
-//            reduceInconsistency(Q,Q->S->moveGoal,Q->S->robotRadius,
-//                                root,hyper_ball_rad);
-//        }
+            } else if(Q->S->spaceHasTime
+                      && (obstacle->next_direction_change_time_ > prev_pose(2))
+                      && obstacle->last_direction_change_time_ != prev_pose(2)) {
+                cout << "direction change" << endl;
+                // A moving obstacle with unknown path is changing direction,
+                // so remove its old anticipated trajectory
+                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
+                               Q->S->timeElapsed,Q->S->moveGoal);
+                obstacle->obstacle_used_ = true;
+                removed = true;
+            }
+            list_item = list_item->child_;
+        }
+        if(removed) {
+            cout << "Obstacle Removed" << endl;
+            reduceInconsistency(Q,Q->S->moveGoal,Q->S->robotRadius,
+                                root,hyper_ball_rad);
+        }
 
         // Add Obstacles
         {
@@ -433,28 +433,11 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                                    avg_thetas[min_dist_node_to_path_index]+theta_bias);
 
                 /// Position bias
-                double x = new_node->position(0);
-                double y = new_node->position(1);
-                double dist = INF;
-//                double min = INF;
-                position_bias = hyper_ball_rad/2;
-                dist = abs(lines.at(min_dist_node_to_path_index)(0)*x
-                           + lines.at(min_dist_node_to_path_index)(1)*y
-                           + lines.at(min_dist_node_to_path_index)(2))
-                        / sqrt(pow(lines.at(min_dist_node_to_path_index)(0),2)
-                               +pow(lines.at(min_dist_node_to_path_index)(1),2));
-//                for(int j = 0; j < lines.size(); j++) {
-//                    dist = abs(lines.at(j)(0)*x
-//                               + lines.at(j)(1)*y
-//                               + lines.at(j)(2))
-//                    / sqrt(pow(lines.at(j)(0),2)
-//                           + pow(lines.at(j)(1),2));
-//                    if(dist < min) {
-//                        cout << "line: " << j << endl;
-//                        min = dist;
-//                    }
-//                }
-                if(dist/*min*/ > position_bias) continue;
+                position_bias = hyper_ball_rad;
+                double dist = DistanceSqrdPointToSegment(new_node->position,
+                            path.at(min_dist_node_to_path_index).head(2),
+                            path.at(min_dist_node_to_path_index+1).head(2));
+                if(dist > position_bias) continue;
 
                 importance_sampling = false;
             }

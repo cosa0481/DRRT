@@ -821,7 +821,7 @@ bool ExplicitEdgeCheck(shared_ptr<CSpace> &S,
                        shared_ptr<Edge> &edge)
 {
     // If ignoring obstacles
-    //if( S->inWarmupTime ) return false;
+    if( S->inWarmupTime ) return false;
 
     shared_ptr<ListNode> obstacle_list_node;
     int length;
