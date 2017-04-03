@@ -12,7 +12,7 @@ void BinaryHeap::displayHeap()
     std::cout << "Heap Size: " << H.size() << std::endl;
     for(int i = 0; i < H.size(); i++ ) {
         std::cout << "HeapNode " << i << ": " << H[i] << std::endl;
-        if( H[i]->dist != -1) {
+        if( H[i]->dist_ != -1) {
             std::cout << H[i]->position << std::endl;
         } else {
             std::cout << "dummy node" << std::endl;
@@ -397,7 +397,7 @@ int main()
              std::cout << "update" << std::endl;
              int randN = (int) rand() % (*Bthis->H.getIndexOfLast()) + 1;
              std::vector<KDTreeNode>& heap = *Bthis->H.getthis->Heap();
-             heap[ randN ].dist = (double) rand() / (RAND_MAX);
+             heap[ randN ].dist_ = (double) rand() / (RAND_MAX);
              if( !Bthis->H.updatethis->Heap( heap[ randN ] ) ) {
                  std::cout << "node at index: " << randN
                            << " not in heap" << std::endl;
@@ -441,7 +441,7 @@ int main()
              std::cout << "update" << std::endl;
              int randN = (int) rand() % (*Bthis->H.getIndexOfLast()) + 1;
              std::vector<KDTreeNode>& heap = *Bthis->H.getthis->Heap();
-             heap[ randN ].dist = (double) rand() / (RAND_MAX);
+             heap[ randN ].dist_ = (double) rand() / (RAND_MAX);
              if( !Bthis->H.updatethis->HeapB( heap[ randN ] ) ) {
                  std::cout << "node at index: " << randN
                            << " not in heap" << std::endl;

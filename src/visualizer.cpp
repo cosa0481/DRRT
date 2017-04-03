@@ -69,11 +69,11 @@ void visualizer(shared_ptr<KDTree> Tree,
     shared_ptr<Obstacle> this_obstacle;
     SceneGraph::GLLineStrip* polygon;
     {
-        lock_guard<mutex> lock(Q->S->cspace_mutex_);
-        obstacles = *Q->S->obstacles;
+        lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+        obstacles = *Q->cspace->obstacles_;
     }
     for(int i = 0; i < obstacles.length_; i++) {
-        obstacles.listPop(this_obstacle);
+        obstacles.ListPop(this_obstacle);
         polygon = new SceneGraph::GLLineStrip();
         for( int j = 0; j < this_obstacle->polygon_.rows(); j++) {
             polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(0),
@@ -94,7 +94,7 @@ void visualizer(shared_ptr<KDTree> Tree,
 
     // For edges
     SceneGraph::GLLineStrip* edge;
-    vector<shared_ptr<Edge>> collisions;
+    vector<shared_ptr<Edge>> collisions_;
 
     // For robot poses
     vector<Eigen::VectorXd> poses;
@@ -131,24 +131,24 @@ void visualizer(shared_ptr<KDTree> Tree,
         /// Display collision lines
         if(show_collision_edges) {
             {
-                lock_guard<mutex> lock(Q->S->cspace_mutex_);
-                collisions = Q->S->collisions;
+                lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                collisions_ = Q->cspace->collisions_;
             }
-            for(int p = 0; p < collisions.size(); p++) {
+            for(int p = 0; p < collisions_.size(); p++) {
                 edge = new SceneGraph::GLLineStrip();
-                edge->SetPoint(Eigen::Vector3d(collisions.at(p)->startNode->position(0),
-                                               collisions.at(p)->startNode->position(1),0.0));
-                edge->SetPoint(Eigen::Vector3d(collisions.at(p)->endNode->position(0),
-                                               collisions.at(p)->endNode->position(1),0.0));
-                Q->S->RemoveVizEdge(collisions.at(p));
+                edge->SetPoint(Eigen::Vector3d(collisions_.at(p)->start_node_->position(0),
+                                               collisions_.at(p)->start_node_->position(1),0.0));
+                edge->SetPoint(Eigen::Vector3d(collisions_.at(p)->end_node_->position(0),
+                                               collisions_.at(p)->end_node_->position(1),0.0));
+                Q->cspace->RemoveVizEdge(collisions_.at(p));
                 glGraph.AddChild(edge);
             }
         }
 
         // Update robot pose (x,y,z, r,p,y)
         {
-            lock_guard<mutex> lock(Robot->robotMutex_);
-            current_pose = Robot->robotPose;
+            lock_guard<mutex> lock(Robot->robot_mutex);
+            current_pose = Robot->robot_pose;
         }
         if( poses.size() == 0 || current_pose != poses.back() ) {
             poses.push_back(current_pose);

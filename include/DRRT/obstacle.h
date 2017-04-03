@@ -21,7 +21,7 @@
 #define MAXPATHNODES 100000
 #define DELTA 10 // should be changed if delta is changed in executable
 
-class CSpace;
+class ConfigSpace;
 
 class Obstacle : public std::enable_shared_from_this<Obstacle>
 {
@@ -103,13 +103,13 @@ public:
     }
 
     // Polygon
-    Obstacle(int kind, Eigen::MatrixX2d polygon, bool cspace_has_theta)
+    Obstacle(int kind, Eigen::MatrixX2d polygon, bool ConfigSpace_has_theta)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
           obstacle_used_after_sense_(false), polygon_(polygon)
     {
         Eigen::VectorXd pos;
-        if(cspace_has_theta) {
+        if(ConfigSpace_has_theta) {
             pos = Eigen::Vector3d();
             pos(2) = 0.0;
         } else {
@@ -157,7 +157,7 @@ public:
 
     // Read in obstacles from files
     static void ReadObstaclesFromFile(std::string obstacle_file,
-                                      std::shared_ptr<CSpace> &C);
+                                      std::shared_ptr<ConfigSpace> &C);
     static void ReadDynamicObstaclesFromFile(std::string obstacle_file);
     static void ReadDiscoverableObstaclesFromFile(std::string obstacle_file);
     static void ReadDirectionalObstaclesFromFile(std::string obstacle_file);
@@ -165,9 +165,9 @@ public:
     static void ReadDynamicTimeObstaclesFromFile(std::string obstacle_file);
 
     // Moves obstacles around or remove them
-    static void UpdateObstacles(std::shared_ptr<CSpace>& C);
-    // Adds the obstacle to the CSpace
-    void AddObsToCSpace(std::shared_ptr<CSpace>& C);
+    static void UpdateObstacles(std::shared_ptr<ConfigSpace>& C);
+    // Adds the obstacle to the ConfigSpace
+    void AddObsToConfigSpace(std::shared_ptr<ConfigSpace>& C);
     // Decrease life of obstacle
     void DecreaseLife() { this->life_span_ -= 1.0; }
     // Get shared_ptr to this Obstacle
@@ -177,8 +177,8 @@ public:
     // this is used to calculate the current path (for collision checking)
     // from unknown_path (which describes how the obstacle moves vs time)
     // based on current time. Note that times in the future are closer
-    // to S->start(3) for [x,y,theta,time]
-    void ChangeObstacleDirection(std::shared_ptr<CSpace> S,
+    // to S->start_(3) for [x,y,theta,time]
+    void ChangeObstacleDirection(std::shared_ptr<ConfigSpace> C,
                                  double current_time);
 
 };

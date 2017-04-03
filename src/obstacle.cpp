@@ -4,7 +4,7 @@
 using namespace std;
 
 void Obstacle::ReadObstaclesFromFile(string obstacle_file,
-                                     shared_ptr<CSpace>& C)
+                                     shared_ptr<ConfigSpace>& C)
 {
     // Read a polygon from a file
     ifstream read_stream;
@@ -40,8 +40,8 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
                 line = "";
             }
             shared_ptr<Obstacle> static_polygon
-                    = make_shared<Obstacle>(3,polygon,C->spaceHasTheta);
-            static_polygon->AddObsToCSpace(C);
+                    = make_shared<Obstacle>(3,polygon,C->space_has_theta_);
+            static_polygon->AddObsToConfigSpace(C);
             getline(read_stream, line);
         }
     }
@@ -75,33 +75,34 @@ void Obstacle::ReadDynamicTimeObstaclesFromFile(string obstacle_file)
 
 }
 
-void Obstacle::UpdateObstacles(shared_ptr<CSpace> &C)
+void Obstacle::UpdateObstacles(shared_ptr<ConfigSpace> &C)
 {
-    shared_ptr<ListNode> obstacle_list_node = C->obstacles->front_;
+    lock_guard<mutex> lock(C->cspace_mutex_);
+    shared_ptr<ListNode> obstacle_list_node = C->obstacles_->front_;
     shared_ptr<Obstacle> this_obstacle;
-    for(int i = 0; i < C->obstacles->length_; i++) {
+    for(int i = 0; i < C->obstacles_->length_; i++) {
         this_obstacle = obstacle_list_node->obstacle_;
         this_obstacle->DecreaseLife();
         obstacle_list_node = obstacle_list_node->child_;
     }
 }
 
-void Obstacle::AddObsToCSpace(shared_ptr<CSpace> &C)
+void Obstacle::AddObsToConfigSpace(shared_ptr<ConfigSpace> &C)
 {
     lock_guard<mutex> lock(C->cspace_mutex_);
     shared_ptr<Obstacle> this_obstacle = this->GetPointer();
-    C->obstacles->listPush(this_obstacle);
+    C->obstacles_->ListPush(this_obstacle);
 }
 
-void Obstacle::ChangeObstacleDirection(std::shared_ptr<CSpace> S,
+void Obstacle::ChangeObstacleDirection(std::shared_ptr<ConfigSpace> C,
                                        double current_time)
 {
-    double end_time = S->start(3);
+    double end_time = C->start_(3);
     // Edges in path ar no longer than this in the time dimension
     double path_time_step = 3.0;
 
     // Find the path segment of unknown_path that the obstacle is now moving
-    // along. Note that future is represented by times closer to S->start(3)
+    // along. Note that future is represented by times closer to S->start_(3)
     // and unknown_path is stored from future (low) to past (high)
     // Nonintuitive I know...
     Eigen::VectorXd high_point, low_point;

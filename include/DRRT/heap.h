@@ -21,7 +21,7 @@ public:
     // Returns the key value of the node
     /// Should keyD return rrtLMC as well? used in kdFindKNearest only (afaik)
     double keyD(std::shared_ptr<KDTreeNode> node)
-    {return node->dist;}
+    {return node->dist_;}
 
     double keyQ(std::shared_ptr<KDTreeNode> node)
     {return std::min( node->rrtTreeCost, node->rrtLMC );}

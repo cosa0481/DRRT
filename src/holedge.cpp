@@ -2,7 +2,7 @@
 #include <DRRT/kdtree.h>
 
 /////////////////////// Static Edge Functions ///////////////////////
-std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<CSpace> S,
+std::shared_ptr<Edge> Edge::NewEdge(std::shared_ptr<ConfigSpace> S,
                                     std::shared_ptr<KDTree> Tree,
                                     std::shared_ptr<KDTreeNode>& startNode,
                                     std::shared_ptr<KDTreeNode>& endNode)
@@ -10,7 +10,7 @@ std::shared_ptr<Edge> Edge::newEdge(std::shared_ptr<CSpace> S,
     return std::make_shared<HolEdge>(S,Tree,startNode,endNode);
 }
 
-void Edge::saturate(Eigen::VectorXd& nP,
+void Edge::Saturate(Eigen::VectorXd& nP,
                     Eigen::VectorXd cP,
                     double delta,
                     double dist)
@@ -21,35 +21,35 @@ void Edge::saturate(Eigen::VectorXd& nP,
 /////////////////////// Virtual Edge Functions ///////////////////////
 bool HolEdge::ValidMove()
 {
-    if( this->cspace->spaceHasTime ) {
+    if( this->cspace_->space_has_time_ ) {
         // Note that planning happens in reverse time. i.e. time = 0 is at
         // the root of the search tree, and thus the time of startNode must be
         // greater than the time of endNode
-        return ((this->startNode->position(2) > this->endNode->position(2))
-                && ((this->cspace->dubinsMinVelocity <= this->velocity)
-                    && (this->velocity <= this->cspace->dubinsMaxVelocity)));
+        return ((this->start_node_->position(2) > this->end_node_->position(2))
+                && ((this->cspace_->dubins_min_velocity_ <= this->velocity_)
+                    && (this->velocity_ <= this->cspace_->dubins_max_velocity_)));
     }
     // if space does not have time then we assume that a move is always valid
     return true;
 }
 
-Eigen::VectorXd HolEdge::poseAtDistAlongEdge(double distAlongEdge)
+Eigen::VectorXd HolEdge::PoseAtDistAlongEdge(double distAlongEdge)
 {
     double distRemaining = distAlongEdge;
-    if( this->trajectory.rows() < 2 || this->dist <= distAlongEdge ) {
-        return this->endNode->position;
+    if( this->trajectory_.rows() < 2 || this->dist_ <= distAlongEdge ) {
+        return this->end_node_->position;
     }
 
-    // Find the piece of trajectory that contains the point at the desired distance
+    // Find the piece of trajectory_ that contains the point at the desired distance
     int i = 1;
     double thisDist = INF;
     // Check if 3rd column is not zero (3rd column is time)
-    bool timeInPath = (this->trajectory.col(2)(0) != 0.0);
-    while( i <= this->trajectory.rows() ) {
-        double wtime = dubinsDistAlongTimePath( this->trajectory.row(i-1),
-                                                this->trajectory.row(i) );
-        double wotime = dubinsDistAlongPath( this->trajectory.row(i-1),
-                                             this->trajectory.row(i) );
+    bool timeInPath = (this->trajectory_.col(2)(0) != 0.0);
+    while( i <= this->trajectory_.rows() ) {
+        double wtime = DubinsDistAlongTimePath( this->trajectory_.row(i-1),
+                                                this->trajectory_.row(i) );
+        double wotime = DubinsDistAlongPath( this->trajectory_.row(i-1),
+                                             this->trajectory_.row(i) );
         if( timeInPath ) {
             thisDist = wtime;
         } else {
@@ -71,14 +71,14 @@ Eigen::VectorXd HolEdge::poseAtDistAlongEdge(double distAlongEdge)
 
     // Now calculate pose along that piece
     double ratio = distRemaining/thisDist;
-    Eigen::VectorXd ret = this->trajectory.row(i-1)
-            + ratio*(this->trajectory.row(i)-this->trajectory.row(i-1));
-    double retTimeRatio = distAlongEdge/this->dist;
-    double retTime = this->startNode->position(2)
-            + retTimeRatio*(this->endNode->position(2)
-                            - this->startNode->position(2));
-    double retTheta = atan2 (this->trajectory(i,1) - this->trajectory(i-1,1),
-                             this->trajectory(i,0) - this->trajectory(i-1,0) );
+    Eigen::VectorXd ret = this->trajectory_.row(i-1)
+            + ratio*(this->trajectory_.row(i)-this->trajectory_.row(i-1));
+    double retTimeRatio = distAlongEdge/this->dist_;
+    double retTime = this->start_node_->position(2)
+            + retTimeRatio*(this->end_node_->position(2)
+                            - this->start_node_->position(2));
+    double retTheta = atan2 (this->trajectory_(i,1) - this->trajectory_(i-1,1),
+                             this->trajectory_(i,0) - this->trajectory_(i-1,0) );
 
     Eigen::VectorXd vec(4);
     vec(0) = ret(0); // x-coordinate
@@ -89,31 +89,31 @@ Eigen::VectorXd HolEdge::poseAtDistAlongEdge(double distAlongEdge)
     return vec;
 }
 
-Eigen::VectorXd HolEdge::poseAtTimeAlongEdge(double timeAlongEdge)
+Eigen::VectorXd HolEdge::PoseAtTimeAlongEdge(double timeAlongEdge)
 {
-    if( this->trajectory.rows() < 2 || (this->startNode->position(2)
-                                        - this->endNode->position(2))
+    if( this->trajectory_.rows() < 2 || (this->start_node_->position(2)
+                                        - this->end_node_->position(2))
             <= timeAlongEdge ) {
-        return this->endNode->position;
+        return this->end_node_->position;
     }
 
-    // Find the piece of the trajectory that contains the time at the
+    // Find the piece of the trajectory_ that contains the time at the
     // desired distance
     int i = 1;
-    while( this->trajectory(i,2)
-           > this->startNode->position(2) - timeAlongEdge ) {
+    while( this->trajectory_(i,2)
+           > this->start_node_->position(2) - timeAlongEdge ) {
         i += 1;
     }
 
     // Now calculate pose along that piece
-    double ratio = (this->trajectory(i-1,2)
-            - (this->startNode->position(2)-timeAlongEdge))
-            / (this->trajectory(i-1,2) - this->trajectory(i,2));
-    Eigen::VectorXd ret = this->trajectory.row(i-1)
-            + ratio*(this->trajectory.row(i) - this->trajectory.row(i-1));
-    double retTime = this->startNode->position(2) - timeAlongEdge;
-    double retTheta = atan2( this->trajectory(i,1) - this->trajectory(i-1,1),
-                             this->trajectory(i,0) - this->trajectory(i-1,0) );
+    double ratio = (this->trajectory_(i-1,2)
+            - (this->start_node_->position(2)-timeAlongEdge))
+            / (this->trajectory_(i-1,2) - this->trajectory_(i,2));
+    Eigen::VectorXd ret = this->trajectory_.row(i-1)
+            + ratio*(this->trajectory_.row(i) - this->trajectory_.row(i-1));
+    double retTime = this->start_node_->position(2) - timeAlongEdge;
+    double retTheta = atan2( this->trajectory_(i,1) - this->trajectory_(i-1,1),
+                             this->trajectory_(i,0) - this->trajectory_(i-1,0) );
 
     Eigen::VectorXd vec(4);
     vec(0) = ret(0); // x-coordinate
@@ -124,12 +124,12 @@ Eigen::VectorXd HolEdge::poseAtTimeAlongEdge(double timeAlongEdge)
     return vec;
 }
 
-void HolEdge::calculateTrajectory()
+void HolEdge::CalculateTrajectory()
 {
 
 }
 
-void HolEdge::calculateHoverTrajectory()
+void HolEdge::CalculateHoverTrajectory()
 {
 
 }

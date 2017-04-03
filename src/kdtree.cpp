@@ -32,9 +32,9 @@ void KDTree::printTree(std::shared_ptr<KDTreeNode> node,
               << node->position(1) << ": "
               << node->rrtLMC;
     if( node->rrtParentUsed ) {
-        std::cout << " : " << node->rrtParentEdge->endNode->position(0) << ","
-                  << node->rrtParentEdge->endNode->position(1);
-        std::cout << " (" << node->rrtParentEdge->dist << ")";
+        std::cout << " : " << node->rrtParentEdge->end_node_->position(0) << ","
+                  << node->rrtParentEdge->end_node_->position(1);
+        std::cout << " (" << node->rrtParentEdge->dist_ << ")";
     }
     if( !node->kdChildLExist && !node->kdChildRExist ) {
         std::cout << " | leaf" << std::endl;
@@ -496,21 +496,21 @@ std::shared_ptr<KDTreeNode> KDTree::addToKNNHeap(std::shared_ptr<BinaryHeap> H,
     std::shared_ptr<KDTreeNode> top = std::make_shared<KDTreeNode>();
     if( node->inHeap ) {
         H->topHeapB(top);
-        if( top->dist == -1 ) {
+        if( top->dist_ == -1 ) {
             std::cout << "Heap node has no reference tree node!" << std::endl;
         }
         return top;
     } else if( *H->getIndexOfLast() < k ) {
         // Just insert
-        node->dist = key;
+        node->dist_ = key;
         H->addToHeapB(node);
-    } else if( heap[1]->dist > key ) {
+    } else if( heap[1]->dist_ > key ) {
         H->popHeapB(top);
-        node->dist = key;
+        node->dist_ = key;
         H->addToHeapB(node);
     }
     H->topHeapB(top);
-    if( top->dist == -1 ) {
+    if( top->dist_ == -1 ) {
         std::cout << "Heap node has no reference tree node!" << std::endl;
     }
     return top;
@@ -528,7 +528,7 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
     std::shared_ptr<KDTreeNode> currentWorstClosestNode;
     nearestHeap->topHeapB(currentWorstClosestNode);
     std::shared_ptr<double> currentWorstClosestDist
-            = std::make_shared<double>(currentWorstClosestNode->dist);
+            = std::make_shared<double>(currentWorstClosestNode->dist_);
     while( true ) {
         if( queryPoint(parent->kdSplit) < parent->position(parent->kdSplit) ) {
             // Traverse the tree to the left
@@ -553,7 +553,7 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
     if( newDist < *currentWorstClosestDist ) {
         currentWorstClosestNode = addToKNNHeap(nearestHeap, parent,
                                                newDist, k);
-        *currentWorstClosestDist = currentWorstClosestNode->dist;
+        *currentWorstClosestDist = currentWorstClosestNode->dist_;
     }
 
     // Now walk back up the tree (will break out when done)
@@ -588,7 +588,7 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
             if( newDist < *currentWorstClosestDist ) {
                 currentWorstClosestNode = addToKNNHeap( nearestHeap, parent,
                                                         newDist, k );
-                *currentWorstClosestDist = currentWorstClosestNode->dist;
+                *currentWorstClosestDist = currentWorstClosestNode->dist_;
             }
         }
 
@@ -601,7 +601,7 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
                                      currentWorstClosestDist,
                                      parent->kdChildR, k, queryPoint,
                                      nearestHeap );
-            *currentWorstClosestDist = currentWorstClosestNode->dist;
+            *currentWorstClosestDist = currentWorstClosestNode->dist_;
         } else if( parent->position(parent->kdSplit)
                    <= queryPoint(parent->kdSplit) && parent->kdChildLExist ) {
             // queryPoint is on the right side of the parent, so we need to
@@ -610,7 +610,7 @@ bool KDTree::kdFindKNearestInSubtree(std::shared_ptr<KDTreeNode> farthestNode,
                                      currentWorstClosestDist,
                                      parent->kdChildL, k, queryPoint,
                                      nearestHeap );
-            *currentWorstClosestDist = currentWorstClosestNode->dist;
+            *currentWorstClosestDist = currentWorstClosestNode->dist_;
         }
 
         if( parent == root ) {
@@ -630,7 +630,7 @@ std::vector<std::shared_ptr<KDTreeNode>> KDTree::kdFindKNearest(int k,
     // true >> use heap functions (key not keyQ) not priority queue functions
 
     // Insert root node in heap
-    this->root->dist = this->distanceFunction(queryPoint, this->root->position);
+    this->root->dist_ = this->distanceFunction(queryPoint, this->root->position);
     Heap->addToHeapB( this->root );
 
     // Insert a dummy node in the heap with INF key
@@ -673,7 +673,7 @@ bool KDTree::addToRangeList(std::shared_ptr<JList> &S,
         return false;
     }
     node->inHeap = true;
-    S->JlistPush( node, key );
+    S->JListPush( node, key );
     return true;
 }
 
@@ -681,7 +681,7 @@ void KDTree::popFromRangeList(std::shared_ptr<JList> &S,
                               std::shared_ptr<KDTreeNode> &t,
                               std::shared_ptr<double> k)
 {
-    S->JlistPopKey(t,k);
+    S->JListPopKey(t,k);
     t->inHeap = false;
 }
 
@@ -689,8 +689,8 @@ void KDTree::emptyRangeList(std::shared_ptr<JList>& S)
 {
     std::shared_ptr<KDTreeNode> n = std::make_shared<KDTreeNode>();
     std::shared_ptr<double> k = std::make_shared<double>(0);
-    while( S->length > 0 ) {
-        S->JlistPopKey( n, k );
+    while( S->length_ > 0 ) {
+        S->JListPopKey( n, k );
         n->inHeap = false;
     }
 
@@ -800,7 +800,7 @@ void KDTree::kdFindWithinRange(std::shared_ptr<JList> &S,
     // Find nodes within range
     kdFindWithinRangeInSubtree(this->root, range, queryPoint, S);
 
-//    std::cout << "Found " << S->length << " points in Range " << range << std::endl;
+//    std::cout << "Found " << S->length_ << " points in Range " << range << std::endl;
 
     if(this->numWraps > 0) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
@@ -816,7 +816,7 @@ void KDTree::kdFindWithinRange(std::shared_ptr<JList> &S,
         }
     }
 
-//    std::cout << "Found " << S->length << " points" << std::endl;
+//    std::cout << "Found " << S->length_ << " points" << std::endl;
 }
 
 void KDTree::kdFindMoreWithinRange(std::shared_ptr<JList> &L,

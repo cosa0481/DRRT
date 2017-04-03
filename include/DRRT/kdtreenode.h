@@ -24,7 +24,7 @@ public:
     // Data used for heap in KNN-search
     int heapIndex;    // named such to allow the use of default heap functions
     bool inHeap;      // ditto
-    double dist;      // ditto, this will hold the distance
+    double dist_;      // ditto, this will hold the distance
 
     // More data used for KD Tree
     Eigen::VectorXd position; // a d x 1 array of the dimensions of the space
@@ -77,7 +77,7 @@ public:
 
     // Constructors
     KDTreeNode() : kdInTree(false), kdParentExist(false), kdChildLExist(false),
-        kdChildRExist(false), heapIndex(-1), inHeap(false), dist(-1),
+        kdChildRExist(false), heapIndex(-1), inHeap(false), dist_(-1),
         rrtParentUsed(false), rrtNeighborsOut(std::make_shared<JList>(false)),
         rrtNeighborsIn(std::make_shared<JList>(false)), priorityQueueIndex(-1),
         inPriorityQueue(false), SuccessorList(std::make_shared<JList>(false)),
@@ -89,7 +89,7 @@ public:
     }
     KDTreeNode(float d) :  kdInTree(false), kdParentExist(false),
         kdChildLExist(false), kdChildRExist(false), heapIndex(-1),
-        inHeap(false), dist(d), rrtParentUsed(false),
+        inHeap(false), dist_(d), rrtParentUsed(false),
         rrtNeighborsOut(std::make_shared<JList>(false)),
         rrtNeighborsIn(std::make_shared<JList>(false)),
         priorityQueueIndex(-1), inPriorityQueue(false),
@@ -102,7 +102,7 @@ public:
     }
     KDTreeNode(float d, Eigen::VectorXd pos) :  kdInTree(false),
         kdParentExist(false), kdChildLExist(false), kdChildRExist(false),
-        heapIndex(-1), inHeap(false), dist(d), position(pos),
+        heapIndex(-1), inHeap(false), dist_(d), position(pos),
         rrtParentUsed(false), rrtNeighborsOut(std::make_shared<JList>(false)),
         rrtNeighborsIn(std::make_shared<JList>(false)), priorityQueueIndex(-1),
         inPriorityQueue(false), SuccessorList(std::make_shared<JList>(false)),
@@ -112,7 +112,7 @@ public:
     {}
     KDTreeNode(Eigen::VectorXd pos) : kdInTree(false), kdParentExist(false),
         kdChildLExist(false), kdChildRExist(false), heapIndex(-1),
-        inHeap(false), dist(INFINITY), position(pos), rrtParentUsed(false),
+        inHeap(false), dist_(INFINITY), position(pos), rrtParentUsed(false),
         rrtNeighborsOut(std::make_shared<JList>(false)),
         rrtNeighborsIn(std::make_shared<JList>(false)),
         priorityQueueIndex(-1), inPriorityQueue(false),
@@ -130,7 +130,7 @@ public:
         kdChildRExist(other.kdChildRExist),
         heapIndex(other.heapIndex),
         inHeap(other.inHeap),
-        dist(other.dist),
+        dist_(other.dist_),
         position(other.position),
         kdSplit(other.kdSplit),
         kdParent(other.kdParent),

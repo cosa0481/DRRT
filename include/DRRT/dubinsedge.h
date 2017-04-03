@@ -6,7 +6,7 @@
 
 
 // #include this file in drrt_data_structures.h
-// Remember to implement Edge::newEdge(Eigen::VectorXd,Eigen::VectorXd)
+// Remember to implement Edge::NewEdge(Eigen::VectorXd,Eigen::VectorXd)
 
 class DubinsEdge : public Edge
 {
@@ -15,17 +15,17 @@ public:
     DubinsEdge()
         : Edge() {}
 
-    DubinsEdge(std::shared_ptr<CSpace> cspace,
-               std::shared_ptr<KDTree> tree,
+    DubinsEdge(std::shared_ptr<ConfigSpace> ConfigSpace,
+               std::shared_ptr<KDTree> tree_,
                std::shared_ptr<KDTreeNode> start,
                std::shared_ptr<KDTreeNode> end)
-        : Edge(cspace,tree,start,end) {}
+        : Edge(ConfigSpace,tree_,start,end) {}
 
     bool ValidMove();
-    Eigen::VectorXd poseAtDistAlongEdge(double distAlongEdge);
-    Eigen::VectorXd poseAtTimeAlongEdge(double timeAlongEdge);
-    void calculateTrajectory();
-    void calculateHoverTrajectory();
+    Eigen::VectorXd PoseAtDistAlongEdge(double distAlongEdge);
+    Eigen::VectorXd PoseAtTimeAlongEdge(double timeAlongEdge);
+    void CalculateTrajectory();
+    void CalculateHoverTrajectory();
     bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle);
 };
 

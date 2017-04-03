@@ -32,23 +32,23 @@ public:
     // Constructors
     List()
     {
-        std::shared_ptr<ListNode> endNode = std::make_shared<ListNode>();
-        endNode->child_ = endNode;
-        front_ = endNode;
+        std::shared_ptr<ListNode> end_node = std::make_shared<ListNode>();
+        end_node->child_ = end_node;
+        front_ = end_node;
         length_ = 0;
     }
 
-    void listPush(std::shared_ptr<Obstacle>& o);
-    void listPush(std::shared_ptr<Obstacle>& o, double key);
-    void listTop(std::shared_ptr<Obstacle>& o);
-    void listTopKey(std::shared_ptr<Obstacle>& o, double* k);
-    void listPop(std::shared_ptr<Obstacle>& o);
-    void listPopKey(std::shared_ptr<Obstacle>& o, double* k);
-    void listEmpty();
-    void listPrint();
+    void ListPush(std::shared_ptr<Obstacle>& o);
+    void ListPush(std::shared_ptr<Obstacle>& o, double key);
+    void ListTop(std::shared_ptr<Obstacle>& o);
+    void ListTopKey(std::shared_ptr<Obstacle>& o, double* k);
+    void ListPop(std::shared_ptr<Obstacle>& o);
+    void ListPopKey(std::shared_ptr<Obstacle>& o, double* k);
+    void ListEmpty();
+    void ListPrint();
 
     // Helper function
-    std::shared_ptr<List> listCopy( std::shared_ptr<ListNode> example );
+    std::shared_ptr<List> ListCopy( std::shared_ptr<ListNode> example );
 };
 
 
