@@ -64,49 +64,6 @@ public:
         trajectory_ = Eigen::MatrixXd::Zero(MAXPATHNODES,3);
     }
 
-
-    /////////////////////// Critical Functions ///////////////////////
-    // Critical functions that must be modified vs the ConfigSpace and
-    // Workspace being used ('D' is for "Dubin's")
-
-    // Returns the distance between two points, assuming they are
-    // in the C-Space
-    // Should obey the triangle inequality
-    // Use the following version of dist for Dubins space [X Y Theta Time]
-    //virtual double Edist(Eigen::VectorXd x, Eigen::VectorXd y)=0;
-
-    /* This returns the distance that is used internally in the
-     * kd-tree (see notes there). The kd-implementation handles
-     * wrapping dimensions (e.g. a circle or taurus) by running
-     * multiple searches, 1 for each wrapped identity of the query
-     * point. So this is the distance function that is the -non-wrapping-
-     * version of what the actual distance function between points
-     * in the KD space is
-     * Use the follwing version of KDist for Dubins space (with
-     * and without time, since time == 0 in the latter case, but
-     * still exists as a dimension in points
-     */
-    //static double EKDdist(Eigen::VectorXd x, Eigen::VectorXd y);
-
-    /* Returns the workspace distance between two points, this should
-     * obey the triangle inequality. e.g. in the current version of this
-     * code, it is assumed that the workspace is the first two dimensionss
-     * of the ConfigSpace. It is used for calculating the "real world" distance
-     * that the robot covers (e.ge in a particular amount of time when
-     * determining if a move is possible given robot max speed
-     * Use the following version of w_dist_ for Euclidian space and Dubin's
-     * space
-     */
-    //virtual double EWdist(Eigen::VectorXd x, Eigen::VectorXd y)=0;
-
-    // Moves newPoint toward closestPoint such that each robot is no further
-    // than delta. Points reperesent the cartesian product of R robots
-    // Use the following version of Edge::Saturate for Dubin's space
-//    virtual void Saturate(std::shared_ptr<Eigen::Vector4d> newPoint,
-//                         Eigen::Vector4d closestPoint,
-//                         double delta )=0;
-
-
     /////////////////////// Edge Functions ///////////////////////
 
     // Allocates a new edge
