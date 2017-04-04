@@ -4,7 +4,7 @@
 #include <DRRT/list.h>
 #include <DRRT/heap.h>
 #include <DRRT/edge.h>
-/// Include implementation of edge here
+/// Include implementation of desired edge here
 #include <DRRT/dubinsedge.h>
 //#include <DRRT/holedge.h>
 
@@ -13,15 +13,15 @@ public:
     std::mutex cspace_mutex_;         // mutex for accessing obstacle List
     int num_dimensions_;              // dimensions
     std::shared_ptr<List> obstacles_; // a list of obstacles
-    double obs_delta_;         // the granularity of obstacle checks on edges
-    Eigen::VectorXd lower_bounds_;   // 1xD vector containing the lower bounds
-    Eigen::VectorXd upper_bounds_;   // 1xD vector containing the upper bounds
-    Eigen::VectorXd width_;   // 1xD vector containing upper_bounds_-lower_bounds_
-    Eigen::VectorXd start_;   // 1xD vector containing start location
-    Eigen::VectorXd goal_;    // 1xD vector containing goal location
+    double obs_delta_; // the granularity of obstacle checks on edges
+    Eigen::VectorXd lower_bounds_; // 1xD vector containing the lower bounds
+    Eigen::VectorXd upper_bounds_; // 1xD vector containing the upper bounds
+    Eigen::VectorXd width_; // 1xD vector containing upper_bounds_-lower_bounds_
+    Eigen::VectorXd start_; // 1xD vector containing start location
+    Eigen::VectorXd goal_;  // 1xD vector containing goal location
 
     std::vector<std::shared_ptr<Edge>> collisions_; // edges known to be in
-                                                    // collision with an obstacle
+                                                  // collision with an obstacle
 
     double (*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b);
 
@@ -31,9 +31,10 @@ public:
      * replaced with a different approach that takes advantage of
      * Julia's multiple dispatch and polymorphism
      */
-    bool space_has_time_;  // if true then the 3rd dimension of the space is time
-    bool space_has_theta_; // if true then the 4th dimension of the space
+    bool space_has_theta_; // if true then the 3rd dimension of the space
                            // is theta in particular a Dubin's system is used
+    bool space_has_time_;  // if true then the 4th dimension of the space
+                           // is time
 
     double collision_distance_; // distance underwhich a collision would occur
 
@@ -44,24 +45,24 @@ public:
     std::shared_ptr<KDTreeNode> root_;      // the root node
     std::shared_ptr<KDTreeNode> move_goal_;  // the current node goal for robot
 
+    // sample this when iterations_until_sample_ == 0
+    Eigen::VectorXd iteration_sample_point_;
+    // sample this when wait_time_ has passed
+    Eigen::VectorXd time_sample_point_;
     int iterations_until_sample_; // a count down to sample a particular point
-    Eigen::VectorXd iteration_sample_point_; // sample this when iterations_until_sample_ == 0
-    Eigen::VectorXd time_sample_point_; // sample this when wait_time_ has passed
-    double wait_time_;                  // time to wait in seconds
-    u_int64_t start_time_ns_;           // time this started
-    double time_elapsed_; // elapsed time since started (where time spent saving
-                          // experimental data has been removed)
+    double wait_time_;            // time to wait in seconds
+    u_int64_t start_time_ns_;     // time this started
+    double time_elapsed_; // elapsed time since start
 
     std::shared_ptr<Obstacle> obstacle_to_remove_; // an obstacle to remove
 
     double robot_radius_;       // robot radius
     double robot_velocity_;     // robot velocity (used for Dubins w/o time)
 
-    double dubins_min_velocity_; // min velocity of Dubin's car (for dubins + time)
-    double dubins_max_velocity_; // max velocity of Dubin's car (for dubins + time)
+    double dubins_min_velocity_; // min vel of Dubin's car (for dubins + time)
+    double dubins_max_velocity_; // max vel of Dubin's car (for dubins + time)
 
-    // This jlist must "hold" MatrixXd's ?
-    // So use the JListNode->node->position when using this stack
+    /// Use JListNode->node->position_ when popping from this stack
     std::shared_ptr<JList> sample_stack_; // points to sample in the future
 
     double hyper_volume_;        // hyper_volume_ of the space
@@ -81,17 +82,17 @@ public:
     {
         obstacles_ = std::make_shared<List>();
 
-        hyper_volume_ = 0.0; // flag indicating that this needs to be calculated
+        hyper_volume_ = 0.0; // flag indicating this needs to be calculated
         in_warmup_time_ = false;
         warmup_time_ = 0.0; // default value for time for build
-                          // graph with no obstacles
+                            // graph with no obstacles
         Eigen::ArrayXd upper_array = upper;
         Eigen::ArrayXd lower_array = lower;
         width_ = upper_array - lower_array;
     }
 
     // Setter for distanceFunction
-    void setDistanceFunction(double(*func)(Eigen::VectorXd a,
+    void SetDistanceFunction(double(*func)(Eigen::VectorXd a,
                                            Eigen::VectorXd b))
     { distanceFunction = func; }
 

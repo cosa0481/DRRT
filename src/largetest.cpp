@@ -25,12 +25,12 @@ chrono::time_point<chrono::high_resolution_clock> startTime;
 void printRRTxPath(shared_ptr<KDTreeNode> &leaf)
 {
     std::cout << "\nRRTx Path" << std::endl;
-    while(leaf->rrtParentUsed) {
-        cout << "pose: " << leaf->rrtLMC << "\n" << leaf->position << endl;
+    while(leaf->rrt_parent_used_) {
+        cout << "pose: " << leaf->rrt_LMC_ << "\n" << leaf->position_ << endl;
         cout << "VVVVVVVV" << endl;
-        leaf = leaf->rrtParentEdge->end_node_;
+        leaf = leaf->rrt_parent_edge_->end_node_;
     }
-    cout << leaf->position << endl;
+    cout << leaf->position_ << endl;
 }
 
 
@@ -55,27 +55,27 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 
     /// KD-Tree
     shared_ptr<KDTree> kd_tree
-            = make_shared<KDTree>(Q->cspace->num_dimensions_,p.wraps,p.wrap_points);
-    kd_tree->setDistanceFunction(Q->cspace->distanceFunction);
+            = make_shared<KDTree>(Q->cspace->num_dimensions_,p.wraps_,p.wrap_points);
+    kd_tree->SetDistanceFunction(Q->cspace->distanceFunction);
 
     shared_ptr<KDTreeNode> root = make_shared<KDTreeNode>(Q->cspace->start_);
     //explicitNodeCheck(S,root);
-    root->rrtTreeCost = 0.0;
-    root->rrtLMC = 0.0;
-    root->rrtParentEdge = Edge::NewEdge(Q->cspace,kd_tree,root,root);
-    root->rrtParentUsed = false;
-    kd_tree->kdInsert(root);
-    kdTree.row(kdTreePos++) = root->position;
+    root->rrt_tree_cost_ = 0.0;
+    root->rrt_LMC_ = 0.0;
+    root->rrt_parent_edge_ = Edge::NewEdge(Q->cspace,kd_tree,root,root);
+    root->rrt_parent_used_ = false;
+    kd_tree->KDInsert(root);
+    kdTree.row(kdTreePos++) = root->position_;
 
     shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>(Q->cspace->goal_);
-    goal->rrtTreeCost = INF;
-    goal->rrtLMC = INF;
-    kdTree.row(kdTreePos++) = goal->position;
+    goal->rrt_tree_cost_ = INF;
+    goal->rrt_LMC_ = INF;
+    kdTree.row(kdTreePos++) = goal->position_;
 
     Q->cspace->goal_node_ = goal;
     Q->cspace->root_ = root;
     Q->cspace->move_goal_ = goal;
-    Q->cspace->move_goal_->isMoveGoal = true;
+    Q->cspace->move_goal_->is_move_goal_ = true;
 
     /// Robot
     shared_ptr<RobotData> robot
@@ -109,13 +109,13 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     shared_ptr<Edge> prev_edge;
 
     current_distance = kd_tree->distanceFunction(robot->robot_pose,
-                                                root->position);
+                                                root->position_);
     prev_pose = robot->robot_pose;
 
     int i = 0;
     while(true) {
         double hyper_ball_rad = min(Q->cspace->saturation_delta_, p.ball_constant*(
-                                pow(log(1+kd_tree->treeSize)/(kd_tree->treeSize),
+                                pow(log(1+kd_tree->tree_size_)/(kd_tree->tree_size_),
                                     1/Q->cspace->num_dimensions_) ));
         now_time = getTimeNs(startTime);
 
@@ -146,9 +146,9 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                     if( robot->robot_edge != prev_edge) {
                         // Record data (edges)
                         kdEdge.row(kdEdgePos++)
-                                = robot->robot_edge->start_node_->position;
+                                = robot->robot_edge->start_node_->position_;
                         kdEdge.row(kdEdgePos++)
-                                = robot->robot_edge->end_node_->position;
+                                = robot->robot_edge->end_node_->position_;
                     }
                 } else { cout << "robot not moved" << endl; break; }
             }
@@ -158,13 +158,13 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             /// Make graph consistent
             reduceInconsistency(Q,Q->cspace->move_goal_, Q->cspace->robot_radius_,
                                 root, hyper_ball_rad);
-            if(Q->cspace->move_goal_->rrtLMC != old_rrtLMC) {
-                old_rrtLMC = Q->cspace->move_goal_->rrtLMC;
+            if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
+                old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
             }
 
             /// Check for completion
             current_distance = kd_tree->distanceFunction(robot->robot_pose,
-                                                        root->position);
+                                                        root->position_);
             move_distance = kd_tree->distanceFunction(robot->robot_pose,
                                                      prev_pose);
             cout << "Distance to goal: " << current_distance << endl;
@@ -185,16 +185,16 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 shared_ptr<double> closest_dist = make_shared<double>(INF);
 
                 new_node = randNodeOrFromStack(Q->cspace);
-                if(new_node->kdInTree) continue;
+                if(new_node->kd_in_tree_) continue;
 
-                kd_tree->kdFindNearest(closest_node,closest_dist,
-                                      new_node->position);
+                kd_tree->KDFindNearest(closest_node,closest_dist,
+                                      new_node->position_);
 
                 /// Saturate new node
-                this_dist = kd_tree->distanceFunction(new_node->position,
-                                                        closest_node->position);
+                this_dist = kd_tree->distanceFunction(new_node->position_,
+                                                        closest_node->position_);
                 if(this_dist > Q->cspace->saturation_delta_ && new_node != Q->cspace->goal_node_) {
-                    Edge::Saturate(new_node->position, closest_node->position,
+                    Edge::Saturate(new_node->position_, closest_node->position_,
                                    Q->cspace->saturation_delta_, this_dist);
                 }
 
@@ -207,23 +207,23 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 if(Extend(kd_tree,Q,new_node,closest_node,
                           Q->cspace->saturation_delta_,hyper_ball_rad,Q->cspace->move_goal_)) {
                     // Record data (kd-tree)
-                    kdTree.row(kdTreePos++) = new_node->position;
+                    kdTree.row(kdTreePos++) = new_node->position_;
                 }
 
                 /// Make graph consistent
                 reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
                                     root,hyper_ball_rad);
-                if(Q->cspace->move_goal_->rrtLMC != old_rrtLMC) {
-                    old_rrtLMC = Q->cspace->move_goal_->rrtLMC;
+                if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
+                    old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
                 }
 
                 // If the difference between the first node and the root is
                 // > delta, then set its LMC to INF so it can be recalculated
                 // when the next node is added
                 /// In general this shouldn't happen because of Saturate()
-                if(i == 1 && new_node->rrtParentUsed && (new_node->rrtLMC
-                       - new_node->rrtParentEdge->end_node_->rrtLMC > Q->cspace->saturation_delta_)) {
-                    new_node->rrtLMC = INF;
+                if(i == 1 && new_node->rrt_parent_used_ && (new_node->rrt_LMC_
+                       - new_node->rrt_parent_edge_->end_node_->rrt_LMC_ > Q->cspace->saturation_delta_)) {
+                    new_node->rrt_LMC_ = INF;
                 }
             }
         }
@@ -259,7 +259,7 @@ int main()
 
     shared_ptr<ConfigSpace> cspace
             = make_shared<ConfigSpace>(dims,lbound,ubound,start,goal);
-    cspace->setDistanceFunction(distance_function);
+    cspace->SetDistanceFunction(distance_function);
 
     cspace->obs_delta_ = -1.0;
     cspace->collision_distance_ = 0.1;   // distance for collision
@@ -271,7 +271,7 @@ int main()
     cspace->space_has_theta_ = true;   // Dubin's car model
 
     /// K-D Tree
-    // Dubin's model wraps theta (4th entry) at 2pi
+    // Dubin's model wraps_ theta (4th entry) at 2pi
     Eigen::VectorXi wrap_vec(1);    // 1 wrapping dimension
     wrap_vec(0) = 2;
     Eigen::VectorXd wrap_points_vec(1);

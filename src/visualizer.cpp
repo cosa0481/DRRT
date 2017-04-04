@@ -110,8 +110,8 @@ void visualizer(shared_ptr<KDTree> Tree,
 
         // Add K-D Tree nodes to the frame
         {
-            lock_guard<mutex> lock(Tree->treeMutex_);
-            nodes = Tree->nodes;
+            lock_guard<mutex> lock(Tree->tree_mutex_);
+            nodes = Tree->nodes_;
         }
         for( int k = 0; k < nodes.size(); k++ ) {
             box = new SceneGraph::GLBox();
@@ -121,11 +121,11 @@ void visualizer(shared_ptr<KDTree> Tree,
             axis->SetAxisSize(0.15);
             axis->AddChild(box);
 
-            kdnode = nodes.at(k)->position;
+            kdnode = nodes.at(k)->position_;
             axis->SetPose(kdnode(1),kdnode(0),0.0,
                              0.0,0.0,PI/2 - kdnode(2));
             glGraph.AddChild(axis);
-            Tree->removeVizNode(nodes.at(k));
+            Tree->RemoveVizNode(nodes.at(k));
         }
 
         /// Display collision lines
@@ -136,10 +136,10 @@ void visualizer(shared_ptr<KDTree> Tree,
             }
             for(int p = 0; p < collisions_.size(); p++) {
                 edge = new SceneGraph::GLLineStrip();
-                edge->SetPoint(Eigen::Vector3d(collisions_.at(p)->start_node_->position(0),
-                                               collisions_.at(p)->start_node_->position(1),0.0));
-                edge->SetPoint(Eigen::Vector3d(collisions_.at(p)->end_node_->position(0),
-                                               collisions_.at(p)->end_node_->position(1),0.0));
+                edge->SetPoint(Eigen::Vector3d(collisions_.at(p)->start_node_->position_(0),
+                                               collisions_.at(p)->start_node_->position_(1),0.0));
+                edge->SetPoint(Eigen::Vector3d(collisions_.at(p)->end_node_->position_(0),
+                                               collisions_.at(p)->end_node_->position_(1),0.0));
                 Q->cspace->RemoveVizEdge(collisions_.at(p));
                 glGraph.AddChild(edge);
             }

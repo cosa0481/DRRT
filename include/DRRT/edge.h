@@ -78,7 +78,7 @@ public:
     static void Saturate(Eigen::VectorXd &nP,
                          Eigen::VectorXd cP,
                          double delta,
-                         double dist_);
+                         double distance);
 
     std::shared_ptr<Edge> GetPointer() { return shared_from_this(); }
 
@@ -92,11 +92,11 @@ public:
      * distance is stored in Edge->dist_
      * Dubin's edge version (COULD BE MADE MORE EFFICIENT)
      */
-    virtual Eigen::VectorXd PoseAtDistAlongEdge(double distAlongEdge)=0;
+    virtual Eigen::VectorXd PoseAtDistAlongEdge(double dist_along_edge)=0;
 
     // Returns the pose of a robot that is located time along the edge
     // Dubin's edge version (could be made more efficient)
-    virtual Eigen::VectorXd PoseAtTimeAlongEdge(double timeAlongEdge)=0;
+    virtual Eigen::VectorXd PoseAtTimeAlongEdge(double time_along_edge)=0;
 
     /* Dubin's version, figures out which one of the 6 possibilities is the
      * shortest (ignoring obstacles) subject to the robot's (constant)

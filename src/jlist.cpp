@@ -279,13 +279,13 @@ void JList::JListPrint()
     while( ptr != ptr->child_ ) {
         if( use_nodes_ ) {
             std::cout << "node_ " << i << ": "
-                      << ptr->node_->rrtLMC << "\n" << ptr->node_->position
+                      << ptr->node_->rrt_LMC_ << "\n" << ptr->node_->position_
                       << std::endl;
         } else { // use edges
             std::cout << "edge_ " << i << ": "
                       << ptr->edge_->dist_ << "\n"
-                      << ptr->edge_->start_node_->position << "\n->\n"
-                      << ptr->edge_->end_node_->position << std::endl;
+                      << ptr->edge_->start_node_->position_ << "\n->\n"
+                      << ptr->edge_->end_node_->position_ << std::endl;
         }
         ptr = ptr->child_;
         i++;
@@ -298,7 +298,7 @@ Eigen::Matrix<double,Eigen::Dynamic,2> JList::JListAsMatrix()
     std::shared_ptr<JListNode> ptr = front_;
     int row_count = 0;
     while( ptr != ptr->child_ ) {
-        matrix.row(row_count) = ptr->node_->position.head(2);
+        matrix.row(row_count) = ptr->node_->position_.head(2);
         row_count++;
         ptr = ptr->child_;
     }

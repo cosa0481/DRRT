@@ -19,22 +19,24 @@ double DubinsDistAlongPath(Eigen::VectorXd x, Eigen::VectorXd y)
     return sqrt(temp.sum());
 }
 
-double RightTurnDist(Eigen::VectorXd pointA, Eigen::VectorXd pointB,
-                     Eigen::VectorXd circleCenter, double r)
+double RightTurnDist(Eigen::VectorXd point_a, Eigen::VectorXd point_b,
+                     Eigen::VectorXd circle_center, double r)
 {
-    double theta = atan2(pointA(1)-circleCenter(1), pointA(0)-circleCenter(0))
-            - atan2(pointB(1)-circleCenter(1), pointB(0)-circleCenter(0));
+    double theta = atan2(point_a(1)-circle_center(1),
+                         point_a(0)-circle_center(0))
+            - atan2(point_b(1)-circle_center(1), point_b(0)-circle_center(0));
     if( theta < 0 ) {
         theta += 2*3.1415926536;
     }
     return theta*r;
 }
 
-double LeftTurnDist(Eigen::VectorXd pointA, Eigen::VectorXd pointB,
-                    Eigen::VectorXd circleCenter, double r)
+double LeftTurnDist(Eigen::VectorXd point_a, Eigen::VectorXd point_b,
+                    Eigen::VectorXd circle_center, double r)
 {
-    double theta = atan2(pointB(1)-circleCenter(1), pointB(0)-circleCenter(0))
-            - atan2(pointA(1)-circleCenter(1), pointA(0)-circleCenter(0));
+    double theta = atan2(point_b(1)-circle_center(1),
+                         point_b(0)-circle_center(0))
+            - atan2(point_a(1)-circle_center(1), point_a(0)-circle_center(0));
     if( theta < 0 ) {
         theta += 2*3.1415926536;
     }

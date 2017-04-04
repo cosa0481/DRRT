@@ -27,15 +27,15 @@ double DubinsDistAlongPath( Eigen::VectorXd x, Eigen::VectorXd y );
  * pointA to pointB, where both are assumed to be on the
  * circle of radius r that is centered at circleCenter
  */
-double RightTurnDist( Eigen::VectorXd pointA, Eigen::VectorXd pointB,
-                      Eigen::VectorXd circleCenter, double r );
+double RightTurnDist( Eigen::VectorXd point_a, Eigen::VectorXd point_b,
+                      Eigen::VectorXd circle_center, double r );
 
 /* Helps with Dubin's car
  * Returns the distance that the car travels to get from
  * pointA to pointB, where both are assumed to be on the
  * circle of radius r that is centered at circleCenter
  */
-double LeftTurnDist( Eigen::VectorXd pointA, Eigen::VectorXd pointB,
-                     Eigen::VectorXd circleCenter, double r );
+double LeftTurnDist(Eigen::VectorXd point_a, Eigen::VectorXd point_b,
+                     Eigen::VectorXd circle_center, double r );
 
 #endif // DRRT_DISTANCE_FUNCTIONS_H

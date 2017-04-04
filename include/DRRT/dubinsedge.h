@@ -22,8 +22,8 @@ public:
         : Edge(ConfigSpace,tree_,start,end) {}
 
     bool ValidMove();
-    Eigen::VectorXd PoseAtDistAlongEdge(double distAlongEdge);
-    Eigen::VectorXd PoseAtTimeAlongEdge(double timeAlongEdge);
+    Eigen::VectorXd PoseAtDistAlongEdge(double dist_along_edge);
+    Eigen::VectorXd PoseAtTimeAlongEdge(double time_along_edge);
     void CalculateTrajectory();
     void CalculateHoverTrajectory();
     bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle);

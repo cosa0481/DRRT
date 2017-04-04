@@ -18,11 +18,11 @@ std::shared_ptr<Edge> Edge::NewEdge(std::shared_ptr<ConfigSpace> C,
 void Edge::Saturate(Eigen::VectorXd& nP,
                     Eigen::VectorXd cP,
                     double delta,
-                    double dist)
+                    double distance)
 {
     // First scale non-theta dimensions
     nP.head(2) = cP.head(2) +
-            ( nP.head(2) - cP.head(2) ) * delta / dist;
+            ( nP.head(2) - cP.head(2) ) * delta / distance;
 
     while(nP(2) < -2*PI) nP(2) += 2*PI;
     while(nP(2) > 2*PI) nP(2) -= 2*PI;
@@ -69,7 +69,7 @@ bool DubinsEdge::ValidMove()
         // Note that planning happens in reverse time. i.e. time = 0 is at
         // the root of the search tree, and thus the time of startNode must be
         // greater than the time of endNode
-        return ((this->start_node_->position(2) > this->end_node_->position(2))
+        return ((this->start_node_->position_(2) > this->end_node_->position_(2))
                 && ((this->cspace_->dubins_min_velocity_ <= this->velocity_)
                     && (this->velocity_ <= this->cspace_->dubins_max_velocity_)));
     }
@@ -77,11 +77,11 @@ bool DubinsEdge::ValidMove()
     return true;
 }
 
-Eigen::VectorXd DubinsEdge::PoseAtDistAlongEdge(double distAlongEdge)
+Eigen::VectorXd DubinsEdge::PoseAtDistAlongEdge(double dist_along_edge)
 {
-    double distRemaining = distAlongEdge;
-    if( this->trajectory_.rows() < 2 || this->dist_ <= distAlongEdge ) {
-        return this->end_node_->position;
+    double distRemaining = dist_along_edge;
+    if( this->trajectory_.rows() < 2 || this->dist_ <= dist_along_edge ) {
+        return this->end_node_->position_;
     }
 
     // Find the piece of trajectory that contains the point
@@ -128,29 +128,29 @@ Eigen::VectorXd DubinsEdge::PoseAtDistAlongEdge(double distAlongEdge)
     return vec;
 }
 
-Eigen::VectorXd DubinsEdge::PoseAtTimeAlongEdge(double timeAlongEdge)
+Eigen::VectorXd DubinsEdge::PoseAtTimeAlongEdge(double time_along_edge)
 {
-    if( this->trajectory_.rows() < 2 || (this->start_node_->position(2)
-                                        - this->end_node_->position(2))
-            <= timeAlongEdge ) {
-        return this->end_node_->position;
+    if( this->trajectory_.rows() < 2 || (this->start_node_->position_(2)
+                                        - this->end_node_->position_(2))
+            <= time_along_edge ) {
+        return this->end_node_->position_;
     }
 
     // Find the piece of the trajectory_ that contains the time at the
     // desired distance
     int i = 1;
     while( this->trajectory_(i,2)
-           > this->start_node_->position(2) - timeAlongEdge ) {
+           > this->start_node_->position_(2) - time_along_edge ) {
         i += 1;
     }
 
     // Now calculate pose along that piece
     double ratio = (this->trajectory_(i-1,2)
-                    - (this->start_node_->position(2)-timeAlongEdge))
+                    - (this->start_node_->position_(2)-time_along_edge))
             / (this->trajectory_(i-1,2) - this->trajectory_(i,2));
     Eigen::VectorXd ret = this->trajectory_.row(i-1)
             + ratio*(this->trajectory_.row(i) - this->trajectory_.row(i-1));
-    double retTime = this->start_node_->position(2) - timeAlongEdge;
+    double retTime = this->start_node_->position_(2) - time_along_edge;
     double retTheta = atan2( this->trajectory_(i,1) - this->trajectory_(i-1,1),
                              this->trajectory_(i,0) - this->trajectory_(i-1,0) );
 
@@ -167,10 +167,10 @@ void DubinsEdge::CalculateTrajectory()
 {
     double r_min = this->cspace_->min_turn_radius_;
 
-    Eigen::Vector2d initial_location = this->start_node_->position.head(2);
-    double initial_theta = this->start_node_->position(2);
-    Eigen::Vector2d goal_location = this->end_node_->position.head(2);
-    double goal_theta = this->end_node_->position(2);
+    Eigen::Vector2d initial_location = this->start_node_->position_.head(2);
+    double initial_theta = this->start_node_->position_(2);
+    Eigen::Vector2d goal_location = this->end_node_->position_.head(2);
+    double goal_theta = this->end_node_->position_(2);
 
     Eigen::Vector2d temp, temp2;
 
@@ -718,8 +718,8 @@ void DubinsEdge::CalculateTrajectory()
         // Note this HARDCODED batch version of DubinsDistAlongPath only
         // works because we assume constant speed along the edge
         this->dist_ = sqrt(pow(bestDist,2)
-                          + pow(this->start_node_->position(2)
-                                - this->end_node_->position(2), 2) );
+                          + pow(this->start_node_->position_(2)
+                                - this->end_node_->position_(2), 2) );
 
         /* We need to calculate the time parameterization for the robot
          * along the path. NOTE: We make the simplifying assumption that
@@ -737,7 +737,7 @@ void DubinsEdge::CalculateTrajectory()
          */
 
         this->velocity_ = this->w_dist_
-                / (this->start_node_->position(2)-this->end_node_->position(2));
+                / (this->start_node_->position_(2)-this->end_node_->position_(2));
 
         // Build trajectory with 0 for times
         Eigen::VectorXd zeros(first_path_x.size()
@@ -773,17 +773,17 @@ void DubinsEdge::CalculateTrajectory()
                                1) = zeros;
 
         // Now calculate times
-        this->trajectory_(0,2) = this->start_node_->position(2);
+        this->trajectory_(0,2) = this->start_node_->position_(2);
         double cumulativeDist = 0.0;
         for( int j = 1; j < this->trajectory_.rows()-1; j++ ) {
             cumulativeDist += this->tree_->distanceFunction(
                         this->trajectory_.row(j-1).head(2),
                         this->trajectory_.row(j).head(2));
-            this->trajectory_(j,2) = this->start_node_->position(2)
+            this->trajectory_(j,2) = this->start_node_->position_(2)
                     - cumulativeDist/this->velocity_;
         }
         this->trajectory_.row(this->trajectory_.rows()-1).head(3)
-                = this->end_node_->position.head(3); // make end point exact
+                = this->end_node_->position_.head(3); // make end point exact
     } else {
         this->dist_ = bestDist;
 
@@ -817,11 +817,11 @@ void DubinsEdge::CalculateHoverTrajectory()
 
     if( this->cspace_->space_has_time_ ) {
         this->velocity_ = this->cspace_->dubins_min_velocity_;
-        this->trajectory_.row(0) = this->start_node_->position.head(3);
-        this->trajectory_.row(1) = this->end_node_->position.head(3);
+        this->trajectory_.row(0) = this->start_node_->position_.head(3);
+        this->trajectory_.row(1) = this->end_node_->position_.head(3);
     } else {
-        this->trajectory_.row(0) = this->start_node_->position.head(2);
-        this->trajectory_.row(1) = this->end_node_->position.head(2);
+        this->trajectory_.row(0) = this->start_node_->position_.head(2);
+        this->trajectory_.row(1) = this->end_node_->position_.head(2);
     }
 }
 
@@ -834,16 +834,16 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     // Thus, the edge is safe if a robot with this additional radius can
     // traverse that segment
     if(!ExplicitEdgeCheck2D(obstacle,
-                            this->start_node_->position,
-                            this->end_node_->position,
+                            this->start_node_->position_,
+                            this->end_node_->position_,
                             this->cspace_->robot_radius_
                             + 2*this->cspace_->min_turn_radius_)) {
 //        std::cout << "Returning false" << std::endl;
         return false;
     }
 
-//    std::cout << "robot cannot traverse edge:\n" << this->start_node_->position
-//              << std::endl << "--" << std::endl << this->start_node_->position << std::endl;
+//    std::cout << "robot cannot traverse edge:\n" << this->start_node_->position_
+//              << std::endl << "--" << std::endl << this->start_node_->position_ << std::endl;
 
     // If the segment was in conflict then we need to do the full check
     // check of the trajectory segments
@@ -875,8 +875,8 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 //                std::cout << "Obstacle:\n" << obstacle->position_ << std::endl
 //                          << "with radius: " << obstacle->radius_ << std::endl
 //                          << "in collision with this edge:\n"
-//                     << this->start_node_->position << "\n--\n"
-//                     << this->end_node_->position << std::endl;
+//                     << this->start_node_->position_ << "\n--\n"
+//                     << this->end_node_->position_ << std::endl;
                 std::shared_ptr<Edge> this_edge = this->GetPointer();
                 this->cspace_->AddVizEdge(this_edge);
                 return true;

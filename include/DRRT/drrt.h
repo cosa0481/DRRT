@@ -29,7 +29,7 @@ public:
     double change_threshold;            // obstacle change detection
     double goal_threshold;              // goal detection
     bool move_robot_flag;               // true -> drive robot
-    Eigen::VectorXi wraps;              // wrapping dimensions (0=1st)
+    Eigen::VectorXi wraps_;              // wrapping dimensions (0=1st)
     Eigen::VectorXd wrap_points;        // points at which they wrap
 
     // Constructor
@@ -53,7 +53,7 @@ public:
             change_threshold(c_t),
             goal_threshold(g_t),
             move_robot_flag(m_r_f),
-            wraps(w),
+            wraps_(w),
             wrap_points(w_p)
     {}
 };
@@ -192,7 +192,7 @@ int FindIndexBeforeTime(Eigen::MatrixXd path, double timeToFind);
 
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
-// be DESTROYED PROPERLY using L.emptyRangeList to avoid problems -collision-
+// be DESTROYED PROPERLY using L.EmptyRangeList to avoid problems -collision-
 std::shared_ptr<JList> FindPointsInConflictWithObstacle(
         std::shared_ptr<ConfigSpace> &S,
         std::shared_ptr<KDTree> Tree,
@@ -284,7 +284,7 @@ bool Extend(std::shared_ptr<KDTree> &Tree,
  * then it saves a copy of each edge in each node (to avoid work duplication
  * in RRT# and RRTx)
  */
-/// THIS FUNCTION INITIALLY SETS rrtLMC COST ///
+/// THIS FUNCTION INITIALLY SETS rrt_LMC_ COST ///
 void findBestParent(std::shared_ptr<ConfigSpace> &S,
                     std::shared_ptr<KDTree> &Tree,
                     std::shared_ptr<KDTreeNode> &newNode,
