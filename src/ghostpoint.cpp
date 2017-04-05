@@ -36,20 +36,20 @@ Eigen::VectorXd GetNextGhostPoint(std::shared_ptr<GhostPointIterator> G,
         G->wrap_dim_flags_[G->ghost_tree_depth_-1] = 1;
 
         // Calculate this (wrapped) dimension of the ghost
-        double wrapValue = G->kd_tree_->wrap_points_[G->ghost_tree_depth_-1];
-        int wrapDim = G->kd_tree_->wraps_[G->ghost_tree_depth_-1];
-        double dimVal = G->query_point_[wrapDim];
-        double dimClosest = 0.0;
-        if( G->query_point_[wrapDim] < wrapValue/2.0 ) {
+        double wrap_value = G->kd_tree_->wrap_points_[G->ghost_tree_depth_-1];
+        int wrap_dim = G->kd_tree_->wraps_[G->ghost_tree_depth_-1];
+        double dim_val = G->query_point_[wrap_dim];
+        double dim_closest = 0.0;
+        if( G->query_point_[wrap_dim] < wrap_value/2.0 ) {
             // Wrap to the right
-            dimVal += wrapValue;
-            dimClosest += wrapValue;
+            dim_val += wrap_value;
+            dim_closest += wrap_value;
         } else {
             // Wrap to the left
-            dimVal -= wrapValue;
+            dim_val -= wrap_value;
         }
-        G->current_ghost_[wrapDim] = dimVal;
-        G->closest_unwrapped_point_[wrapDim] = dimClosest;
+        G->current_ghost_[wrap_dim] = dim_val;
+        G->closest_unwrapped_point_[wrap_dim] = dim_closest;
 
         // Finally move back down the tree to the lef-most possible leaf,
         // marking the path with 0s and populating appropriate dimension

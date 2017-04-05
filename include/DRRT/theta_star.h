@@ -5,10 +5,10 @@
 
 double DistFunc(Eigen::VectorXd a, Eigen::VectorXd b);
 
-std::vector<Eigen::VectorXd> ThetaStar(std::shared_ptr<Queue> queue);
+std::vector<Eigen::VectorXd> ThetaStar(std::shared_ptr<Queue> Q);
 
-bool UpdateVertex(std::shared_ptr<Queue> queue,
-                  std::shared_ptr<KDTree> tree,
+bool UpdateVertex(std::shared_ptr<Queue> Q,
+                  std::shared_ptr<KDTree> Tree,
                   std::shared_ptr<KDTreeNode> &node,
                   std::shared_ptr<KDTreeNode> &neighbor,
                   std::shared_ptr<KDTreeNode> &min_neighbor);

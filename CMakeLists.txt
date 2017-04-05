@@ -35,15 +35,15 @@ set( HDRS
                 include/DRRT/drrt.h
                 include/DRRT/kdtree.h
                 include/DRRT/heap.h
-                include/DRRT/ghostPoint.h
+                include/DRRT/ghostpoint.h
                 include/DRRT/list.h
                 include/DRRT/jlist.h
                 include/DRRT/kdtreenode.h
-                include/DRRT/drrt_data_structures.h
+                include/DRRT/datastructures.h
                 include/DRRT/edge.h
                 include/DRRT/dubinsedge.h
                 include/DRRT/holedge.h
-                include/DRRT/drrt_distance_functions.h
+                include/DRRT/distancefunctions.h
                 include/DRRT/visualizer.h
                 include/DRRT/obstacle.h
                 include/DRRT/theta_star.h
@@ -53,12 +53,12 @@ set( SRCS
 		src/drrt.cpp
                 src/kdtree.cpp
                 src/heap.cpp
-                src/ghostPoint.cpp
+                src/ghostpoint.cpp
                 src/list.cpp
                 src/jlist.cpp
                 src/dubinsedge.cpp
                 src/holedge.cpp
-                src/drrt_distance_functions.cpp
+                src/distancefunctions.cpp
                 src/visualizer.cpp
                 src/obstacle.cpp
                 src/theta_star.cpp

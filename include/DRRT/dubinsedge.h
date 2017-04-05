@@ -5,7 +5,7 @@
 #include <DRRT/edge.h>
 
 
-// #include this file in drrt_data_structures.h
+// #include this file in datastructures.h
 // Remember to implement Edge::NewEdge(Eigen::VectorXd,Eigen::VectorXd)
 
 class DubinsEdge : public Edge
@@ -15,11 +15,11 @@ public:
     DubinsEdge()
         : Edge() {}
 
-    DubinsEdge(std::shared_ptr<ConfigSpace> ConfigSpace,
-               std::shared_ptr<KDTree> tree_,
+    DubinsEdge(std::shared_ptr<ConfigSpace> C,
+               std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> start,
                std::shared_ptr<KDTreeNode> end)
-        : Edge(ConfigSpace,tree_,start,end) {}
+        : Edge(C,Tree,start,end) {}
 
     bool ValidMove();
     Eigen::VectorXd PoseAtDistAlongEdge(double dist_along_edge);

@@ -1,9 +1,9 @@
-/* drrt_distance_functions.cpp
+/* distancefunctions.cpp
  * Corin Sandford
  * Fall 2016
  */
 
-#include <DRRT/drrt_distance_functions.h>
+#include <DRRT/distancefunctions.h>
 
 double DubinsDistAlongTimePath(Eigen::VectorXd x, Eigen::VectorXd y)
 {

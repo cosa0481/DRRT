@@ -14,9 +14,9 @@ double DistFunc(Eigen::VectorXd a, Eigen::VectorXd b)
     return sqrt(temp.sum());
 }
 
-vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
+vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
 {
-
+    cout << "Theta*\n------" << endl;
     Eigen::VectorXi wrap_vec(1);
     Eigen::VectorXd wrap_points_vec(1);
     wrap_vec(0) = 2;
@@ -25,22 +25,26 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
             make_shared<KDTree>(3,wrap_vec,wrap_points_vec);
     tree->SetDistanceFunction(DistFunc);
 
-    shared_ptr<KDTreeNode> start = make_shared<KDTreeNode>(queue->cspace->start_);
+    shared_ptr<KDTreeNode> start = make_shared<KDTreeNode>(Q->cspace->start_);
     start->rrt_LMC_ = 0;
-    shared_ptr<Edge> start_edge = Edge::NewEdge(queue->cspace,tree,start,start);
+    shared_ptr<Edge> start_edge = Edge::NewEdge(Q->cspace,tree,start,start);
     start->rrt_parent_edge_ = start_edge;
     start->rrt_parent_used_ = true;
     tree->KDInsert(start);
 
-    /// NEED TO BE ABLE TO APPLY THIS DYNAMICALY
+    /// NEED TO BE ABLE TO APPLY THIS DYNAMICALLY
     // Here I'm just adding the obstacles manually since I know how many exist
     shared_ptr<ListNode> osnode;
     {
-        lock_guard<mutex> lock(queue->cspace->cspace_mutex_);
-        osnode = queue->cspace->obstacles_->front_;
+        lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+        osnode = Q->cspace->obstacles_->front_;
         // below takes care of add loop in main
         osnode->obstacle_->obstacle_used_ = true;
-        AddNewObstacle(tree,queue,osnode->obstacle_,tree->root);
+        AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
+        osnode = osnode->child_;
+        // below takes care of add loop in main
+        osnode->obstacle_->obstacle_used_ = true;
+        AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
     }
 
     cout << "Building K-D Tree of ConfigSpace" << endl;
@@ -48,8 +52,8 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
     Eigen::Vector3d this_point;
     shared_ptr<KDTreeNode> new_node;
     double x_width, y_width, angle;
-    x_width = queue->cspace->num_dimensions_*queue->cspace->width_(0);
-    y_width = queue->cspace->num_dimensions_*queue->cspace->width_(1);
+    x_width = Q->cspace->num_dimensions_*Q->cspace->width_(0);
+    y_width = Q->cspace->num_dimensions_*Q->cspace->width_(1);
     for( int i = 0; i < x_width; i++ ) {
         for( int j = 0; j < y_width; j++ ) {
             if( i == 0 && j == 0 ) {
@@ -82,8 +86,6 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
         }
     }
 
-    /// Need to make each node have eight neighbors surrounding it
-    /// each node is at a grid point
     shared_ptr<KDTreeNode> this_node = make_shared<KDTreeNode>();
     shared_ptr<JList> node_list = make_shared<JList>(true); // uses KDTreeNodes
     shared_ptr<JListNode> this_item = make_shared<JListNode>();
@@ -92,6 +94,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
     // This is where the robot starts
     shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>();
     tree->GetNodeAt(Eigen::Vector3d(20,20,-PI+20/sqrt(20*20+20*20)),goal);
+    goal->rrt_parent_edge_ = Edge::NewEdge(Q->cspace,tree,goal,goal);
 
     open_set = make_shared<BinaryHeap>(false); // Priority Queue
     open_set->AddToHeap(goal); // add starting position_
@@ -102,15 +105,14 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
     shared_ptr<KDTreeNode> node, end_node, min_neighbor;
     shared_ptr<JListNode> item;
     end_node = make_shared<KDTreeNode>(Eigen::Vector3d(-1,-1,-1));
-    end_node->rrt_parent_edge_ = Edge::NewEdge(queue->cspace,tree,end_node,end_node);
+    end_node->rrt_parent_edge_ = Edge::NewEdge(Q->cspace,tree,end_node,end_node);
     end_node->rrt_LMC_ = INF;
     while(open_set->index_of_last_ > 0) {
         open_set->PopHeap(node);
 
         if(node == start) {
             cout << "Found Any-Angle Path" << endl;
-            vector<Eigen::VectorXd> path = GetPath(end_node->rrt_parent_edge_->start_node_);
-            path.insert(path.begin(), start->position_);
+            vector<Eigen::VectorXd> path = GetPath(start);
             return path;
         }
 
@@ -132,7 +134,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
 //                    near_node->rrt_LMC_ = INF;
 //                    near_node->rrt_parent_used_ = false;
 //                }
-                UpdateVertex(queue,tree,node,near_node,min_neighbor);
+                UpdateVertex(Q,tree,node,near_node,min_neighbor);
             }
             this_item = this_item->child_;
         }
@@ -153,25 +155,25 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> queue)
     return null_vec;
 }
 
-bool UpdateVertex(shared_ptr<Queue> queue,
-                   shared_ptr<KDTree> tree,
-                   shared_ptr<KDTreeNode> &node,
-                   shared_ptr<KDTreeNode> &neighbor,
-                   shared_ptr<KDTreeNode> &min_neighbor)
+bool UpdateVertex(shared_ptr<Queue> Q,
+                  shared_ptr<KDTree> Tree,
+                  shared_ptr<KDTreeNode> &node,
+                  shared_ptr<KDTreeNode> &neighbor,
+                  shared_ptr<KDTreeNode> &min_neighbor)
 {
     shared_ptr<Edge> this_edge;
     if(node->rrt_parent_used_) {
-        this_edge = Edge::NewEdge(queue->cspace,tree,
+        this_edge = Edge::NewEdge(Q->cspace,Tree,
                                   node->rrt_parent_edge_->start_node_,neighbor);
-        if(!LineCheck(queue->cspace,tree,this_edge->start_node_,this_edge->end_node_)
+        if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,this_edge->end_node_)
                 && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
             min_neighbor = neighbor;
             min_neighbor->rrt_parent_edge_ = this_edge;
             return true;
         }
     }
-    this_edge = Edge::NewEdge(queue->cspace,tree,node,neighbor);
-    if(!LineCheck(queue->cspace,tree,this_edge->start_node_,this_edge->end_node_)
+    this_edge = Edge::NewEdge(Q->cspace,Tree,node,neighbor);
+    if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,this_edge->end_node_)
             && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
         min_neighbor = neighbor;
         min_neighbor->rrt_parent_edge_ = this_edge;
@@ -184,9 +186,9 @@ vector<Eigen::VectorXd> GetPath(shared_ptr<KDTreeNode> &node)
 {
     vector<Eigen::VectorXd> path;
     path.push_back(node->position_);
-    if(node->rrt_parent_edge_->end_node_ != node) {
+    if(node->rrt_parent_edge_->start_node_ != node->rrt_parent_edge_->end_node_) {
         vector<Eigen::VectorXd> rec_path
-                = GetPath(node->rrt_parent_edge_->end_node_);
+                = GetPath(node->rrt_parent_edge_->start_node_);
         for(int i = 0; i < rec_path.size(); i++) {
             path.push_back(rec_path.at(i));
         }

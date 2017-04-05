@@ -658,7 +658,7 @@ bool checkNeighborsForEdgeProblems(shared_ptr<ConfigSpace>& S,
     return false;
 }
 
-bool LineCheck(std::shared_ptr<ConfigSpace> S,
+bool LineCheck(std::shared_ptr<ConfigSpace> C,
                std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> node1,
                std::shared_ptr<KDTreeNode> node2) {
@@ -672,14 +672,39 @@ bool LineCheck(std::shared_ptr<ConfigSpace> S,
     node1->position_(2) = theta;
     node2->position_(2) = theta;
     // Find the trajectory between them (should be a straight line)
-    std::shared_ptr<Edge> edge = Edge::NewEdge(S,Tree,node1,node2);
-    edge->CalculateTrajectory();
-    // Check if this straight line is valid
-//    cout << "check edge:\n" << edge->start_node_->position_ << "\n--\n"
-//         << edge->end_node_->position_ << endl;
-    bool unsafe = ExplicitEdgeCheck(S,edge);
-//    cout << "line of sight: " << !unsafe << endl;
-    // Restore the nodes' original angles
+    std::shared_ptr<Edge> edge = Edge::NewEdge(C,Tree,node1,node2);
+    // Create trajectory straight line from node1 --> node2
+    int traj_length = 50;
+    Eigen::VectorXd x_traj = Eigen::VectorXd::Zero(traj_length+1);
+    Eigen::VectorXd y_traj = Eigen::VectorXd::Zero(traj_length+1);
+    double x_val = node1->position_(0);
+    double y_val = node1->position_(1);
+    double x_dist = abs(node2->position_(0) - x_val);
+    double y_dist = abs(node2->position_(1) - y_val);
+    int i = 0;
+    while(i < traj_length) {
+        x_traj(i) = x_val;
+        if(node2->position_(0) > node1->position_(0))
+            x_val += x_dist/traj_length;
+        else x_val -= x_dist/traj_length;
+
+        y_traj(i) = y_val;
+        if(node2->position_(1) > node1->position_(1))
+            y_val += y_dist/traj_length;
+        else y_val -= y_dist/traj_length;
+
+        i++;
+    }
+    x_traj(i) = x_val;
+    y_traj(i) = y_val;
+    edge->trajectory_.resize(traj_length+1,2);
+    edge->trajectory_.col(0) = x_traj;
+    edge->trajectory_.col(1) = y_traj;
+    // Check if this straight line trajectory is valid
+    bool unsafe = ExplicitEdgeCheck(C,edge);
+    // Restore the nodes' original angles (for some reason if I get rid of
+    // this it dies but this doesn't mean anything since theta* doesn't use
+    // the theta dimension)
     node1->position_(2) = saved_theta1;
     node2->position_(2) = saved_theta2;
     // Return true if there this edge is unsafe and there is no line of sight

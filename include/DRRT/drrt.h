@@ -18,7 +18,7 @@
 
 ///////////////////// RRT Problem ///////////////////////
 // This holds all the parameters needed to run RRTx with the DRRT library
-class Problem{
+typedef struct Problem{
 public:
     std::string search_type;            // algorithm search type ("RRTx")
     std::shared_ptr<ConfigSpace> c_space;    // problem configuration space
@@ -56,7 +56,7 @@ public:
             wraps_(w),
             wrap_points(w_p)
     {}
-};
+} Problem;
 
 
 ///////////////////// Helper Functions ///////////////////////
@@ -70,20 +70,6 @@ double randDouble( double min, double max );
 // Functions that interact with nodes and not much else.
 // This includes a handfull of functions that traverse the search
 // tree in one way or another
-
-// Returns Distance between two nodes (e.g., in the C-space)
-// Should obey the triangle inequality
-//double distance(std::shared_ptr<KDTreeNode> x, std::shared_ptr<KDTreeNode> y);
-
-/* Returns distance between two nodes (e.g., in the workspace)
- * Should obey the triangle inequality.
- * Note that it is assumed that the first two dimensions of
- * the C-space are position in the workspace
- */
-//double w_dist_( std::shared_ptr<KDTreeNode> x, std::shared_ptr<KDTreeNode> y );
-
-// Returns true if nodeA certifies nodeB (only used in Alg. A)
-//bool certifierOf( std::shared_ptr<KDTreeNode> nodeA, std::shared_ptr<KDTreeNode> nodeB );
 
 // Extracts the cost of the graph path from th node to the root
 // by adding up the edge lengths between node and root
@@ -255,7 +241,7 @@ bool ExplicitPointCheck(std::shared_ptr<Queue>& Q, Eigen::VectorXd point);
 bool ExplicitNodeCheck(std::shared_ptr<Queue>& Q,
                        std::shared_ptr<KDTreeNode> node);
 
-bool LineCheck(std::shared_ptr<ConfigSpace> S,
+bool LineCheck(std::shared_ptr<ConfigSpace> C,
                std::shared_ptr<KDTree> Tree,
                std::shared_ptr<KDTreeNode> node1,
                std::shared_ptr<KDTreeNode> node2);

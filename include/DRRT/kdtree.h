@@ -8,8 +8,8 @@
 
 
 #include <DRRT/ghostPoint.h>
-#include <DRRT/drrt_data_structures.h>
-#include <DRRT/drrt_distance_functions.h>
+#include <DRRT/datastructures.h>
+#include <DRRT/distancefunctions.h>
 
 
 // A KD-Tree data structure that stores nodes of type T

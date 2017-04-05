@@ -72,16 +72,17 @@ void visualizer(shared_ptr<KDTree> Tree,
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
         obstacles = *Q->cspace->obstacles_;
     }
-    for(int i = 0; i < obstacles.length_; i++) {
+    int num_obstacles = obstacles.length_;
+    for(int i = 0; i < num_obstacles; i++) {
         obstacles.ListPop(this_obstacle);
         polygon = new SceneGraph::GLLineStrip();
         for( int j = 0; j < this_obstacle->polygon_.rows(); j++) {
-            polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(0),
-                                              this_obstacle->polygon_.row(j)(1),
+            polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(1),
+                                              this_obstacle->polygon_.row(j)(0),
                                               0.0));
         }
-        polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(0)(0),
-                                          this_obstacle->polygon_.row(0)(1),
+        polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(0)(1),
+                                          this_obstacle->polygon_.row(0)(0),
                                           0.0));
         glGraph.AddChild(polygon);
     }

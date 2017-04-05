@@ -297,7 +297,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
         Q->cspace->time_elapsed_ = (getTimeNs(startTime)
                              - Q->cspace->start_time_ns_)/1000000000.0;
         if(Q->cspace->time_elapsed_ >= slice_end) {
-            cout << "\nIteration: " << i++ << endl << "---------" << endl;
+            cout << "\nIteration: " << i++ << endl << "----------------" << endl;
             iter_start = getTimeNs(startTime);
 
             slice_start = now_time;

@@ -20,7 +20,6 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
         line = "";
 //        cout << "polygons in file: " << num_polygons << endl;
         for(int i = 0; i < num_polygons; i++) {
-//            cout << "Polygon " << i << ": " << endl;
             // Get number of points in this polygon
             getline(read_stream, line);
             num_points = stoi(line);
@@ -42,7 +41,6 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
             shared_ptr<Obstacle> static_polygon
                     = make_shared<Obstacle>(3,polygon,C->space_has_theta_);
             static_polygon->AddObsToConfigSpace(C);
-            getline(read_stream, line);
         }
     }
     else { cout << "Error opening obstacle file" << endl; }
