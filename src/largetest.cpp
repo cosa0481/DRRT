@@ -101,7 +101,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     Q->cspace->time_elapsed_ = 0.0;
     double slice_end;
 
-    double now_time = getTimeNs(startTime);
+    double now_time = GetTimeNs(startTime);
     double trunc_elapsed_time;
 
     double old_rrtLMC, current_distance, move_distance, this_dist;
@@ -117,7 +117,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
         double hyper_ball_rad = min(Q->cspace->saturation_delta_, p.ball_constant*(
                                 pow(log(1+kd_tree->tree_size_)/(kd_tree->tree_size_),
                                     1/Q->cspace->num_dimensions_) ));
-        now_time = getTimeNs(startTime);
+        now_time = GetTimeNs(startTime);
 
         slice_end = (1+slice_counter)*p.slice_time;
 
@@ -127,7 +127,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             Q->cspace->in_warmup_time_ = false;
         }
 
-        Q->cspace->time_elapsed_ = (getTimeNs(startTime)
+        Q->cspace->time_elapsed_ = (GetTimeNs(startTime)
                              - Q->cspace->start_time_ns_)/1000000000.0;
         if(Q->cspace->time_elapsed_ >= slice_end) {
             cout << "\nIteration: " << i++ << endl << "---------" << endl;
@@ -316,7 +316,7 @@ int main()
               << " units" << endl;
 
     // Calculate and display time elapsed
-    double totalTime = getTimeNs(startTime);
+    double totalTime = GetTimeNs(startTime);
     cout << "Total time: " << totalTime/1000000000.0
               << " s" << endl;
 

@@ -61,10 +61,10 @@ public:
 
 ///////////////////// Helper Functions ///////////////////////
 // Returns current time in nanoseconds
-double getTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start );
+double GetTimeNs( std::chrono::time_point<std::chrono::high_resolution_clock> start );
 
 // Returns a random double between min and max
-double randDouble( double min, double max );
+double RandDouble( double min, double max );
 
 /////////////////////// Node Functions ///////////////////////
 // Functions that interact with nodes and not much else.

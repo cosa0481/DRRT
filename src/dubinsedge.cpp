@@ -851,7 +851,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     // Dubin's path at once instead of just line segments stored in trajectory
 //    std::chrono::time_point<std::chrono::high_resolution_clock> startTime
 //            = std::chrono::high_resolution_clock::now();
-    //double time_start = getTimeNs(startTime);
+    //double time_start = GetTimeNs(startTime);
     //double time_end;
     int count = 0;
     for(int i = 1; i < this->trajectory_.rows(); i++) {
@@ -868,7 +868,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 //                std::cout << "specifically edge segment:" << endl;
 //                std::cout << "trajectory_.row("<<i<<"):\n" << this->trajectory_.row(i) << std::endl;
 //                std::cout << "trajectory_.row("<<i-1<<"):\n" << this->trajectory_.row(i-1) << std::endl;
-                //time_end = getTimeNs(startTime);
+                //time_end = GetTimeNs(startTime);
 //                if(true) std::cout << "Check path: " << count << ": "
 //                                   << (time_end-time_start)/MICROSECOND
 //                                   << std::endl;
@@ -883,7 +883,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
             }
         }
     }
-    //time_end = getTimeNs(startTime);
+    //time_end = GetTimeNs(startTime);
 //    if(true) std::cout << "Check path: " << count << ": "
 //                       << (time_end-time_start)/MICROSECOND << " ms" << std::endl;
     return false;

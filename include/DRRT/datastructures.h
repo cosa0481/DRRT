@@ -155,6 +155,8 @@ typedef struct RrtNodeNeighborIterator{
 typedef struct RobotData{
     std::mutex robot_mutex;
 
+    bool goal_reached;          // true if robot has reached goal space
+
     Eigen::VectorXd robot_pose;  // this is where the robot is
                                 // (i.e. where it was at the end of
                                 // the last control loop
@@ -199,6 +201,8 @@ typedef struct RobotData{
 
     double time_along_robot_edge; // the current time that the robot "will be"
                                   // along robot_edge (i.e. next time slice)
+
+    double robot_sensor_range;  // distance at which the robot notices obstacles
 
     // Optimal path as determined by the Theta*
     // Any Angle search algorithm

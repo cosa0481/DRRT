@@ -38,13 +38,13 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     {
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
         osnode = Q->cspace->obstacles_->front_;
-        // below takes care of add loop in main
-        osnode->obstacle_->obstacle_used_ = true;
-        AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
-        osnode = osnode->child_;
-        // below takes care of add loop in main
-        osnode->obstacle_->obstacle_used_ = true;
-        AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
+        while(osnode->child_ != osnode) {
+//            cout << "obstacle:\n" << osnode->obstacle_->position_ << endl;
+            // below takes care of add loop in main
+            osnode->obstacle_->obstacle_used_ = true;
+            AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
+            osnode = osnode->child_;
+        }
     }
 
     cout << "Building K-D Tree of ConfigSpace" << endl;
@@ -93,7 +93,12 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
 
     // This is where the robot starts
     shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>();
-    tree->GetNodeAt(Eigen::Vector3d(20,20,-PI+20/sqrt(20*20+20*20)),goal);
+    double x_start = 49;
+    double y_start = 49;
+    tree->GetNodeAt(Eigen::Vector3d(x_start,y_start,
+                                    -PI+x_start/sqrt(x_start*x_start
+                                                     +y_start*y_start)),
+                    goal);
     goal->rrt_parent_edge_ = Edge::NewEdge(Q->cspace,tree,goal,goal);
 
     open_set = make_shared<BinaryHeap>(false); // Priority Queue
@@ -103,7 +108,6 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     cout << "Searching for Best Any-Angle Path" << endl;
 
     shared_ptr<KDTreeNode> node, end_node, min_neighbor;
-    shared_ptr<JListNode> item;
     end_node = make_shared<KDTreeNode>(Eigen::Vector3d(-1,-1,-1));
     end_node->rrt_parent_edge_ = Edge::NewEdge(Q->cspace,tree,end_node,end_node);
     end_node->rrt_LMC_ = INF;
@@ -128,7 +132,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         for(int i = 0; i < node_list->length_; i++) {
             near_node = this_item->node_;
             // If the neighbor is not in the closed set
-            if(!closed_set->JListContains(near_node,item)) {
+            if(!closed_set->JListContains(near_node)) {
 //                if(!open_set->marked(near_node)) {
 //                    cout << "near_node not marked" << endl;
 //                    near_node->rrt_LMC_ = INF;
@@ -138,16 +142,21 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
             }
             this_item = this_item->child_;
         }
-        end_node = min_neighbor;
-        end_node->rrt_parent_used_ = true;
 
-        if(open_set->marked(end_node)) {
-            open_set->RemoveFromHeap(end_node);
+        if(min_neighbor->dist_ != -1) {
+            end_node = min_neighbor;
+            end_node->rrt_parent_used_ = true;
+
+            if(open_set->marked(end_node)) {
+                open_set->RemoveFromHeap(end_node);
+            }
+            open_set->AddToHeap(end_node);
         }
-        open_set->AddToHeap(end_node);
 
         tree->EmptyRangeList(node_list); // clean up
     }
+    cout << "I'm here :(" << endl;
+    exit(-1);
     Eigen::VectorXd null;
     null.setZero(0);
     vector<Eigen::VectorXd> null_vec;
@@ -169,6 +178,8 @@ bool UpdateVertex(shared_ptr<Queue> Q,
                 && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
             min_neighbor = neighbor;
             min_neighbor->rrt_parent_edge_ = this_edge;
+//            cout << "node:\n" << node->rrt_parent_edge_->start_node_->position_
+//                 << "\nparent of:\n" << neighbor->position_ << endl;
             return true;
         }
     }
@@ -177,8 +188,11 @@ bool UpdateVertex(shared_ptr<Queue> Q,
             && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
         min_neighbor = neighbor;
         min_neighbor->rrt_parent_edge_ = this_edge;
+//        cout << "node:\n" << node->position_
+//             << "\nparent of:\n" << neighbor->position_ << endl;
         return true;
     }
+//    cout << "no update" << endl;
     return false;
 }
 

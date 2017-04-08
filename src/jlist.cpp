@@ -7,13 +7,11 @@
 #include <DRRT/kdtreenode.h>
 #include <DRRT/edge.h>
 
-bool JList::JListContains(std::shared_ptr<KDTreeNode> &t,
-                          std::shared_ptr<JListNode> &i)
+bool JList::JListContains(std::shared_ptr<KDTreeNode> &t)
 {
     std::shared_ptr<JListNode> ptr = front_;
     while( ptr != ptr->child_ ) {
         if( t == ptr->node_ ) {
-            i = ptr;
             return true;
         }
         ptr = ptr->child_;

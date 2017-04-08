@@ -47,6 +47,8 @@ set( HDRS
                 include/DRRT/visualizer.h
                 include/DRRT/obstacle.h
                 include/DRRT/theta_star.h
+                include/DRRT/mainloop.h
+                include/DRRT/moverobot.h
 		)
 
 set( SRCS
@@ -62,6 +64,8 @@ set( SRCS
                 src/visualizer.cpp
                 src/obstacle.cpp
                 src/theta_star.cpp
+                src/mainloop.cpp
+                src/moverobot.cpp
 		)
 
 

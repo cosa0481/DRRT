@@ -32,12 +32,17 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
                 line_stream = stringstream(line);
                 getline(line_stream, substring, ',');
                 polygon.row(i)(0) = stod(substring);
+//                cout << "x: " << polygon.row(i)(0) << endl;
                 substring = "";
                 getline(line_stream, substring);
                 polygon.row(i)(1) = stod(substring);
+//                cout << "y: " << polygon.row(i)(1) << endl;
                 substring = "";
                 line = "";
             }
+            getline(read_stream,line);
+            line = "";
+
             shared_ptr<Obstacle> static_polygon
                     = make_shared<Obstacle>(3,polygon,C->space_has_theta_);
             static_polygon->AddObsToConfigSpace(C);
