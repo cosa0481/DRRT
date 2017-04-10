@@ -17,36 +17,43 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     Eigen::Vector3d prev_pose;
     double hyper_ball_rad, current_distance, move_distance;
     while(true) { // will break out when goal is reached
-        hyper_ball_rad = min(Q->cspace->saturation_delta_, ball_constant*(
-                                        pow(log(1+Tree->tree_size_)
-                                            /(Tree->tree_size_),
-                                            1/Q->cspace->num_dimensions_) ));
         {
             lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
             elapsed_time = Q->cspace->time_elapsed_;
-        }
-        if(elapsed_time > planning_only_time + slice_time) {
-//            cout << "Moving" << endl;
-            MoveRobot(Q,Tree,Tree->root,slice_time,hyper_ball_rad,Robot);
 
-            current_distance = Tree->distanceFunction(Robot->robot_pose,
-                                                             Tree->root->position_);
-            move_distance = Tree->distanceFunction(Robot->robot_pose,
-                                                          prev_pose);
+            if(elapsed_time > planning_only_time + slice_time) {
+                hyper_ball_rad = min(Q->cspace->saturation_delta_,
+                                     ball_constant*(
+                                     pow(log(1+Tree->tree_size_)
+                                         /(Tree->tree_size_),
+                                         1/Q->cspace->num_dimensions_) ));
 
-            cout << "Distance to goal: " << current_distance << endl;
-            if(current_distance < goal_threshold) {
-                cout << "Reached goal" << endl;
                 {
                     lock_guard<mutex> lock(Robot->robot_mutex);
-                    Robot->goal_reached = true;
-                    break;
+                    MoveRobot(Q,Tree,Tree->root,slice_time,hyper_ball_rad,Robot);
+
+                    current_distance = Tree->distanceFunction(Robot->robot_pose,
+                                                        Tree->root->position_);
+                    move_distance = Tree->distanceFunction(Robot->robot_pose,
+                                                           prev_pose);
                 }
-            } else if(move_distance > Q->cspace->saturation_delta_) {
-                cout << "Impossible move ... quitting" << endl;
-                exit(-1);
+
+                cout << "Distance to goal: " << current_distance << endl;
+                cout << "Move Distance: " << move_distance << endl;
+                if(current_distance < goal_threshold) {
+                    cout << "Reached goal" << endl;
+                    {
+                        lock_guard<mutex> lock(Robot->robot_mutex);
+                        Robot->goal_reached = true;
+                        break;
+                    }
+                } else if(move_distance > Q->cspace->saturation_delta_) {
+                    cout << "Impossible move ... quitting" << endl;
+                    exit(-1);
+                }
+                prev_pose = Robot->robot_pose;
             }
-            prev_pose = Robot->robot_pose;
         }
+//        this_thread::sleep_for(chrono::nanoseconds(1000000));
     }
 }

@@ -101,6 +101,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(this->cspace_mutex_);
         this->collisions_.push_back(edge);
+
     }
 
     // Remove Edge from vizualizer

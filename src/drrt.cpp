@@ -575,10 +575,8 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
                 // obstacle (at least the obstacle in question)
                 // Need to check if could be in conflict with other obstacles
 
-                {
-                    lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-                    o_list_item = Q->cspace->obstacles_->front_;
-                }
+                o_list_item = Q->cspace->obstacles_->front_;
+
                 conflicts_with_other_obs = false;
                 shared_ptr<Obstacle> other_obstacle;
                 while(o_list_item != o_list_item->child_) {
@@ -861,6 +859,7 @@ bool ExplicitEdgeCheck(shared_ptr<ConfigSpace> &S,
         }
         obstacle_list_node = obstacle_list_node->child_; // iterate
     }
+
     return false;
 }
 
@@ -909,10 +908,11 @@ bool QuickCheck(shared_ptr<ConfigSpace> &C, Eigen::VectorXd point)
         lock_guard<mutex> lock(C->cspace_mutex_);
         obstacle_list_node = C->obstacles_->front_;
         length = C->obstacles_->length_;
-    }
-    for(int i = 0; i < length; i++) {
-        if(QuickCheck2D(obstacle_list_node->obstacle_,point,C)) return true;
-        obstacle_list_node = obstacle_list_node->child_;
+
+        for(int i = 0; i < length; i++) {
+            if(QuickCheck2D(obstacle_list_node->obstacle_,point,C)) return true;
+            obstacle_list_node = obstacle_list_node->child_;
+        }
     }
     return false;
 }
@@ -1010,11 +1010,12 @@ bool ExplicitPointCheck(shared_ptr<Queue>& Q, Eigen::VectorXd point)
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
         obstacle_list_node = Q->cspace->obstacles_->front_;
         length = Q->cspace->obstacles_->length_;
-    }
-    for(int i = 0; i < length; i++) {
-        if(ExplicitPointCheck2D(Q->cspace,obstacle_list_node->obstacle_,
-                                point, Q->cspace->robot_radius_)) return true;
-        obstacle_list_node = obstacle_list_node->child_;
+
+        for(int i = 0; i < length; i++) {
+            if(ExplicitPointCheck2D(Q->cspace,obstacle_list_node->obstacle_,
+                                    point, Q->cspace->robot_radius_)) return true;
+            obstacle_list_node = obstacle_list_node->child_;
+        }
     }
     return false;
 }
@@ -1100,7 +1101,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
     time_end = GetTimeNs(startTime);
     if(timing) cout << "\tfindBestParent: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
-    // If no parent was fonud then ignore this node
+    // If no parent was found then ignore this node
     if( !new_node->rrt_parent_used_ ) {
         Tree->EmptyRangeList(node_list); // clean up
         return false;
@@ -1809,14 +1810,11 @@ void findNewTarget(shared_ptr<ConfigSpace> &S,
                    double hyperBallRad )
 {
     Eigen::VectorXd robPose, nextPose;
+    robPose = R->robot_pose;
     R->robot_edge_used = false;
     R->dist_along_robot_edge = 0.0;
     R->time_along_robot_edge = 0.0;
     nextPose = R->next_move_target->position_;
-    {
-        lock_guard<mutex> lock(R->robot_mutex);
-        robPose = R->robot_pose;
-    }
 
     // Move target has become invalid
     double searchBallRad
@@ -1927,13 +1925,10 @@ void MoveRobot(shared_ptr<Queue> &Q,
     // it moved since the last update (as well as the total path that
     // it has followed)
     if( R->moving ) {
-        {
-            lock_guard<mutex> lock(R->robot_mutex);
-            cout << "Moving "
-                      << Tree->distanceFunction(R->robot_pose,R->next_robot_pose)
-                      << " units" << endl;
-            R->robot_pose = R->next_robot_pose;
-        }
+        cout << "Moving "
+                  << Tree->distanceFunction(R->robot_pose,R->next_robot_pose)
+                  << " units" << endl;
+        R->robot_pose = R->next_robot_pose;
 
         //R.robot_move_path[R.num_robot_move_points+1:R.num_robot_move_points+R.num_local_move_points,:] = R.robot_local_path[1:R.num_local_move_points,:];
         for( int i = 0; i < R->num_local_move_points-1; i++ ) {
@@ -1941,26 +1936,21 @@ void MoveRobot(shared_ptr<Queue> &Q,
         }
         R->num_robot_move_points += R->num_local_move_points;
 
-        {
-            lock_guard<mutex> lock(R->robot_mutex);
-            if( !Q->cspace->space_has_time_ ) {
-                cout << "new robot pose(w/o time):\n"
-                          << R->robot_pose << endl;
-            } else {
-                cout << "new robot pose(w/ time):\n"
-                          << R->robot_pose << endl;
-            }
+        if( !Q->cspace->space_has_time_ ) {
+            cout << "new robot pose(w/o time):\n"
+                      << R->robot_pose << endl;
+        } else {
+            cout << "new robot pose(w/ time):\n"
+                      << R->robot_pose << endl;
         }
+
         Q->cspace->warmup_time_just_ended_ = false;
     } else {
         // Movement has just started, so remember that the robot is now moving
         R->moving = true;
 
         error("First pose:");
-        {
-            lock_guard<mutex> lock(R->robot_mutex);
-            cout << R->robot_pose << endl;
-        }
+        cout << R->robot_pose << endl;
 
         if( !Q->cspace->move_goal_->rrt_parent_used_ ) {
             // no parent has been found for the node at the robots position_
@@ -1994,12 +1984,9 @@ void MoveRobot(shared_ptr<Queue> &Q,
          * each slice time. Even if that does not happen, things will
          * still be okay in practice as long as robot is "close" to moveGoal
          */
-        {
-            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-            Q->cspace->move_goal_->is_move_goal_ = false;
-            Q->cspace->move_goal_ = R->next_move_target;
-            Q->cspace->move_goal_->is_move_goal_ = true;
-        }
+        Q->cspace->move_goal_->is_move_goal_ = false;
+        Q->cspace->move_goal_ = R->next_move_target;
+        Q->cspace->move_goal_->is_move_goal_ = true;
     }
 
 
@@ -2022,10 +2009,8 @@ void MoveRobot(shared_ptr<Queue> &Q,
 
         // Save first local path point
         R->num_local_move_points = 1;
-        {
-            lock_guard<mutex> lock(R->robot_mutex);
-            R->robot_local_path.row(R->num_local_move_points-1) = R->robot_pose;
-        }
+        R->robot_local_path.row(R->num_local_move_points-1) = R->robot_pose;
+
         // Starting at current location (and looking ahead to nextNode), follow
         // parent pointers back for appropriate distance (or root or dead end)
         while( nextDist <= distRemaining && nextNode != root
@@ -2081,11 +2066,8 @@ void MoveRobot(shared_ptr<Queue> &Q,
         // Save first local path point
         double targetTime;
         R->num_local_move_points = 1;
-        {
-            lock_guard<mutex> lock(R->robot_mutex);
-            R->robot_local_path.row(R->num_local_move_points) = R->robot_pose;
-            targetTime = R->robot_pose(2) - slice_time;
-        }
+        R->robot_local_path.row(R->num_local_move_points) = R->robot_pose;
+        targetTime = R->robot_pose(2) - slice_time;
         while( targetTime < R->robot_edge->end_node_->position_(2)
                && nextNode != root && nextNode->rrt_parent_used_
                && nextNode != nextNode->rrt_parent_edge_->end_node_ ) {

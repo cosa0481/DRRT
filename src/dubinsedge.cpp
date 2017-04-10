@@ -842,6 +842,7 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
         return false;
     }
 
+
 //    std::cout << "robot cannot traverse edge:\n" << this->start_node_->position_
 //              << std::endl << "--" << std::endl << this->start_node_->position_ << std::endl;
 
@@ -877,8 +878,8 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
 //                          << "in collision with this edge:\n"
 //                     << this->start_node_->position_ << "\n--\n"
 //                     << this->end_node_->position_ << std::endl;
-                std::shared_ptr<Edge> this_edge = this->GetPointer();
-                this->cspace_->AddVizEdge(this_edge);
+                //std::shared_ptr<Edge> this_edge = this->GetPointer();
+                //this->cspace_->AddVizEdge(this_edge);
                 return true;
             }
         }

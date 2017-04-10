@@ -114,8 +114,10 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     shared_ptr<Obstacle> obstacle;
 
     {
+        cout << "locking" << endl;
         lock_guard<mutex> lock(robot->robot_mutex);
         prev_pose = robot->robot_pose;
+        cout << "unlocking" << endl;
     }
 
     current_distance = kd_tree->distanceFunction(robot->robot_pose,
@@ -341,7 +343,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 
         // Remove obstacles
 //        {
-//            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+//            cout << "locking" << endl;lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
 //            list_item = Q->cspace->obstacles->front_;
 //        }
 //        removed = false;
@@ -395,14 +397,18 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 
         // Add Obstacles
         {
-            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+            cout << "locking" << endl;lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
             list_item = Q->cspace->obstacles_->front_;
+            cout << "unlocking" << endl;
+
         }
         added = false;
         Eigen::VectorXd robot_pose;
         {
-            lock_guard<mutex> lock(robot->robot_mutex);
+            cout << "locking" << endl;lock_guard<mutex> lock(robot->robot_mutex);
             robot_pose = robot->robot_pose;
+            cout << "unlocking" << endl;
+
         }
         while(list_item != list_item->child_) {
             obstacle = list_item->obstacle_;

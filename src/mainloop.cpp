@@ -16,7 +16,8 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  vector<double> avg_thetas,
                  vector<Eigen::VectorXd> path)
 {
-    double slice_start = chrono::duration_cast<chrono::nanoseconds>(start_time-start_time).count();
+    double slice_start = chrono::duration_cast<chrono::nanoseconds>(
+                start_time-start_time).count();
     double slice_end;
     double slice_counter = 0;
 
@@ -24,7 +25,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     double elapsed_time;
     double iter_start, iter_end;
 
-    double old_rrt_LMC, current_distance, move_distance, initial_distance;
+    double old_rrt_LMC, current_distance, initial_distance;
     Eigen::Vector3d prev_pose, robot_pose;
     bool removed, added;
     shared_ptr<ListNode> obs_node;
@@ -41,25 +42,24 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     double position_bias;
     double theta_bias = PI/10;
 
-    current_distance = Tree->distanceFunction(prev_pose, Tree->root->position_);
+    current_distance = Tree->distanceFunction(prev_pose,
+                                              Tree->root->position_);
     bool reached_goal = false;
 
+    int i = 0;
     while(!reached_goal) {
         // Calculate initial hyper ball radius
         double hyper_ball_rad = min(Q->cspace->saturation_delta_,
-                                    ball_constant*(pow(log(1+Tree->tree_size_)
-                                                       /(Tree->tree_size_),
-                                                       1/Q->cspace->num_dimensions_)));
+                             ball_constant*(
+                             pow(log(1+Tree->tree_size_)/(Tree->tree_size_),
+                                 1/Q->cspace->num_dimensions_)));
         now = GetTimeNs(start_time);
         slice_end = (1+slice_counter)*slice_time; // time in the next slice
 
         // Check for warm up time
         if(Q->cspace->in_warmup_time_
                 && Q->cspace->warmup_time_ < Q->cspace->time_elapsed_) {
-            {
-                lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-                Q->cspace->in_warmup_time_ = false;
-            }
+            Q->cspace->in_warmup_time_ = false;
         }
 
         // Add / Remove Obstacles
@@ -90,7 +90,8 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             // Add
             if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
                     && obstacle->start_time_ <= elapsed_time
-                    && elapsed_time <= obstacle->start_time_ + obstacle->life_span_) {
+                    && elapsed_time <= obstacle->start_time_
+                                     + obstacle->life_span_) {
                 // Time to add obstacle
                 obstacle->obstacle_used_ = true; // This line significantly slows down program
                 AddNewObstacle(Tree,Q,obstacle,Tree->root);
@@ -134,6 +135,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             slice_start = now;
             slice_end = (++slice_counter)*slice_time;
 
+            cout << this_thread::get_id() << " Iteration " << i++
+                 << "\n--------------------------------" << endl;
+
 
             reduceInconsistency(Q,Q->cspace->move_goal_,
                                 Q->cspace->robot_radius_,
@@ -153,27 +157,30 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             while(importance_sampling) {
                 new_node = randNodeOrFromStack(Q->cspace);
                 if(new_node->kd_in_tree_) continue;
-                Tree->KDFindNearest(closest_node,closest_dist,new_node->position_);
+                Tree->KDFindNearest(closest_node,closest_dist,
+                                    new_node->position_);
 
                 // Saturate this node
                 initial_distance = Tree->distanceFunction(new_node->position_,
-                                                          closest_node->position_);
+                                                      closest_node->position_);
                 if(initial_distance > Q->cspace->saturation_delta_
                         && new_node != Q->cspace->goal_node_) {
-                    Edge::Saturate(new_node->position_, closest_node->position_,
-                                   Q->cspace->saturation_delta_,initial_distance);
+                    Edge::Saturate(new_node->position_,
+                                   closest_node->position_,
+                                   Q->cspace->saturation_delta_,
+                                   initial_distance);
                 }
                 if(ExplicitNodeCheck(Q,new_node)) continue;
                 if(RandDouble(0,1) > p_uniform) break;
                 if(Tree->distanceFunction(new_node->position_,
                                           Tree->root->position_)
-                        > Tree->distanceFunction(Q->cspace->goal_node_->position_,
-                                                 Tree->root->position_))
+                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
+                                             Tree->root->position_))
                     continue;
                 if(Tree->distanceFunction(new_node->position_,
                                           Q->cspace->goal_node_->position_)
-                        > Tree->distanceFunction(Q->cspace->goal_node_->position_,
-                                                 Tree->root->position_))
+                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
+                                             Tree->root->position_))
                     continue;
 
                 // Find the closest line on the any-angle path to the new node
@@ -181,9 +188,10 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                 double min_dist_node_to_path = INF;
                 int min_dist_node_to_path_index = 0;
                 for(int i = 1; i < Robot->best_any_angle_path.size(); i++) {
-                    dist_node_to_path = DistanceSqrdPointToSegment(new_node->position_,
-                                                                   Robot->best_any_angle_path.at(i-1).head(2),
-                                                                   Robot->best_any_angle_path.at(i).head(2));
+                    dist_node_to_path = DistanceSqrdPointToSegment(
+                                new_node->position_,
+                                Robot->best_any_angle_path.at(i-1).head(2),
+                                Robot->best_any_angle_path.at(i).head(2));
                     if(dist_node_to_path < min_dist_node_to_path) {
                         min_dist_node_to_path = dist_node_to_path;
                         min_dist_node_to_path_index = i-1;
@@ -199,22 +207,30 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
                 // Calculate position bias
                 position_bias = hyper_ball_rad;
-                double distance = DistanceSqrdPointToSegment(new_node->position_,
-                                                             path.at(min_dist_node_to_path_index).head(2),
-                                                             path.at(min_dist_node_to_path_index+1).head(2));
+                double distance = DistanceSqrdPointToSegment(
+                            new_node->position_,
+                            path.at(min_dist_node_to_path_index).head(2),
+                            path.at(min_dist_node_to_path_index+1).head(2));
                 if(distance > position_bias) continue;
                 importance_sampling = false;
             }
 
-            // Extend the graph
-            {
-                lock_guard<mutex> lock(Tree->tree_mutex_);
-                if(Extend(Tree,Q,new_node,closest_node,
-                          Q->cspace->saturation_delta_, hyper_ball_rad,
-                          Q->cspace->move_goal_)) {
-                    // want a cookie?
-                }
+
+            // Extend the graph        
+            if(Extend(Tree,Q,new_node,closest_node,
+                      Q->cspace->saturation_delta_, hyper_ball_rad,
+                      Q->cspace->move_goal_)) {
+                // want a cookie?
+                //cout << "cookie" << endl;
+            } else {
+                //cout << "extend returned false" << endl;
             }
+
+//            {
+//                lock_guard<mutex> lock(Tree->tree_mutex_);
+//                cout << "Tree Size: " << Tree->tree_size_ << endl;
+//            }
+
 
             // Make graph consistent
             reduceInconsistency(Q,Q->cspace->move_goal_,
@@ -226,7 +242,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
             iter_end = GetTimeNs(start_time);
             cout << "Duration: " << (iter_end - iter_start)/MICROSECOND
-                 << " ms" << endl;
+                 << " ms\n" << endl;
 
             {
                 lock_guard<mutex> lock(Robot->robot_mutex);

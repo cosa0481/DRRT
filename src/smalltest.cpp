@@ -7,7 +7,7 @@
 
 #include <DRRT/drrt.h>
 #include <DRRT/visualizer.h>
-#include <DRRT/theta_star.h>
+#include <DRRT/thetastar.h>
 #include <DRRT/mainloop.h>
 #include <DRRT/moverobot.h>
 
@@ -105,6 +105,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     }
 
     vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
+    cout << "Started Visualizer Thread" << endl;
 
     /// End Initialization
 
@@ -122,30 +123,42 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
     thread main_loop1 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                                p.ball_constant, p.slice_time, avg_thetas, path);
+    cout << "Started Main Loop Thread 1" << endl;
+
     thread main_loop2 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                                p.ball_constant, p.slice_time, avg_thetas, path);
+    cout << "Started Main Loop Thread 2" << endl;
+
     thread main_loop3 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                                p.ball_constant, p.slice_time, avg_thetas, path);
+    cout << "Started Main Loop Thread 3" << endl;
+
     thread main_loop4 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                                p.ball_constant, p.slice_time, avg_thetas, path);
+    cout << "Started Main Loop Thread 4" << endl;
+
     thread main_loop5 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                                p.ball_constant, p.slice_time, avg_thetas, path);
+    cout << "Started Main Loop Thread 5" << endl;
 
     thread move_robot = thread(RobotMovement, Q, kd_tree, robot,
                                p.planning_only_time, p.slice_time,
                                p.goal_threshold, p.ball_constant);
+    cout << "Started Robot Movement Thread" << endl;
 
     move_robot.join();
-
-    cout << "Joined move robot thread" << endl;
+    cout << "Joined Robot Movement Thread" << endl;
 
     main_loop1.join();
+    cout << "Joined Main Loop Thread 1" << endl;
     main_loop2.join();
+    cout << "Joined Main Loop Thread 2" << endl;
     main_loop3.join();
+    cout << "Joined Main Loop Thread 3" << endl;
     main_loop4.join();
+    cout << "Joined Main Loop Thread 4" << endl;
     main_loop5.join();
-
-    cout << "Joined all main loop threads" << endl;
+    cout << "Joined Main Loop Thread 5" << endl;
 
 //    double now_time = GetTimeNs(start_time);
 //    double trunc_elapsed_time;
@@ -159,7 +172,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //    shared_ptr<Obstacle> obstacle;
 
 //    {
-//        lock_guard<mutex> lock(robot->robot_mutex);
+//        cout << "locking" << endl;lock_guard<mutex> lock(robot->robot_mutex);
 //        prev_pose = robot->robot_pose;
 //    }
 
@@ -194,7 +207,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
 //        // Remove obstacles
 //        {
-//            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+//            cout << "locking" << endl;lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
 //            list_item = Q->cspace->obstacles_->front_;
 //        }
 //        removed = false;
@@ -248,13 +261,13 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
 //        // Add Obstacles
 //        {
-//            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+//            cout << "locking" << endl;lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
 //            list_item = Q->cspace->obstacles_->front_;
 //        }
 //        added = false;
 //        Eigen::VectorXd robot_pose;
 //        {
-//            lock_guard<mutex> lock(robot->robot_mutex);
+//            cout << "locking" << endl;lock_guard<mutex> lock(robot->robot_mutex);
 //            robot_pose = robot->robot_pose;
 //        }
 //        while(list_item != list_item->child_) {

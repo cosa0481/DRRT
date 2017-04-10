@@ -1,4 +1,4 @@
-#include <DRRT/theta_star.h>
+#include <DRRT/thetastar.h>
 
 using namespace std;
 
@@ -39,7 +39,6 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
         osnode = Q->cspace->obstacles_->front_;
         while(osnode->child_ != osnode) {
-//            cout << "obstacle:\n" << osnode->obstacle_->position_ << endl;
             // below takes care of add loop in main
             osnode->obstacle_->obstacle_used_ = true;
             AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
@@ -109,7 +108,8 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
 
     shared_ptr<KDTreeNode> node, end_node, min_neighbor;
     end_node = make_shared<KDTreeNode>(Eigen::Vector3d(-1,-1,-1));
-    end_node->rrt_parent_edge_ = Edge::NewEdge(Q->cspace,tree,end_node,end_node);
+    end_node->rrt_parent_edge_
+            = Edge::NewEdge(Q->cspace,tree,end_node,end_node);
     end_node->rrt_LMC_ = INF;
     while(open_set->index_of_last_ > 0) {
         open_set->PopHeap(node);
@@ -173,8 +173,10 @@ bool UpdateVertex(shared_ptr<Queue> Q,
     shared_ptr<Edge> this_edge;
     if(node->rrt_parent_used_) {
         this_edge = Edge::NewEdge(Q->cspace,Tree,
-                                  node->rrt_parent_edge_->start_node_,neighbor);
-        if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,this_edge->end_node_)
+                                  node->rrt_parent_edge_->start_node_,
+                                  neighbor);
+        if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,
+                      this_edge->end_node_)
                 && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
             min_neighbor = neighbor;
             min_neighbor->rrt_parent_edge_ = this_edge;
@@ -200,7 +202,8 @@ vector<Eigen::VectorXd> GetPath(shared_ptr<KDTreeNode> &node)
 {
     vector<Eigen::VectorXd> path;
     path.push_back(node->position_);
-    if(node->rrt_parent_edge_->start_node_ != node->rrt_parent_edge_->end_node_) {
+    if(node->rrt_parent_edge_->start_node_
+            != node->rrt_parent_edge_->end_node_) {
         vector<Eigen::VectorXd> rec_path
                 = GetPath(node->rrt_parent_edge_->start_node_);
         for(int i = 0; i < rec_path.size(); i++) {

@@ -46,7 +46,7 @@ set( HDRS
                 include/DRRT/distancefunctions.h
                 include/DRRT/visualizer.h
                 include/DRRT/obstacle.h
-                include/DRRT/theta_star.h
+                include/DRRT/thetastar.h
                 include/DRRT/mainloop.h
                 include/DRRT/moverobot.h
 		)
@@ -63,7 +63,7 @@ set( SRCS
                 src/distancefunctions.cpp
                 src/visualizer.cpp
                 src/obstacle.cpp
-                src/theta_star.cpp
+                src/thetastar.cpp
                 src/mainloop.cpp
                 src/moverobot.cpp
 		)
