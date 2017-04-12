@@ -84,7 +84,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                      MAXPATHNODES, Q->cspace->num_dimensions_);
 
     if(Q->cspace->space_has_time_) {
-        addOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
+        AddOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
     }
 
     shared_ptr<thread> visualizer_thread
@@ -137,7 +137,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node1->position_);
     Extend(kd_tree,Q,node1,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node1->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     position_(0) = 5;
     position_(1) = 5;
@@ -146,7 +146,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node2->position_);
     Extend(kd_tree,Q,node2,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node2->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     position_(0) = 10;
     position_(1) = 10;
@@ -155,7 +155,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node3->position_);
     Extend(kd_tree,Q,node3,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node3->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     position_(0) = 15;
     position_(1) = 15;
@@ -164,7 +164,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node4->position_);
     Extend(kd_tree,Q,node4,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node4->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     position_(0) = 8;
     position_(1) = 15;
@@ -173,7 +173,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node5->position_);
     Extend(kd_tree,Q,node5,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node5->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     position_(0) = 5;
     position_(1) = 11;
@@ -182,7 +182,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node6->position_);
     Extend(kd_tree,Q,node6,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node6->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     position_(0) = 20;
     position_(1) = 20;
@@ -191,7 +191,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
     kd_tree->KDFindNearest(closest_node,closest_dist,node7->position_);
     Extend(kd_tree,Q,node7,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
     kdTree.row(kdTreePos++) = node7->position_;
-    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 
 /// Test to plan path through uniform grid of points
@@ -202,7 +202,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node4->position_);
 //    Extend(kd_tree,Q,node4,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node4->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     // If the difference between the first node and the root is
     // > delta, then set its LMC to INF so it can be recalculated
@@ -223,7 +223,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node1->position_);
 //    Extend(kd_tree,Q,node1,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node1->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 15;
 //    position_(1) = 15;
@@ -232,7 +232,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node5->position_);
 //    Extend(kd_tree,Q,node5,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node5->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 7;
 //    position_(1) = 3;
@@ -241,7 +241,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node7->position_);
 //    Extend(kd_tree,Q,node7,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node7->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 10;
 //    position_(1) = 10;
@@ -250,7 +250,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node3->position_);
 //    Extend(kd_tree,Q,node3,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node3->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 18;
 //    position_(1) = 22;
@@ -259,7 +259,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node10->position_);
 //    Extend(kd_tree,Q,node10,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node10->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 22;
 //    position_(1) = 18;
@@ -268,7 +268,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node11->position_);
 //    Extend(kd_tree,Q,node11,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node11->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 13;
 //    position_(1) = 17;
@@ -277,7 +277,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node8->position_);
 //    Extend(kd_tree,Q,node8,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node8->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 20;
 //    position_(1) = 20;
@@ -286,7 +286,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node12->position_);
 //    Extend(kd_tree,Q,node12,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node12->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 3;
 //    position_(1) = 7;
@@ -295,7 +295,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node6->position_);
 //    Extend(kd_tree,Q,node6,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node6->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 12;
 //    position_(1) = 8;
@@ -304,7 +304,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node2->position_);
 //    Extend(kd_tree,Q,node2,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node2->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
 //    position_(0) = 17;
 //    position_(1) = 13;
@@ -313,7 +313,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //    kd_tree->KDFindNearest(closest_node,closest_dist,node9->position_);
 //    Extend(kd_tree,Q,node9,closest_node,Q->cspace->saturation_delta_,10,Q->cspace->move_goal_);
 //    kdTree.row(kdTreePos++) = node9->position_;
-//    reduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
+//    ReduceInconsistency(Q, Q->cspace->move_goal_, Q->cspace->robot_radius_, root, 10);
 
     std::cout << "\nKD-Tree" << std::endl;
     kd_tree->PrintTree(root);
@@ -391,7 +391,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 //        }
 //        if(removed) {
 //            cout << "Obstacle Removed" << endl;
-//            reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
+//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
 //                                root,hyper_ball_rad);
 //        }
 
@@ -466,10 +466,10 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             list_item = list_item->child_;
         }
         if(added) {
-            propogateDescendants(Q,kd_tree,robot);
-            if(!markedOS(Q->cspace->move_goal_)) verifyInQueue(Q,Q->cspace->move_goal_);
+            PropogateDescendants(Q,kd_tree,robot);
+            if(!MarkedOS(Q->cspace->move_goal_)) VerifyInQueue(Q,Q->cspace->move_goal_);
             cout << "Obstacle Added" << endl;
-            reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
+            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
                                 root,hyper_ball_rad);
         }
 

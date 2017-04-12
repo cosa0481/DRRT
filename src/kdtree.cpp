@@ -12,14 +12,13 @@
 
 void KDTree::AddVizNode(std::shared_ptr<KDTreeNode> node)
 {
-    // These lock_guards are redundant somewhere
-//    std::lock_guard<std::mutex> lock(this->tree_mutex_);
+    std::lock_guard<std::mutex> lock(this->tree_mutex_);
     this->nodes_.push_back(node);
 }
 
 void KDTree::RemoveVizNode(std::shared_ptr<KDTreeNode> &node)
 {
-    // These lock_guards cause a hang up because it is waiting the mutex to unlock
+    // This lock_guard causes a hang up because it is waiting the mutex to unlock from visualizer.cpp
 //    std::lock_guard<std::mutex> lock(this->tree_mutex_);
     this->nodes_.erase(
                 std::remove(this->nodes_.begin(),this->nodes_.end(),node),

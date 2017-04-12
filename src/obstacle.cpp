@@ -289,12 +289,12 @@ void AddObstacle(shared_ptr<KDTree> Tree,
 
         // Iterate through list
         shared_ptr<JListNode> list_item
-                = nextOutNeighbor(this_node_out_neighbors);
+                = NextOutNeighbor(this_node_out_neighbors);
         shared_ptr<JListNode> next_item;
         shared_ptr<Edge> neighbor_edge;
         while(list_item->key_ != -1.0) {
             neighbor_edge = list_item->edge_;
-            next_item = nextOutNeighbor(this_node_out_neighbors);
+            next_item = NextOutNeighbor(this_node_out_neighbors);
             if(neighbor_edge->ExplicitEdgeCheck(O))
                 // Mark edge to neighbor at INF cost
                 list_item->edge_->dist_ = INF;
@@ -313,7 +313,7 @@ void AddObstacle(shared_ptr<KDTree> Tree,
             this_node->rrt_parent_edge_->dist_ = INF;
             this_node->rrt_parent_used_ = false;
 
-            verifyInOSQueue(queue,this_node);
+            VerifyInOSQueue(queue,this_node);
         }
     }
 
@@ -354,7 +354,7 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
 
         // Iterate through list
         shared_ptr<JListNode> list_item
-                = nextOutNeighbor(this_node_out_neighbors);
+                = NextOutNeighbor(this_node_out_neighbors);
         shared_ptr<ListNode> o_list_item;
         shared_ptr<JListNode> next_item;
         shared_ptr<Edge> neighbor_edge;
@@ -362,7 +362,7 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
         while(list_item->key_ != -1.0) {
             neighbor_edge = list_item->edge_;
             neighbor_node = list_item->edge_->end_node_;
-            next_item = nextOutNeighbor(this_node_out_neighbors);
+            next_item = NextOutNeighbor(this_node_out_neighbors);
             if(neighbor_edge->dist_ == INF
                     && neighbor_edge->ExplicitEdgeCheck(O)) {
                 // This edge used to be in collision with at least one
@@ -398,10 +398,10 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
         }
 
         if(neighbors_were_blocked) {
-            recalculateLMC(Q,this_node,root,hyper_ball_rad);
+            RecalculateLMC(Q,this_node,root,hyper_ball_rad);
             if(this_node->rrt_tree_cost_ != this_node->rrt_LMC_
                     && Q->priority_queue->lessThan(this_node,move_goal))
-                verifyInQueue(Q,this_node);
+                VerifyInQueue(Q,this_node);
         }
     }
     Tree->EmptyRangeList(node_list);

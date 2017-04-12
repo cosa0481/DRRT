@@ -83,7 +83,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                                      MAXPATHNODES, Q->cspace->num_dimensions_);
 
     if(Q->cspace->space_has_time_) {
-        addOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
+        AddOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
     }
 
     shared_ptr<thread> vis_thread
@@ -156,7 +156,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
 
 
             /// Make graph consistent
-            reduceInconsistency(Q,Q->cspace->move_goal_, Q->cspace->robot_radius_,
+            ReduceInconsistency(Q,Q->cspace->move_goal_, Q->cspace->robot_radius_,
                                 root, hyper_ball_rad);
             if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
                 old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
@@ -184,7 +184,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
                 shared_ptr<double> closest_dist = make_shared<double>(INF);
 
-                new_node = randNodeOrFromStack(Q->cspace);
+                new_node = RandNodeOrFromStack(Q->cspace);
                 if(new_node->kd_in_tree_) continue;
 
                 kd_tree->KDFindNearest(closest_node,closest_dist,
@@ -211,7 +211,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 }
 
                 /// Make graph consistent
-                reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
+                ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
                                     root,hyper_ball_rad);
                 if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
                     old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;

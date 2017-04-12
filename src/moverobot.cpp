@@ -69,7 +69,7 @@ void MoveRobot(shared_ptr<Queue> &Q,
     // after moving the robot (since the robot has already moved this
     // time slice)
     if( R->current_move_invalid ) {
-        findNewTarget( Q->cspace, Tree, R, hyperBallRad );
+        FindNewTarget( Q->cspace, Tree, R, hyperBallRad );
     } else {
         /* Recall that moveGoal is the node whose key is used to determine
          * the level set of cost propogation (this should theoretically
@@ -79,7 +79,6 @@ void MoveRobot(shared_ptr<Queue> &Q,
          * still be okay in practice as long as robot is "close" to moveGoal
          */
         Q->cspace->move_goal_->is_move_goal_ = false;
-        cout << "R->next_move_target:\n" << R->next_move_target->position_ << endl;
         Q->cspace->move_goal_ = R->next_move_target;
         Q->cspace->move_goal_->is_move_goal_ = true;
     }
@@ -212,6 +211,10 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 {
     double elapsed_time;
     Eigen::Vector3d prev_pose;
+    {
+        lock_guard<mutex> lock(Robot->robot_mutex);
+        prev_pose = Robot->robot_pose;
+    }
     double hyper_ball_rad, current_distance, move_distance;
     while(true) { // will break out when goal is reached
         {
@@ -219,12 +222,6 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             elapsed_time = Q->cspace->time_elapsed_;
 
             if(elapsed_time > planning_only_time + slice_time) {
-                // Is the Tree intact?
-                {
-                    lock_guard<mutex> lock(Tree->tree_mutex_);
-                    PrintRrtxPath(Q->cspace->goal_node_);
-                    // Tests show yes (i.e. feasible path from goal to start)
-                }
                 hyper_ball_rad = min(Q->cspace->saturation_delta_,
                                      ball_constant*(
                                      pow(log(1+Tree->tree_size_)
@@ -257,6 +254,6 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                 prev_pose = Robot->robot_pose;
             }
         }
-//        this_thread::sleep_for(chrono::nanoseconds(1000000));
+        this_thread::sleep_for(chrono::nanoseconds(10000000)); // 100th of a second
     }
 }

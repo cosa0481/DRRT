@@ -87,6 +87,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                elapsed_time,move_goal);
                 removed = true;
             }
+
             // Add
             if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
                     && obstacle->start_time_ <= elapsed_time
@@ -107,16 +108,16 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             obs_node = obs_node->child_;
         }
         if(removed) {
-            reduceInconsistency(Q,Q->cspace->move_goal_,
+            ReduceInconsistency(Q,Q->cspace->move_goal_,
                                 Q->cspace->robot_radius_,
                                 Tree->root, hyper_ball_rad);
         }
         if(added) {
-            propogateDescendants(Q,Tree,Robot);
-            if(!markedOS(Q->cspace->move_goal_)) {
-                verifyInQueue(Q,Q->cspace->move_goal_);
+            PropogateDescendants(Q,Tree,Robot);
+            if(!MarkedOS(Q->cspace->move_goal_)) {
+                VerifyInQueue(Q,Q->cspace->move_goal_);
             }
-            reduceInconsistency(Q,Q->cspace->move_goal_,
+            ReduceInconsistency(Q,Q->cspace->move_goal_,
                                 Q->cspace->robot_radius_,
                                 Tree->root,hyper_ball_rad);
         }
@@ -128,8 +129,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
             Q->cspace->time_elapsed_ = elapsed_time;
         }
-//        cout << "elapsed_time: " << elapsed_time << endl;
-//        cout << "slice_end: " << slice_end << endl;
+
         if(elapsed_time >= slice_end) {
             iter_start = GetTimeNs(start_time);
             slice_start = now;
@@ -139,7 +139,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  << "\n--------------------------------" << endl;
 
 
-            reduceInconsistency(Q,Q->cspace->move_goal_,
+            ReduceInconsistency(Q,Q->cspace->move_goal_,
                                 Q->cspace->robot_radius_,
                                 Tree->root, hyper_ball_rad);
             if(Q->cspace->move_goal_->rrt_LMC_ != old_rrt_LMC) {
@@ -155,7 +155,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 //            cout << "Main Loop " << this_thread::get_id() << endl;
             bool importance_sampling = true;
             while(importance_sampling) {
-                new_node = randNodeOrFromStack(Q->cspace);
+                new_node = RandNodeOrFromStack(Q->cspace);
                 if(new_node->kd_in_tree_) continue;
                 Tree->KDFindNearest(closest_node,closest_dist,
                                     new_node->position_);
@@ -221,19 +221,11 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                       Q->cspace->saturation_delta_, hyper_ball_rad,
                       Q->cspace->move_goal_)) {
                 // want a cookie?
-                //cout << "cookie" << endl;
-            } else {
-                //cout << "extend returned false" << endl;
             }
-
-//            {
-//                lock_guard<mutex> lock(Tree->tree_mutex_);
-//                cout << "Tree Size: " << Tree->tree_size_ << endl;
-//            }
 
 
             // Make graph consistent
-            reduceInconsistency(Q,Q->cspace->move_goal_,
+            ReduceInconsistency(Q,Q->cspace->move_goal_,
                                 Q->cspace->robot_radius_,
                                 Tree->root, hyper_ball_rad);
             if(Q->cspace->move_goal_-> rrt_LMC_ != old_rrt_LMC) {

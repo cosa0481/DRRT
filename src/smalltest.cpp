@@ -16,13 +16,39 @@ bool timingex = false;
 
 chrono::time_point<chrono::high_resolution_clock> start_time;
 
+// Takes path from Theta* and returns avg theta of each line for theta bias
+vector<double> PathToThetas(vector<Eigen::VectorXd> path)
+{
+    vector<double> thetas;
+    double angle, x = 0, y = 0;
+    Eigen::VectorXd current_point, prev_point;
+    cout << "Any-Angle Path:" << endl;
+    for( int i = 0; i < path.size(); i++ ) {
+        cout << path.at(i) << endl << endl;
+        if(i==0) continue;
+        current_point = path.at(i);
+        prev_point = path.at(i-1);
+//        path_a = (current_point(1)-prev_point(1))
+//                /(current_point(0)-prev_point(0));
+//        path_b = -1;
+//        path_c = min(abs(current_point(1)),abs(prev_point(1)));
+//        lines.insert(lines.begin(), Eigen::Vector3d(path_a,path_b,path_c));
+        angle = atan2(prev_point(1)-current_point(1),
+                      prev_point(0)-current_point(0));
+        x += cos(angle);
+        y += sin(angle);
+        thetas.push_back(atan2(y,x));
+    }
+    return thetas;
+}
+
 /// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
 shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 {
     /// Initialize
 
-    /// Queue
+    // Queue
     shared_ptr<Queue> Q = make_shared<Queue>();
     Q->priority_queue = make_shared<BinaryHeap>(false); // priority queue use Q functions
     Q->obs_successors = make_shared<JList>(true); // obstacle stack uses KDTreeNodes
@@ -32,7 +58,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     Q->cspace->sample_stack_ = make_shared<JList>(true); // uses KDTreeNodes
     Q->cspace->saturation_delta_ = p.delta;
 
-    /// K-D Tree
+    // K-D Tree
     shared_ptr<KDTree> kd_tree
             = make_shared<KDTree>(Q->cspace->num_dimensions_,p.wraps_,p.wrap_points);
     kd_tree->SetDistanceFunction(Q->cspace->distanceFunction);
@@ -54,51 +80,27 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     Q->cspace->move_goal_ = goal;
     Q->cspace->move_goal_->is_move_goal_ = true;
 
-    /// Robot
+    // Robot
     shared_ptr<RobotData> robot
             = make_shared<RobotData>(Q->cspace->goal_, goal,
                                      MAXPATHNODES, Q->cspace->num_dimensions_);
     robot->robot_sensor_range = 20.0;
 
     if(Q->cspace->space_has_time_) {
-        addOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
+        AddOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
     }
 
-    // Store and print the path
-    // Path in form -b*y = a*x + c
-    vector<Eigen::Vector3d> lines;
-    double angle, x = 0, y = 0;
+    // Any-Angle Path
     vector<Eigen::VectorXd> path = ThetaStar(Q);
-    path.push_back(Q->cspace->goal_);
+//    path.push_back(Q->cspace->goal_);
     robot->best_any_angle_path = path;
-    cout << "Path: " << endl;
-    double path_a, path_b, path_c;
-    vector<double> avg_thetas;
-    Eigen::VectorXd current_point, prev_point;
-    for( int i = 0; i < path.size(); i++ ) {
-        cout << path.at(i) << endl << endl;
-        if(i==0) continue;
-        current_point = path.at(i);
-        prev_point = path.at(i-1);
-        path_a = (current_point(1)-prev_point(1))
-                /(current_point(0)-prev_point(0));
-        path_b = -1;
-        path_c = min(abs(current_point(1)),abs(prev_point(1)));
-        lines.insert(lines.begin(), Eigen::Vector3d(path_a,path_b,path_c));
-        angle = atan2(prev_point(1)-current_point(1),
-                      prev_point(0)-current_point(0));
-        x += cos(angle);
-        y += sin(angle);
-        avg_thetas.push_back(atan2(y,x));
-    }
+    vector<double> avg_thetas = PathToThetas(path); // prints any-angle path
 
     vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
     cout << "Started Visualizer Thread" << endl;
 
     /// End Initialization
 
-    /// Main loop
-//    cout << "RRTx Main Loop" << endl;
     start_time = chrono::high_resolution_clock::now();
 
     Q->cspace->start_time_ns_
@@ -106,8 +108,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
                                                          -start_time).count();
     Q->cspace->time_elapsed_ = 0.0;
 
-//    RrtMainLoop(Q,kd_tree,robot,start_time,p.ball_constant,p.slice_time,avg_thetas);
-//    RobotMovement(Q,kd_tree,robot,p.planning_only_time,p.slice_time,p.goal_threshold,p.ball_constant);
+    // Initiate threads
 
     thread main_loop1 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                                p.ball_constant, p.slice_time, avg_thetas, path);
@@ -249,7 +250,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //        }
 //        if(removed) {
 //            cout << "Obstacle Removed" << endl;
-//            reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
+//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
 //                                root,hyper_ball_rad);
 //        }
 
@@ -322,10 +323,10 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //            list_item = list_item->child_;
 //        }
 //        if(added) {
-//            propogateDescendants(Q,kd_tree,robot);
-//            if(!markedOS(Q->cspace->move_goal_)) verifyInQueue(Q,Q->cspace->move_goal_);
+//            PropogateDescendants(Q,kd_tree,robot);
+//            if(!MarkedOS(Q->cspace->move_goal_)) VerifyInQueue(Q,Q->cspace->move_goal_);
 //            cout << "Obstacle Added" << endl;
-//            reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
+//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
 //                                root,hyper_ball_rad);
 //        }
 
@@ -358,10 +359,10 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
 //            /// Make graph consistent
 //            time_start = GetTimeNs(start_time);
-//            reduceInconsistency(Q,Q->cspace->move_goal_, Q->cspace->robot_radius_,
+//            ReduceInconsistency(Q,Q->cspace->move_goal_, Q->cspace->robot_radius_,
 //                                root, hyper_ball_rad);
 //            time_end = GetTimeNs(start_time);
-//            if(timingex) cout << "reduceInconsistency: "
+//            if(timingex) cout << "ReduceInconsistency: "
 //                              << (time_end - time_start)/MICROSECOND << " ms" << endl;
 //            if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
 //                old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
@@ -390,7 +391,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
 //            bool importance_sampling = true;
 //            while(importance_sampling) {
-//                new_node = randNodeOrFromStack(Q->cspace);
+//                new_node = RandNodeOrFromStack(Q->cspace);
 
 //                if(new_node->kd_in_tree_) continue;
 
@@ -468,7 +469,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //            }
 
 //            /// Make graph consistent
-//            reduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
+//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
 //                                root,hyper_ball_rad);
 //            if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
 //                old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
