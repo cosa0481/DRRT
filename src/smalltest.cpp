@@ -141,6 +141,10 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
                                p.ball_constant, p.slice_time, avg_thetas, path);
     cout << "Started Main Loop Thread 5" << endl;
 
+    thread main_loop6 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
+                               p.ball_constant, p.slice_time, avg_thetas, path);
+    cout << "Started Main Loop Thread 6" << endl;
+
     thread move_robot = thread(RobotMovement, Q, kd_tree, robot,
                                p.planning_only_time, p.slice_time,
                                p.goal_threshold, p.ball_constant);
@@ -159,6 +163,8 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     cout << "Joined Main Loop Thread 4" << endl;
     main_loop5.join();
     cout << "Joined Main Loop Thread 5" << endl;
+    main_loop6.join();
+    cout << "Joined Main Loop Thread 6" << endl;
 
 //    double now_time = GetTimeNs(start_time);
 //    double trunc_elapsed_time;
