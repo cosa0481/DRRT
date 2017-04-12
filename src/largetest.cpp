@@ -139,8 +139,8 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             /// Move robot
             if(Q->cspace->time_elapsed_ > p.planning_only_time + p.slice_time) {
                 if(p.move_robot_flag) {
-                    MoveRobot(Q,kd_tree,root,
-                              p.slice_time,hyper_ball_rad,robot);
+                    /*MoveRobot(Q,kd_tree,root,
+                              p.slice_time,hyper_ball_rad,robot);*/
                     // Record data (robot path)
                     rHist.row(histPos++) = robot->robot_pose;
                     if( robot->robot_edge != prev_edge) {

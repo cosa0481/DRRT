@@ -8,7 +8,7 @@
 #ifndef EDGE_H
 #define EDGE_H
 
-#include <DRRT/kdtreenode.h> // PI defined here
+#include <DRRT/kdtreenode.h>
 
 class ConfigSpace;
 class KDTree;

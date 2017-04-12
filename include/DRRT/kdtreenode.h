@@ -3,8 +3,6 @@
 
 #include <DRRT/jlist.h>
 
-#define PI 3.1415926536
-
 class Edge;
 
 /* Node that can be used in the KDTree, where T is the type of

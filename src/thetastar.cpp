@@ -41,7 +41,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         while(osnode->child_ != osnode) {
             // below takes care of add loop in main
             osnode->obstacle_->obstacle_used_ = true;
-            AddNewObstacle(tree,Q,osnode->obstacle_,tree->root);
+            AddObstacle(tree,Q,osnode->obstacle_,tree->root);
             osnode = osnode->child_;
         }
     }
@@ -172,17 +172,21 @@ bool UpdateVertex(shared_ptr<Queue> Q,
 {
     shared_ptr<Edge> this_edge;
     if(node->rrt_parent_used_) {
-        this_edge = Edge::NewEdge(Q->cspace,Tree,
-                                  node->rrt_parent_edge_->start_node_,
-                                  neighbor);
-        if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,
-                      this_edge->end_node_)
-                && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
-            min_neighbor = neighbor;
-            min_neighbor->rrt_parent_edge_ = this_edge;
-//            cout << "node:\n" << node->rrt_parent_edge_->start_node_->position_
-//                 << "\nparent of:\n" << neighbor->position_ << endl;
-            return true;
+        shared_ptr<KDTreeNode> current_node = node;
+        while(current_node->rrt_parent_used_) {
+            current_node = current_node->rrt_parent_edge_->start_node_;
+            this_edge = Edge::NewEdge(Q->cspace,Tree,
+                                      current_node,
+                                      neighbor);
+            if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,
+                          this_edge->end_node_)
+                    && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
+                min_neighbor = neighbor;
+                min_neighbor->rrt_parent_edge_ = this_edge;
+//              cout << "node:\n" << node->rrt_parent_edge_->start_node_->position_
+//                   << "\nparent of:\n" << neighbor->position_ << endl;
+                return true;
+            }
         }
     }
     this_edge = Edge::NewEdge(Q->cspace,Tree,node,neighbor);

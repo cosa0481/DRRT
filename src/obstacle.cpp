@@ -10,7 +10,7 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
     ifstream read_stream;
     string line, substring;
     stringstream line_stream;
-    int num_polygons, num_points;
+    int num_polygons = 0, num_points;
     read_stream.open(obstacle_file);
     if(read_stream.is_open()) {
         cout << "Obstacle File: " << obstacle_file << endl;
@@ -50,7 +50,7 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
     }
     else { cout << "Error opening obstacle file" << endl; }
     read_stream.close();
-    cout << "Read in Obstacles" << endl;
+    cout << "Read in Obstacles: " << num_polygons << endl;
 }
 
 void Obstacle::ReadDynamicObstaclesFromFile(string obstacle_file)
@@ -180,4 +180,591 @@ void Obstacle::ChangeObstacleDirection(std::shared_ptr<ConfigSpace> C,
         this->path_.row(i)(1) = low_point(1) + my*(ts(length-i+1) - low_point(3));
         this->path_.row(i)(3) = ts(length-i+1);
     }
+}
+
+shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &S,
+                                                   shared_ptr<KDTree> Tree,
+                                                   shared_ptr<Obstacle> &O,
+                                                   shared_ptr<KDTreeNode> &root)
+{
+    shared_ptr<JList> node_list = make_shared<JList>(true);
+    double search_range = 0;
+
+    if(1 <= O->kind_ && O->kind_ <= 5) {
+        // 2D obstacle
+        if(!S->space_has_time_ && !S->space_has_theta_) {
+            // Euclidean space without time
+            search_range = S->robot_radius_ + S->saturation_delta_ + O->radius_;
+            Tree->KDFindWithinRange(node_list,search_range,O->position_);
+        } else if(!S->space_has_time_ && S->space_has_theta_) {
+            // Dubin's robot without time [x,y,theta]
+            search_range = S->robot_radius_ + O->radius_ + PI; // + S->saturation_delta_
+//            cout << "search_range: " << search_range << endl;
+            Eigen::Vector3d obs_center_dubins;
+            obs_center_dubins << O->position_(0), O->position_(1), PI;
+//            cout << "about point:\n" << obs_center_dubins << endl;
+            Tree->KDFindWithinRange(node_list,search_range,obs_center_dubins);
+//            cout << "number of points in conflict: " << node_list->length_ << endl;
+        } else {
+            cout << "Error: This type of obstacle not coded for this space"
+                 << endl;
+        }
+    } else if(6 <= O->kind_ && O->kind_ <= 7) {
+        // 2D obstacle with time, find points within range of each point along
+        // the time path, accumulating all points that are in any of the
+        // bounding hyperspheres
+        // [x,y,theta,time]
+
+        double base_search_range = S->robot_radius_ + S->saturation_delta_ + O->radius_;
+        double search_range;
+        int j;
+        Eigen::Vector4d query_pose;
+        Eigen::Array4d temp, temp1;
+        for(int i = 0; i < O->path_.rows(); i++) {
+            // Makey query pose the middle of the edge, and add 1/2 edge length
+            // through the C-Space to the base_search_range (overestimate)
+
+            if(O->path_.rows() == 1) j = 1;
+            else j = i+1;
+
+            temp = O->path_.row(i);
+            temp1 = O->path_.row(j);
+
+            temp = temp + temp1;
+            temp = temp/2.0;
+
+            temp1 = O->position_;
+
+            query_pose << temp1 + temp;
+            cout << "query_pose:\n" << query_pose << endl;
+            cout << "O->position_:\n" << O->position_ << endl;
+            cout << "temp:\n" << temp << endl;
+
+            if(S->space_has_theta_) query_pose << query_pose, PI;
+            cout << "query_pose:\n" << query_pose << endl;
+
+            search_range = base_search_range
+                    + Tree->distanceFunction(O->path_.row(i),
+                                             O->path_.row(j))/2.0;
+
+            if(S->space_has_theta_) search_range += PI;
+
+            if(i == 1)
+                Tree->KDFindWithinRange(node_list,search_range,query_pose);
+            else
+                Tree->KDFindMoreWithinRange(node_list,search_range,query_pose);
+
+            if(j == O->path_.rows()) break;
+        }
+    } else cout << "This case has not been coded yet." << endl;
+
+    return node_list;
+}
+
+void AddObstacle(shared_ptr<KDTree> Tree,
+                    shared_ptr<Queue> &queue,
+                    shared_ptr<Obstacle> &O,
+                    shared_ptr<KDTreeNode> root)
+{
+    cout << "AddObstacle" << endl;
+    // Find all points in conflict with the obstacle
+    shared_ptr<JList> node_list
+            = FindPointsInConflictWithObstacle(queue->cspace,Tree,O,root);
+
+    // For all nodes that might be in conflict
+    shared_ptr<KDTreeNode> this_node;
+    shared_ptr<double> key = make_shared<double>(0);
+//    cout << "points in conflict: " << node_list->length_ << endl;
+    while(node_list->length_ > 0) {
+//        cout << "point in conflict: " << endl;
+        Tree->PopFromRangeList(node_list,this_node,key);
+//        cout << this_node->position_ << endl;
+        // Check all their edges
+
+        // See if this node's neighbors can be reached
+
+        // Get an iterator for this node's out neighbors
+        shared_ptr<RrtNodeNeighborIterator> this_node_out_neighbors
+                = make_shared<RrtNodeNeighborIterator>(this_node);
+
+        // Iterate through list
+        shared_ptr<JListNode> list_item
+                = nextOutNeighbor(this_node_out_neighbors);
+        shared_ptr<JListNode> next_item;
+        shared_ptr<Edge> neighbor_edge;
+        while(list_item->key_ != -1.0) {
+            neighbor_edge = list_item->edge_;
+            next_item = nextOutNeighbor(this_node_out_neighbors);
+            if(neighbor_edge->ExplicitEdgeCheck(O))
+                // Mark edge to neighbor at INF cost
+                list_item->edge_->dist_ = INF;
+            list_item = next_item;
+        }
+
+        // See if this node's parent can be reached
+        if(this_node->rrt_parent_used_
+                && this_node->rrt_parent_edge_->ExplicitEdgeCheck(O)) {
+            // Remove this_node from it's parent's successor list
+            this_node->rrt_parent_edge_->end_node_->successor_list_->JListRemove(
+                        this_node->successor_list_item_in_parent_);
+
+            // This node now has no parent
+            this_node->rrt_parent_edge_->end_node_ = this_node;
+            this_node->rrt_parent_edge_->dist_ = INF;
+            this_node->rrt_parent_used_ = false;
+
+            verifyInOSQueue(queue,this_node);
+        }
+    }
+
+    // Clean up
+    Tree->EmptyRangeList(node_list);
+}
+
+void RemoveObstacle(std::shared_ptr<KDTree> Tree,
+                    std::shared_ptr<Queue> &Q,
+                    std::shared_ptr<Obstacle> &O,
+                    std::shared_ptr<KDTreeNode> root,
+                    double hyper_ball_rad, double time_elapsed_,
+                    std::shared_ptr<KDTreeNode> &move_goal)
+{
+    cout << "RemoveObstacle" << endl;
+    bool neighbors_were_blocked, conflicts_with_other_obs;
+
+    // Find all points in conflict with obstacle
+    shared_ptr<JList> node_list
+            = FindPointsInConflictWithObstacle(Q->cspace,Tree,O,root);
+
+    // For all nodes that might be in conflict
+    shared_ptr<KDTreeNode> this_node = make_shared<KDTreeNode>();
+    shared_ptr<double> key = make_shared<double>(0);
+//    cout << "points in conflict: " << node_list->length_ << endl;
+    while(node_list->length_ > 0) {
+//        cout << "point in conflict: " << endl;
+        Tree->PopFromRangeList(node_list,this_node,key);
+//        cout << this_node->position_ << endl;
+        // Check all of their edges
+
+        // See if this node's out neighbors were blocked by the obstacle
+
+        // Get an iterator for this node's out neighbors
+        shared_ptr<RrtNodeNeighborIterator> this_node_out_neighbors
+                = make_shared<RrtNodeNeighborIterator>(this_node);
+        neighbors_were_blocked = false;
+
+        // Iterate through list
+        shared_ptr<JListNode> list_item
+                = nextOutNeighbor(this_node_out_neighbors);
+        shared_ptr<ListNode> o_list_item;
+        shared_ptr<JListNode> next_item;
+        shared_ptr<Edge> neighbor_edge;
+        shared_ptr<KDTreeNode> neighbor_node;
+        while(list_item->key_ != -1.0) {
+            neighbor_edge = list_item->edge_;
+            neighbor_node = list_item->edge_->end_node_;
+            next_item = nextOutNeighbor(this_node_out_neighbors);
+            if(neighbor_edge->dist_ == INF
+                    && neighbor_edge->ExplicitEdgeCheck(O)) {
+                // This edge used to be in collision with at least one
+                // obstacle (at least the obstacle in question)
+                // Need to check if could be in conflict with other obstacles
+
+                o_list_item = Q->cspace->obstacles_->front_;
+
+                conflicts_with_other_obs = false;
+                shared_ptr<Obstacle> other_obstacle;
+                while(o_list_item != o_list_item->child_) {
+                    other_obstacle = o_list_item->obstacle_;
+                    if(other_obstacle != O
+                            && other_obstacle->obstacle_used_
+                            && other_obstacle->start_time_ <= time_elapsed_
+                            && time_elapsed_ <= (other_obstacle->start_time_
+                                               + other_obstacle->life_span_)) {
+                        if(neighbor_edge->ExplicitEdgeCheck(other_obstacle)) {
+                            conflicts_with_other_obs = true;
+                            break;
+                        }
+                    }
+                    o_list_item = o_list_item->child_;
+                }
+
+                if(!conflicts_with_other_obs) {
+                    // Reset edge length_ to actual cost
+                    list_item->edge_->dist_ = list_item->edge_->dist_original_;
+                    neighbors_were_blocked = true;
+                }
+            }
+            list_item = next_item;
+        }
+
+        if(neighbors_were_blocked) {
+            recalculateLMC(Q,this_node,root,hyper_ball_rad);
+            if(this_node->rrt_tree_cost_ != this_node->rrt_LMC_
+                    && Q->priority_queue->lessThan(this_node,move_goal))
+                verifyInQueue(Q,this_node);
+        }
+    }
+    Tree->EmptyRangeList(node_list);
+    O->obstacle_used_ = false;
+}
+
+bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
+                         Eigen::VectorXd start_point,
+                         Eigen::VectorXd end_point,
+                         double radius)
+{
+    if(!O->obstacle_used_ || O->life_span_ <= 0) return false;
+
+    // Do a quick check to see if any points on the obstacle might be closer
+    // to the edge than robot radius
+    if(1 <= O->kind_ && O->kind_ <= 5) {
+
+        // Calculate distance squared from center of the obstacle to the edge
+        // projected into the first two dimensions
+        double dist_sqrd = DistanceSqrdPointToSegment(O->position_,
+                                                      start_point.head(2),
+                                                      end_point.head(2));
+
+//        cout << "obs:\n" << O->position_.head(2) << endl;
+//        cout << "line:\n" << start_point.head(2) << endl << "--" << endl
+//             << end_point.head(2) << endl;
+//        cout << "dist: " << sqrt(dist_sqrd) << endl;
+//        cout << "min: " << radius+O->radius_ << endl;
+        if(dist_sqrd > pow((radius + O->radius_),2)) return false;
+    }
+
+    if(O->kind_ == 1) return true; // ball is the obstacle, so in collision
+    else if( O->kind_ == 2) return false;
+    else if(O->kind_ == 3 || O->kind_ == 5) {
+        // Need to check vs all edges in the polygon
+        if(O->polygon_.rows() < 2) return false;
+
+        // Start with the last point vs the first point
+        Eigen::Vector2d A = O->polygon_.row(O->polygon_.rows()-1);
+        Eigen::Vector2d B;
+        double seg_dist_sqrd;
+        for(int i = 0; i < O->polygon_.rows(); i++) {
+            B = O->polygon_.row(i);
+            seg_dist_sqrd = SegmentDistSqrd(start_point,end_point,A,B);
+//            cout << "dist between edge and polygon edge: " << sqrt(seg_dist_sqrd) << endl;
+            if(seg_dist_sqrd < pow(radius,2)) {
+                // There is a collision with the 2d projection of the obstacle
+//                cout << "p_edge -- traj_edge: " << sqrt(seg_dist_sqrd)
+//                     << "\n<\nradius:" << radius << endl;
+                if(O->kind_ == 5);
+                else return true;
+            }
+            A = B;
+        }
+    } else if(O->kind_ == 6 || O->kind_ == 7) {
+        // Must check all edges of obstacle path that
+        // overlap with robot edge in time
+
+        Eigen::VectorXd early_point, late_point;
+
+        // Make life easier by always checking past to future
+        if(start_point(2) < end_point(2)) {
+            early_point = start_point;
+            late_point = end_point;
+        } else {
+            early_point = end_point;
+            late_point = start_point;
+        }
+
+        int first_obs_ind = max(FindIndexBeforeTime(O->path_,early_point(2)),
+                                0);
+        int last_obs_ind = min(FindIndexBeforeTime(O->path_,late_point(2)),
+                               (int)O->path_.rows()-1);
+
+        if(last_obs_ind <= first_obs_ind) return false; // object does not
+                                                        // overlap in time
+
+        int i_start, i_end;
+        double x_1, y_1, t_1, x_2, y_2, t_2, m_x1, m_y1,
+                m_x2, m_y2, t_c, r_x, r_y, o_x, o_y;
+        for(i_start = first_obs_ind; i_start < last_obs_ind; i_start++) {
+            i_end = i_start + 1;
+
+            x_1 = early_point(0);   // robot start x
+            y_1 = early_point(1);   // robot start y
+            t_1 = early_point(2);   // robot start time
+
+            x_2 = O->path_.row(i_start)(0) + O->position_(0); // obs start x
+            y_2 = O->path_.row(i_start)(1) + O->position_(1); // obs start y
+            t_2 = O->path_.row(i_start)(2);                 // obs start time
+
+            // Calculate intermediate quantities (parametric slopes)
+            m_x1 = (late_point(0) - x_1)/(late_point(2)-t_1);
+            m_y1 = (late_point(1) - y_1)/(late_point(2)-t_1);
+            m_x2 = (O->path_.row(i_end)(0) + O->position_(0) - x_2)
+                    / (O->path_.row(i_end)(2)-t_2);
+            m_y2 = (O->path_.row(i_end)(1) + O->position_(1) - y_2)
+                    / (O->path_.row(i_end)(2)-t_2);
+
+            // Solve for time of closest pass of centers
+            t_c = (pow(m_x1,2)*t_1 + m_x2*(m_x2*t_2 + x_1 - x_2)
+                   - m_x1*(m_x2*(t_1 + t_2) + x_1 - x_2)
+                   + (m_y1 - m_y2) * (m_y1*t_1 - m_y2*t_2 - y_1 + y_2))
+                  / (pow(m_x1-m_x2,2) + pow(m_y1-m_y2,2));
+
+            // Now bound t_c by the allowable times of robot and obstacle
+            if(t_c < max(t_1,t_2)) t_c = max(t_1,t_2);
+            else if( t_c > min(late_point(2),O->path_.row(i_end)(2))) {
+                t_c = min(late_point(2),O->path_.row(i_end)(2));
+            }
+
+            // Finally see if the distance between the robot and the
+            // obstacle at t_c is close enough to cause a conflict
+            r_x = m_x1*(t_c - t_1) + x_1;   // robot x at t_c
+            r_y = m_y1*(t_c - t_1) + y_1;   // robot y at t_c
+            o_x = m_x2*(t_c - t_2) + x_2;   // obstacle x at t_c
+            o_y = m_y2*(t_c - t_2) + y_2;   // obstacle y at t_c
+
+            if(pow(r_x - o_x,2) + pow(r_y - o_y,2)
+                    < pow(O->radius_ + radius,2)) {
+                    // Then there is a collision
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool ExplicitEdgeCheck(shared_ptr<ConfigSpace> &C,
+                       shared_ptr<Edge> &edge)
+{
+    // If ignoring obstacles
+    if( C->in_warmup_time_ ) return false;
+
+    shared_ptr<ListNode> obstacle_list_node;
+    int length;
+    {
+        lock_guard<mutex> lock(C->cspace_mutex_);
+        obstacle_list_node = C->obstacles_->front_;
+        length = C->obstacles_->length_;
+    }
+    for( int i = 0; i < length; i++ ) {
+        if( edge->ExplicitEdgeCheck(obstacle_list_node->obstacle_) ) {
+            return true;
+        }
+        obstacle_list_node = obstacle_list_node->child_; // iterate
+    }
+
+    return false;
+}
+
+bool QuickCheck2D(shared_ptr<ConfigSpace> &C,
+                  Eigen::VectorXd point,
+                  shared_ptr<Obstacle> &O)
+{
+    if(!O->obstacle_used_ || O->life_span_ <= 0) return false;
+    if((1 <= O->kind_ && O->kind_ <= 5)
+            && C->distanceFunction(O->position_,point) > O->radius_)
+        return false;
+
+    if(O->kind_ == 1) return true;
+    else if(O->kind_ == 2 || O->kind_ == 4) return false;
+    else if(O->kind_ == 3) {
+        if(PointInPolygon(point,O->polygon_)) return true;
+    } else if(O->kind_ == 5) return false;
+    else if(O->kind_ == 6 || O->kind_ == 7) {
+        // First transform position_ and polygon to appropriate position_
+        // at the time of the point based on the obstacles path through time
+
+        if(point.size() < 3)
+            cout << "error: point does not contain time" << endl;
+
+        Eigen::Vector2d offset = FindTransformObjToTimeOfPoint(O,point);
+
+        // Do a quick check based on lower bound of distance to obstacle
+        if(C->distanceFunction(O->position_ + offset,point) > O->radius_)
+            return false;
+
+        // Transform polygon and do a normal check vs it
+        Eigen::ArrayXd polygon;
+        polygon = O->original_polygon_.col(0);
+        O->polygon_.col(0) = polygon + offset(0);
+        polygon = O->original_polygon_.col(1);
+        O->polygon_.col(1) = polygon + offset(1);
+        if(PointInPolygon(point,O->polygon_)) return true;
+    }
+    return false;
+}
+
+bool QuickCheck(shared_ptr<ConfigSpace> &C, Eigen::VectorXd point)
+{
+    shared_ptr<ListNode> obstacle_list_node;
+    int length;
+    {
+        lock_guard<mutex> lock(C->cspace_mutex_);
+        obstacle_list_node = C->obstacles_->front_;
+        length = C->obstacles_->length_;
+
+        for(int i = 0; i < length; i++) {
+            if(QuickCheck2D(C,point,obstacle_list_node->obstacle_)) return true;
+            obstacle_list_node = obstacle_list_node->child_;
+        }
+    }
+    return false;
+}
+
+bool ExplicitPointCheck2D(shared_ptr<ConfigSpace> &C,
+                          shared_ptr<Obstacle> &O,
+                          Eigen::VectorXd point,
+                          double radius)
+{
+//    cout << "ExplicitPointCheck2D" << endl;
+    double this_distance = INF;
+    double min_distance = C->collision_distance_;
+
+    if(!O->obstacle_used_ || O->life_span_ <= 0) return false;
+
+    if( 1 <= O->kind_ && O->kind_ <= 5 ) {
+        // Do a quick check to see if any points on the obstacle
+        // might be closer to point than minDist based on the ball
+        // around the obstacle
+
+        O->position_(2) = point(2);
+//        cout << "Point:\n" << point << endl;
+//        if(point(0) > 3
+//           && point(0) < 10
+//           && point(1) > 3
+//           && point(1) < 10) {
+//            cout << "Object:\n" << O->position_ << endl;
+//            cout << "dist(O,point): " << C->distanceFunction(O->position_,point) << endl;
+//            cout << "collision dist: " << C->distanceFunction(O->position_,point) - radius - O->radius_ << endl;
+//            cout << "minimum: " << min_distance << endl;
+//            cout << "dist > min?: " << ((C->distanceFunction(O->position_,point) - radius - O->radius_) > min_distance) << endl;
+//        }
+
+        // Calculate distance from robot boundary to obstacle center
+        this_distance = C->distanceFunction(O->position_,point) - radius;
+        if(this_distance - O->radius_ > min_distance) return false;
+    }
+
+    if(O->kind_ == 1) {
+        // Ball is actual obstacle, os we have a new minimum
+        this_distance = this_distance - O->radius_;
+        if(this_distance < 0.0) return true;
+    } else if(O->kind_ == 2) return false;
+    else if(O->kind_ == 3) {
+//        cout << "PointInPolygon" << endl;
+        if(PointInPolygon(point.head(2),O->polygon_)) return true;
+//        cout << "the above should be true but it's false" << endl;
+        this_distance = sqrt(DistToPolygonSqrd(point,O->polygon_)) - radius;
+        if(this_distance < 0.0) return true;
+    } else if(O->kind_ == 5) return false;
+    else if(O->kind_ == 6 || O->kind_ == 7) {
+        // First transform position_ and polygon to appropriate ponsition
+        // at the time of the point, based on the obstacle's path through time
+        Eigen::Vector2d offset = FindTransformObjToTimeOfPoint(O,point);
+
+        // Do a quick check to see if any points on the obstacle might
+        // be closer to the point than min_dist based on the ball around
+        // the obstacle
+
+        // Calculate distance from robot boundary to obstacle center
+        Eigen::VectorXd now_pos = O->position_;
+        now_pos(0) = now_pos(0) + offset(0);
+        now_pos(1) = now_pos(1) + offset(1);
+        double this_distance = C->distanceFunction(now_pos, point) - radius;
+        if(this_distance - O->radius_ > min_distance) return false;
+
+        // Transform polygon and then do the rest of a normal check
+        Eigen::ArrayXd polygon = O->original_polygon_.col(0);
+        O->polygon_.col(0) = polygon + offset(0);
+        polygon = O->original_polygon_.col(1);
+        O->polygon_.col(1) = polygon + offset(1);
+
+        if(PointInPolygon(point,O->polygon_)) return true;
+        this_distance = sqrt(DistToPolygonSqrd(point,O->polygon_)) - radius;
+        if(this_distance < 0.0) return true;
+    }
+
+    return false;
+}
+
+bool ExplicitPointCheck(shared_ptr<Queue>& Q, Eigen::VectorXd point)
+{
+    // If ignoring obstacles
+    if(Q->cspace->in_warmup_time_) return false;
+
+    // First do quick check to see if the point can be determined in collision
+    // with minimal work (quick check is not implicit check)
+    if(QuickCheck(Q->cspace,point)) return true;
+
+    // Point is not inside any obstacles but still may be in collision
+    // because of the robot radius
+    shared_ptr<ListNode> obstacle_list_node;
+    int length;
+    {
+        lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+        obstacle_list_node = Q->cspace->obstacles_->front_;
+        length = Q->cspace->obstacles_->length_;
+
+        for(int i = 0; i < length; i++) {
+            if(ExplicitPointCheck2D(Q->cspace,obstacle_list_node->obstacle_,
+                                    point, Q->cspace->robot_radius_)) return true;
+            obstacle_list_node = obstacle_list_node->child_;
+        }
+    }
+    return false;
+}
+
+bool ExplicitNodeCheck(shared_ptr<Queue>& Q, shared_ptr<KDTreeNode> node)
+{
+    return ExplicitPointCheck(Q,node->position_);
+}
+
+bool LineCheck(std::shared_ptr<ConfigSpace> C,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2) {
+    // Save the actual angles of these nodes
+    double saved_theta1 = node1->position_(2);
+    double saved_theta2 = node2->position_(2);
+    // Calculate the angle between the two nodes
+    double theta = std::atan2(node2->position_(1)-node1->position_(1),
+                              node2->position_(0)-node1->position_(0));
+    // Make these nodes point in the same direction
+    node1->position_(2) = theta;
+    node2->position_(2) = theta;
+    // Find the trajectory between them (should be a straight line)
+    std::shared_ptr<Edge> edge = Edge::NewEdge(C,Tree,node1,node2);
+    // Create trajectory straight line from node1 --> node2
+    double traj_length = 50;
+    Eigen::VectorXd x_traj = Eigen::VectorXd::Zero(traj_length+1);
+    Eigen::VectorXd y_traj = Eigen::VectorXd::Zero(traj_length+1);
+    double x_val = node1->position_(0);
+    double y_val = node1->position_(1);
+    double x_dist = abs(node2->position_(0) - x_val);
+    double y_dist = abs(node2->position_(1) - y_val);
+    int i = 0;
+    while(i < traj_length) {
+        x_traj(i) = x_val;
+        if(node2->position_(0) > node1->position_(0))
+            x_val += x_dist/traj_length;
+        else x_val -= x_dist/traj_length;
+
+        y_traj(i) = y_val;
+        if(node2->position_(1) > node1->position_(1))
+            y_val += y_dist/traj_length;
+        else y_val -= y_dist/traj_length;
+
+        i++;
+    }
+    x_traj(i) = x_val;
+    y_traj(i) = y_val;
+    edge->trajectory_.resize(traj_length+1,2);
+    edge->trajectory_.col(0) = x_traj;
+    edge->trajectory_.col(1) = y_traj;
+    // Check if this straight line trajectory is valid
+    bool unsafe = ExplicitEdgeCheck(C,edge);
+    // Restore the nodes' original angles (for some reason if I get rid of
+    // this it dies but this doesn't mean anything since theta* doesn't use
+    // the theta dimension)
+    node1->position_(2) = saved_theta1;
+    node2->position_(2) = saved_theta2;
+    // Return true if there this edge is unsafe and there is no line of sight
+    return unsafe;
 }

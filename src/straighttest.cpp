@@ -421,7 +421,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 cout << "time to add" << endl;
                 /// Adding this causes assertion failed index >=0 && index < size()
                 obstacle->obstacle_used_ = true;
-                AddNewObstacle(kd_tree,Q,obstacle,root);
+                AddObstacle(kd_tree,Q,obstacle,root);
                 // Now check the robot's current move to its target
                 if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
                     robot->current_move_invalid = true;
@@ -434,7 +434,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 // Place to add
                 cout << "place to add" << endl;
                 obstacle->obstacle_used_ = true;
-                AddNewObstacle(kd_tree,Q,obstacle,root);
+                AddObstacle(kd_tree,Q,obstacle,root);
                 // Now check the robot's current move to its target
                 if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
                     robot->current_move_invalid = true;
@@ -448,7 +448,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 cout << "direction change" << endl;
                 obstacle->obstacle_used_ = true;
                 obstacle->ChangeObstacleDirection(Q->cspace,robot_pose(3));
-                AddNewObstacle(kd_tree,Q,obstacle,root);
+                AddObstacle(kd_tree,Q,obstacle,root);
                 // Now check the robot's current move to its target
                 if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
                     robot->current_move_invalid = true;
@@ -457,7 +457,7 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
                 // Warm up time is over, so we need to treat all obstacles
                 // as if they have just been added
                 cout << "finished warm up time" << endl;
-                AddNewObstacle(kd_tree,Q,obstacle,root);
+                AddObstacle(kd_tree,Q,obstacle,root);
                 // Now check the robot's current move to its target
                 if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
                     robot->current_move_invalid = true;
@@ -485,8 +485,8 @@ shared_ptr<RobotData> RRTX(Problem p, shared_ptr<thread> &vis)
             /// Move robot
             if(Q->cspace->time_elapsed_ > p.planning_only_time + p.slice_time) {
                 if(p.move_robot_flag) {
-                    MoveRobot(Q,kd_tree,root,
-                              p.slice_time,hyper_ball_rad,robot);
+                    /*MoveRobot(Q,kd_tree,root,
+                              p.slice_time,hyper_ball_rad,robot);*/
                     // Record data (robot path)
                     rHist.row(histPos++) = robot->robot_pose;
                     if( robot->robot_edge != prev_edge) {

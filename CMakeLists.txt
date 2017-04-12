@@ -85,11 +85,11 @@ target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 #add_executable( jlisttest src/jlist.cpp ${HDRS} )
 #target_link_libraries( jlisttest ${LIBRARY_NAME} )
 
-add_executable( largetest src/largetest.cpp ${HDRS} )
-target_link_libraries( largetest ${LIBRARY_NAME} )
+#add_executable( largetest src/largetest.cpp ${HDRS} )
+#target_link_libraries( largetest ${LIBRARY_NAME} )
 
-add_executable( straighttest src/straighttest.cpp ${HDRS} )
-target_link_libraries( straighttest ${LIBRARY_NAME} )
+#add_executable( straighttest src/straighttest.cpp ${HDRS} )
+#target_link_libraries( straighttest ${LIBRARY_NAME} )
 
 add_executable( smalltest src/smalltest.cpp ${HDRS} )
 target_link_libraries( smalltest ${LIBRARY_NAME} )

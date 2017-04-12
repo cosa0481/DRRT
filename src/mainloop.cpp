@@ -94,7 +94,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                      + obstacle->life_span_) {
                 // Time to add obstacle
                 obstacle->obstacle_used_ = true; // This line significantly slows down program
-                AddNewObstacle(Tree,Q,obstacle,Tree->root);
+                AddObstacle(Tree,Q,obstacle,Tree->root);
                 if(Robot->robot_edge_used
                         && Robot->robot_edge->ExplicitEdgeCheck(obstacle)) {
                     {
@@ -206,7 +206,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                      + theta_bias);
 
                 // Calculate position bias
-                position_bias = hyper_ball_rad;
+                position_bias = 2*hyper_ball_rad;
                 double distance = DistanceSqrdPointToSegment(
                             new_node->position_,
                             path.at(min_dist_node_to_path_index).head(2),

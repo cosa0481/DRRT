@@ -3,7 +3,8 @@
 
 #include <DRRT/list.h>
 #include <DRRT/heap.h>
-#include <DRRT/edge.h>
+#include <DRRT/edge.h> // includes jlist.h which includes
+                       // obstacle.h which includes distancefunctions.h
 /// Include implementation of desired edge here
 #include <DRRT/dubinsedge.h>
 //#include <DRRT/holedge.h>

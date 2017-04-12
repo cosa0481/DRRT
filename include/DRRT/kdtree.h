@@ -6,11 +6,8 @@
 #ifndef KDTREE_H
 #define KDTREE_H
 
-
 #include <DRRT/ghostPoint.h>
 #include <DRRT/datastructures.h>
-#include <DRRT/distancefunctions.h>
-
 
 // A KD-Tree data structure that stores nodes of type T
 class KDTree {

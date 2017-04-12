@@ -1,27 +1,14 @@
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 
-#include <Eigen/Eigen>
-#include <vector>
-#include <string>
-#include <iostream>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <cstdlib>
-#include <iomanip>
-#include <thread>
-#include <mutex>
-#include <string>
-
-// Infinity value for distance
-#define INF 1000000000000
-#define MICROSECOND 1000000 // for timing
-#define MAXPATHNODES 100000
-#define DELTA 10 // should be changed if delta is changed in executable
+#include <DRRT/distancefunctions.h>
 
 class ConfigSpace;
+class JList;
+class KDTree;
+class KDTreeNode;
+class Edge;
+struct Queue;
 
 class Obstacle : public std::enable_shared_from_this<Obstacle>
 {
@@ -182,5 +169,64 @@ public:
                                  double current_time);
 
 };
+
+// This returns a -rangeList- (see KDTree code) containing all points
+// that are in conflict with the obstacle. Note that rangeList must
+// be DESTROYED PROPERLY using L.EmptyRangeList to avoid problems -collision-
+std::shared_ptr<JList> FindPointsInConflictWithObstacle(
+        std::shared_ptr<ConfigSpace> &S,
+        std::shared_ptr<KDTree> Tree,
+        std::shared_ptr<Obstacle> &O,
+        std::shared_ptr<KDTreeNode> &root);
+
+// This adds the obstacle (checks for edge conflicts with the obstactle
+// and then puts the affected nodes into the appropriate heaps -collision-
+void AddObstacle(std::shared_ptr<KDTree> Tree,
+                 std::shared_ptr<Queue> &queue,
+                 std::shared_ptr<Obstacle>& O,
+                 std::shared_ptr<KDTreeNode> root);
+
+// This removes the obstacle (checks for edge conflicts with the obstacle
+// and then puts the affected nodes into the appropriate heaps)
+void RemoveObstacle(std::shared_ptr<KDTree> Tree,
+                    std::shared_ptr<Queue>& Q,
+                    std::shared_ptr<Obstacle>& O,
+                    std::shared_ptr<KDTreeNode> root,
+                    double hyper_ball_rad, double time_elapsed_,
+                    std::shared_ptr<KDTreeNode>& move_goal );
+
+// Checks if the edge between the points is in collision with the obstacle
+// (the point is closer than robot radius to the edge)
+bool ExplicitEdgeCheck2D(std::shared_ptr<Obstacle> &O,
+                         Eigen::VectorXd start_point,
+                         Eigen::VectorXd end_point,
+                         double radius);
+
+// Checks if the edge is in collision with any obstacles in the C-space
+// Returns true if there the edge is in collision
+bool ExplicitEdgeCheck(std::shared_ptr<ConfigSpace> &C,
+                       std::shared_ptr<Edge> &edge);
+
+bool QuickCheck2D(std::shared_ptr<ConfigSpace> &C,
+                  Eigen::Vector2d point,
+                  std::shared_ptr<Obstacle> &O);
+
+bool QuickCheck(std::shared_ptr<ConfigSpace> &C, Eigen::Vector2d point);
+
+
+bool ExplicitPointCheck2D(std::shared_ptr<ConfigSpace> &C,
+                          std::shared_ptr<Obstacle> &O,
+                          Eigen::VectorXd point,
+                          double radius);
+
+bool ExplicitPointCheck(std::shared_ptr<Queue>& Q, Eigen::VectorXd point);
+
+bool ExplicitNodeCheck(std::shared_ptr<Queue>& Q,
+                       std::shared_ptr<KDTreeNode> node);
+
+bool LineCheck(std::shared_ptr<ConfigSpace> C,
+               std::shared_ptr<KDTree> Tree,
+               std::shared_ptr<KDTreeNode> node1,
+               std::shared_ptr<KDTreeNode> node2);
 
 #endif // OBSTACLE_H

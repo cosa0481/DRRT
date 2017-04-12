@@ -5,7 +5,6 @@
  * library on a smaller scale than test.cpp
  */
 
-#include <DRRT/drrt.h>
 #include <DRRT/visualizer.h>
 #include <DRRT/thetastar.h>
 #include <DRRT/mainloop.h>
@@ -16,17 +15,6 @@ using namespace std;
 bool timingex = false;
 
 chrono::time_point<chrono::high_resolution_clock> start_time;
-
-void PrintRrtxPath(shared_ptr<KDTreeNode> &leaf)
-{
-    std::cout << "\nRRTx Path" << std::endl;
-    while(leaf->rrt_parent_used_) {
-        cout << "pose: " << leaf->rrt_LMC_ << "\n" << leaf->position_ << endl;
-        cout << "VVVVVVVV" << endl;
-        leaf = leaf->rrt_parent_edge_->end_node_;
-    }
-    cout << leaf->position_ << endl;
-}
 
 /// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
@@ -287,7 +275,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //                cout << "time to add" << endl;
 //                /// Adding this causes program to slow considerably
 //                obstacle->obstacle_used_ = true;
-//                AddNewObstacle(kd_tree,Q,obstacle,root);
+//                AddObstacle(kd_tree,Q,obstacle,root);
 //                // Now check the robot's current move to its target
 //                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
 //                    robot->current_move_invalid = true;
@@ -300,7 +288,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //                // Place to add
 //                cout << "place to add" << endl;
 //                obstacle->obstacle_used_ = true;
-//                AddNewObstacle(kd_tree,Q,obstacle,root);
+//                AddObstacle(kd_tree,Q,obstacle,root);
 //                obstacle->sensible_obstacle_ = false;
 //                // Now check the robot's current move to its target
 //                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
@@ -315,7 +303,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //                cout << "direction change" << endl;
 //                obstacle->obstacle_used_ = true;
 //                obstacle->ChangeObstacleDirection(Q->cspace,robot_pose(3));
-//                AddNewObstacle(kd_tree,Q,obstacle,root);
+//                AddObstacle(kd_tree,Q,obstacle,root);
 //                obstacle->last_direction_change_time_ = robot_pose(3);
 //                // Now check the robot's current move to its target
 //                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
@@ -325,7 +313,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 //                // Warm up time is over, so we need to treat all obstacles
 //                // as if they have just been added
 ////                cout << "finished warm up time" << endl;
-////                AddNewObstacle(kd_tree,Q,obstacle,root);
+////                AddObstacle(kd_tree,Q,obstacle,root);
 //                // Now check the robot's current move to its target
 ////                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
 ////                    robot->current_move_invalid = true;
