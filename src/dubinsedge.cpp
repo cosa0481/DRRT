@@ -27,7 +27,7 @@ void Edge::Saturate(Eigen::VectorXd& nP,
     while(nP(2) < -2*PI) nP(2) += 2*PI;
     while(nP(2) > 2*PI) nP(2) -= 2*PI;
 
-    ///std::cout << "modded theta: " << nP(2) << std::endl;
+    //std::cout << "modded theta: " << nP(2) << std::endl;
 
 //    // Saturate theta in the shorter of the
 //    // two directions that it can go

@@ -2,7 +2,7 @@ project( DRRT )
 
 cmake_minimum_required( VERSION 2.8 )
 
-set( CMAKE_BUILD_TYPE Default ) # Debug
+set( CMAKE_BUILD_TYPE Default )
 
 list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules )
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH} )
@@ -49,6 +49,7 @@ set( HDRS
                 include/DRRT/thetastar.h
                 include/DRRT/mainloop.h
                 include/DRRT/moverobot.h
+                include/DRRT/sampling.h
 		)
 
 set( SRCS
@@ -66,6 +67,7 @@ set( SRCS
                 src/thetastar.cpp
                 src/mainloop.cpp
                 src/moverobot.cpp
+                src/sampling.cpp
 		)
 
 
