@@ -94,7 +94,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     vector<Eigen::VectorXd> path = ThetaStar(Q);
 //    path.push_back(Q->cspace->goal_);
     robot->best_any_angle_path = path;
-    vector<double> avg_thetas = PathToThetas(path); // prints any-angle path
+    vector<double> thetas = PathToThetas(path); // prints any-angle path
 
     vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
     cout << "Started Visualizer Thread" << endl;
@@ -119,7 +119,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     for(auto & thr : thread_pool) {
         thr = thread(RrtMainLoop, Q, kd_tree, robot,
                                      start_time, p.ball_constant, p.slice_time,
-                                     avg_thetas, path);
+                                     thetas, path);
         cout << "Started Main Loop Thread " << threads++ << endl;
     }
 

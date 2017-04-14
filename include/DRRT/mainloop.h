@@ -5,10 +5,10 @@
 
 void RrtMainLoop(std::shared_ptr<Queue> Q, std::shared_ptr<KDTree> Tree,
                  std::shared_ptr<RobotData> Robot,
-                 std::chrono::time_point<std::chrono::high_resolution_clock> start_time,
+        std::chrono::time_point<std::chrono::high_resolution_clock> start_time,
                  double ball_constant,
                  double slice_time,
-                 std::vector<double> avg_thetas,
+                 std::vector<double> thetas,
                  std::vector<Eigen::VectorXd> path);
 
 #endif // MAINLOOP_H

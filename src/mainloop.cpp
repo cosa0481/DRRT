@@ -13,7 +13,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  chrono::time_point<chrono::high_resolution_clock> start_time,
                  double ball_constant,
                  double slice_time,
-                 vector<double> avg_thetas,
+                 vector<double> thetas,
                  vector<Eigen::VectorXd> path)
 {
     double slice_start = chrono::duration_cast<chrono::nanoseconds>(
@@ -157,9 +157,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
                 // Calculate theta bias
                 new_node->position_(2)
-                        = RandDouble(avg_thetas[min_dist_node_to_path_index]
+                        = RandDouble(thetas[min_dist_node_to_path_index]
                                      - theta_bias,
-                                     avg_thetas[min_dist_node_to_path_index]
+                                     thetas[min_dist_node_to_path_index]
                                      + theta_bias);
 
                 // Calculate position bias
