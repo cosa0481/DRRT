@@ -85,7 +85,6 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         }
     }
 
-    shared_ptr<KDTreeNode> this_node = make_shared<KDTreeNode>();
     shared_ptr<JList> node_list = make_shared<JList>(true); // uses KDTreeNodes
     shared_ptr<JListNode> this_item = make_shared<JListNode>();
     shared_ptr<KDTreeNode> near_node = make_shared<KDTreeNode>();
@@ -183,8 +182,6 @@ bool UpdateVertex(shared_ptr<Queue> Q,
                     && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
                 min_neighbor = neighbor;
                 min_neighbor->rrt_parent_edge_ = this_edge;
-//              cout << "node:\n" << node->rrt_parent_edge_->start_node_->position_
-//                   << "\nparent of:\n" << neighbor->position_ << endl;
                 return true;
             }
         }
@@ -194,11 +191,8 @@ bool UpdateVertex(shared_ptr<Queue> Q,
             && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
         min_neighbor = neighbor;
         min_neighbor->rrt_parent_edge_ = this_edge;
-//        cout << "node:\n" << node->position_
-//             << "\nparent of:\n" << neighbor->position_ << endl;
         return true;
     }
-//    cout << "no update" << endl;
     return false;
 }
 

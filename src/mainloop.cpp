@@ -26,11 +26,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     double iter_start, iter_end;
 
     double old_rrt_LMC, current_distance, initial_distance;
-    Eigen::Vector3d prev_pose, robot_pose;
-    bool removed, added;
-    shared_ptr<ListNode> obs_node;
-    shared_ptr<Obstacle> obstacle;
-    shared_ptr<KDTreeNode> move_goal;
+    Eigen::Vector3d prev_pose;
 
     {
         lock_guard<mutex> lock(Robot->robot_mutex);
@@ -49,77 +45,24 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     int i = 0;
     while(!reached_goal) {
         // Calculate initial hyper ball radius
-        double hyper_ball_rad = min(Q->cspace->saturation_delta_,
+        double hyper_ball_rad;
+        {
+            lock_guard<mutex> lock(Tree->tree_mutex_);
+            hyper_ball_rad = min(Q->cspace->saturation_delta_,
                              ball_constant*(
                              pow(log(1+Tree->tree_size_)/(Tree->tree_size_),
                                  1/Q->cspace->num_dimensions_)));
+        }
         now = GetTimeNs(start_time);
         slice_end = (1+slice_counter)*slice_time; // time in the next slice
 
         // Check for warm up time
-        if(Q->cspace->in_warmup_time_
-                && Q->cspace->warmup_time_ < Q->cspace->time_elapsed_) {
-            Q->cspace->in_warmup_time_ = false;
-        }
-
-        // Add / Remove Obstacles
         {
             lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-            obs_node = Q->cspace->obstacles_->front_;
-            elapsed_time = Q->cspace->time_elapsed_;
-            move_goal = Q->cspace->move_goal_;
-        }
-        {
-            lock_guard<mutex> lock(Robot->robot_mutex);
-            robot_pose = Robot->robot_pose;
-        }
-        removed = false;
-        added = false;
-        while(obs_node != obs_node->child_) {
-            obstacle = obs_node->obstacle_;
-
-            // Remove
-            if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
-                    && (obstacle->start_time_ + obstacle->life_span_
-                        <= elapsed_time)) {
-                // Time to remove obstacle
-                RemoveObstacle(Tree,Q,obstacle,Tree->root,hyper_ball_rad,
-                               elapsed_time,move_goal);
-                removed = true;
+            if(Q->cspace->in_warmup_time_
+                    && Q->cspace->warmup_time_ < Q->cspace->time_elapsed_) {
+                Q->cspace->in_warmup_time_ = false;
             }
-
-            // Add
-            if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
-                    && obstacle->start_time_ <= elapsed_time
-                    && elapsed_time <= obstacle->start_time_
-                                     + obstacle->life_span_) {
-                // Time to add obstacle
-                obstacle->obstacle_used_ = true; // This line significantly slows down program
-                AddObstacle(Tree,Q,obstacle,Tree->root);
-                if(Robot->robot_edge_used
-                        && Robot->robot_edge->ExplicitEdgeCheck(obstacle)) {
-                    {
-                        lock_guard<mutex> lock(Robot->robot_mutex);
-                        Robot->current_move_invalid = true;
-                    }
-                }
-                added = true;
-            }
-            obs_node = obs_node->child_;
-        }
-        if(removed) {
-            ReduceInconsistency(Q,Q->cspace->move_goal_,
-                                Q->cspace->robot_radius_,
-                                Tree->root, hyper_ball_rad);
-        }
-        if(added) {
-            PropogateDescendants(Q,Tree,Robot);
-            if(!MarkedOS(Q->cspace->move_goal_)) {
-                VerifyInQueue(Q,Q->cspace->move_goal_);
-            }
-            ReduceInconsistency(Q,Q->cspace->move_goal_,
-                                Q->cspace->robot_radius_,
-                                Tree->root,hyper_ball_rad);
         }
 
         // Run iterations based on timing
@@ -138,13 +81,21 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             cout << this_thread::get_id() << " Iteration " << i++
                  << "\n--------------------------------" << endl;
 
-
-            ReduceInconsistency(Q,Q->cspace->move_goal_,
-                                Q->cspace->robot_radius_,
-                                Tree->root, hyper_ball_rad);
-            if(Q->cspace->move_goal_->rrt_LMC_ != old_rrt_LMC) {
-                old_rrt_LMC = Q->cspace->move_goal_->rrt_LMC_;
-            }
+            {
+                lock_guard<mutex> lock(Q->queuetex);
+                {
+                    lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                    {
+                        lock_guard<mutex> lock(Tree->tree_mutex_);
+                        ReduceInconsistency(Q,Q->cspace->move_goal_,
+                                            Q->cspace->robot_radius_,
+                                            Tree->root, hyper_ball_rad);
+                        if(Q->cspace->move_goal_->rrt_LMC_ != old_rrt_LMC) {
+                            old_rrt_LMC = Q->cspace->move_goal_->rrt_LMC_;
+                        }
+                    } // unlock tree mutex
+                } // unlock cspace_mutex_
+            } // unlock queuetex
 
             // Sample the free cspace
             shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
@@ -157,18 +108,24 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             while(importance_sampling) {
                 new_node = RandNodeOrFromStack(Q->cspace);
                 if(new_node->kd_in_tree_) continue;
-                Tree->KDFindNearest(closest_node,closest_dist,
-                                    new_node->position_);
+                {
+                    lock_guard<mutex> lock(Tree->tree_mutex_);
+                    Tree->KDFindNearest(closest_node,closest_dist,
+                                        new_node->position_);
+                }
 
                 // Saturate this node
                 initial_distance = Tree->distanceFunction(new_node->position_,
                                                       closest_node->position_);
-                if(initial_distance > Q->cspace->saturation_delta_
-                        && new_node != Q->cspace->goal_node_) {
-                    Edge::Saturate(new_node->position_,
-                                   closest_node->position_,
-                                   Q->cspace->saturation_delta_,
-                                   initial_distance);
+                {
+                    lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                    if(initial_distance > Q->cspace->saturation_delta_
+                            && new_node != Q->cspace->goal_node_) {
+                        Edge::Saturate(new_node->position_,
+                                       closest_node->position_,
+                                       Q->cspace->saturation_delta_,
+                                       initial_distance);
+                    }
                 }
                 if(ExplicitNodeCheck(Q,new_node)) continue;
                 if(RandDouble(0,1) > p_uniform) break;
@@ -215,22 +172,31 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                 importance_sampling = false;
             }
 
-
             // Extend the graph        
-            if(Extend(Tree,Q,new_node,closest_node,
+            {
+                //lock_guard<mutex> lock(Tree->tree_mutex_);
+                Extend(Tree,Q,new_node,closest_node,
                       Q->cspace->saturation_delta_, hyper_ball_rad,
-                      Q->cspace->move_goal_)) {
-                // want a cookie?
+                      Q->cspace->move_goal_);
             }
 
 
             // Make graph consistent
-            ReduceInconsistency(Q,Q->cspace->move_goal_,
-                                Q->cspace->robot_radius_,
-                                Tree->root, hyper_ball_rad);
-            if(Q->cspace->move_goal_-> rrt_LMC_ != old_rrt_LMC) {
-                old_rrt_LMC = Q->cspace->move_goal_->rrt_LMC_;
-            }
+            {
+                lock_guard<mutex> lock(Q->queuetex);
+                {
+                    lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                    {
+                        lock_guard<mutex> lock(Tree->tree_mutex_);
+                        ReduceInconsistency(Q,Q->cspace->move_goal_,
+                                            Q->cspace->robot_radius_,
+                                            Tree->root, hyper_ball_rad);
+                        if(Q->cspace->move_goal_->rrt_LMC_ != old_rrt_LMC) {
+                            old_rrt_LMC = Q->cspace->move_goal_->rrt_LMC_;
+                        }
+                    } // unlock tree mutex
+                } // unlock cspace_mutex_
+            } // unlock queuetex
 
             iter_end = GetTimeNs(start_time);
             cout << "Duration: " << (iter_end - iter_start)/MICROSECOND

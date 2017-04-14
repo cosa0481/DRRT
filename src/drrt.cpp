@@ -513,6 +513,7 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
             time_end = GetTimeNs(startTime);
             if(timing) cout << "\t\tmakeParentOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
         }
+
         listItem = listItem->child_; // iterate thorugh list
     }
 }
@@ -785,7 +786,6 @@ bool Rewire(shared_ptr<Queue> &Q,
         // Note that using simply "<" causes problems
         // Above note may be outdated
         // node.rrt_tree_cost_ = node.rrt_LMC_!!! Now happens after return
-        cout << "not rewiring" << endl;
         return false;
     }
 

@@ -182,7 +182,97 @@ void Obstacle::ChangeObstacleDirection(std::shared_ptr<ConfigSpace> C,
     }
 }
 
-shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &S,
+void CheckObstacles(shared_ptr<Queue> Q,
+                    shared_ptr<KDTree> Tree,
+                    shared_ptr<RobotData> Robot,
+                    double ball_constant)
+{
+    bool reached_goal = false;
+    bool added, removed;
+    shared_ptr<ListNode> obstacle_node;
+    shared_ptr<Obstacle> obstacle;
+    double time_elapsed;
+    double hyper_ball_rad;
+    while(!reached_goal) {
+        {
+            lock_guard<mutex> lock(Tree->tree_mutex_);
+            hyper_ball_rad = min(Q->cspace->saturation_delta_,
+                             ball_constant*(
+                             pow(log(1+Tree->tree_size_)/(Tree->tree_size_),
+                                 1/Q->cspace->num_dimensions_)));
+        }
+        added = false;
+        removed = false;
+        {
+            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+            obstacle_node = Q->cspace->obstacles_->front_;
+            time_elapsed = Q->cspace->time_elapsed_;
+            while(obstacle_node != obstacle_node->child_) {
+                obstacle = obstacle_node->obstacle_;
+
+                // Remove
+                if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
+                        && (obstacle->start_time_ + obstacle->life_span_
+                            <= time_elapsed)) {
+                    // Time reached to remove obstacle
+                    RemoveObstacle(Tree,Q,obstacle,Tree->root,hyper_ball_rad,
+                                   time_elapsed,Q->cspace->move_goal_);
+                    removed = true;
+                }
+
+                // Add
+                if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
+                        && obstacle->start_time_ <= time_elapsed
+                        && time_elapsed <= obstacle->start_time_
+                                         + obstacle->life_span_) {
+                    // Time reached to add obstacle
+                    obstacle->obstacle_used_ = true;
+                    AddObstacle(Tree,Q,obstacle,Tree->root);
+                    {
+                        lock_guard<mutex> lock(Robot->robot_mutex);
+                        if(Robot->robot_edge_used
+                                && Robot->robot_edge->ExplicitEdgeCheck(obstacle)) {
+                            Robot->current_move_invalid = true;
+                        }
+                    }
+                    added = true;
+                }
+                obstacle_node = obstacle_node->child_;
+            }
+        } // unlock cspace mutex
+
+        {
+            lock_guard<mutex> lock(Q->queuetex);
+            {
+                lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                {
+                    lock_guard<mutex> lock(Tree->tree_mutex_);
+                    if(removed) {
+                        ReduceInconsistency(Q,Q->cspace->move_goal_,
+                                            Q->cspace->robot_radius_,
+                                            Tree->root, hyper_ball_rad);
+                    }
+                    if(added) {
+                        PropogateDescendants(Q,Tree,Robot);
+                        if(!MarkedOS(Q->cspace->move_goal_)) {
+                            VerifyInQueue(Q,Q->cspace->move_goal_);
+                        }
+                        ReduceInconsistency(Q,Q->cspace->move_goal_,
+                                            Q->cspace->robot_radius_,
+                                            Tree->root,hyper_ball_rad);
+                    }
+                } // unlock tree mutex
+            } // unlock cspace_mutex_
+        } // unlock queuetex
+
+        {
+            lock_guard<mutex> lock(Robot->robot_mutex);
+            reached_goal = Robot->goal_reached;
+        }
+    }
+}
+
+shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &C,
                                                    shared_ptr<KDTree> Tree,
                                                    shared_ptr<Obstacle> &O,
                                                    shared_ptr<KDTreeNode> &root)
@@ -192,19 +282,16 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &S,
 
     if(1 <= O->kind_ && O->kind_ <= 5) {
         // 2D obstacle
-        if(!S->space_has_time_ && !S->space_has_theta_) {
+        if(!C->space_has_time_ && !C->space_has_theta_) {
             // Euclidean space without time
-            search_range = S->robot_radius_ + S->saturation_delta_ + O->radius_;
+            search_range = C->robot_radius_ + C->saturation_delta_ + O->radius_;
             Tree->KDFindWithinRange(node_list,search_range,O->position_);
-        } else if(!S->space_has_time_ && S->space_has_theta_) {
+        } else if(!C->space_has_time_ && C->space_has_theta_) {
             // Dubin's robot without time [x,y,theta]
-            search_range = S->robot_radius_ + O->radius_ + PI; // + S->saturation_delta_
-//            cout << "search_range: " << search_range << endl;
+            search_range = C->robot_radius_ + O->radius_ + PI; // + S->saturation_delta_
             Eigen::Vector3d obs_center_dubins;
             obs_center_dubins << O->position_(0), O->position_(1), PI;
-//            cout << "about point:\n" << obs_center_dubins << endl;
             Tree->KDFindWithinRange(node_list,search_range,obs_center_dubins);
-//            cout << "number of points in conflict: " << node_list->length_ << endl;
         } else {
             cout << "Error: This type of obstacle not coded for this space"
                  << endl;
@@ -215,7 +302,7 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &S,
         // bounding hyperspheres
         // [x,y,theta,time]
 
-        double base_search_range = S->robot_radius_ + S->saturation_delta_ + O->radius_;
+        double base_search_range = C->robot_radius_ + C->saturation_delta_ + O->radius_;
         double search_range;
         int j;
         Eigen::Vector4d query_pose;
@@ -236,18 +323,14 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &S,
             temp1 = O->position_;
 
             query_pose << temp1 + temp;
-            cout << "query_pose:\n" << query_pose << endl;
-            cout << "O->position_:\n" << O->position_ << endl;
-            cout << "temp:\n" << temp << endl;
 
-            if(S->space_has_theta_) query_pose << query_pose, PI;
-            cout << "query_pose:\n" << query_pose << endl;
+            if(C->space_has_theta_) query_pose << query_pose, PI;
 
             search_range = base_search_range
                     + Tree->distanceFunction(O->path_.row(i),
                                              O->path_.row(j))/2.0;
 
-            if(S->space_has_theta_) search_range += PI;
+            if(C->space_has_theta_) search_range += PI;
 
             if(i == 1)
                 Tree->KDFindWithinRange(node_list,search_range,query_pose);
@@ -262,23 +345,20 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &S,
 }
 
 void AddObstacle(shared_ptr<KDTree> Tree,
-                    shared_ptr<Queue> &queue,
+                    shared_ptr<Queue> &Q,
                     shared_ptr<Obstacle> &O,
                     shared_ptr<KDTreeNode> root)
 {
-    cout << "AddObstacle" << endl;
+//    cout << "AddObstacle" << endl;
     // Find all points in conflict with the obstacle
     shared_ptr<JList> node_list
-            = FindPointsInConflictWithObstacle(queue->cspace,Tree,O,root);
+            = FindPointsInConflictWithObstacle(Q->cspace,Tree,O,root);
 
     // For all nodes that might be in conflict
     shared_ptr<KDTreeNode> this_node;
     shared_ptr<double> key = make_shared<double>(0);
-//    cout << "points in conflict: " << node_list->length_ << endl;
     while(node_list->length_ > 0) {
-//        cout << "point in conflict: " << endl;
         Tree->PopFromRangeList(node_list,this_node,key);
-//        cout << this_node->position_ << endl;
         // Check all their edges
 
         // See if this node's neighbors can be reached
@@ -313,7 +393,7 @@ void AddObstacle(shared_ptr<KDTree> Tree,
             this_node->rrt_parent_edge_->dist_ = INF;
             this_node->rrt_parent_used_ = false;
 
-            VerifyInOSQueue(queue,this_node);
+            VerifyInOSQueue(Q,this_node);
         }
     }
 
@@ -328,7 +408,7 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
                     double hyper_ball_rad, double time_elapsed_,
                     std::shared_ptr<KDTreeNode> &move_goal)
 {
-    cout << "RemoveObstacle" << endl;
+//    cout << "RemoveObstacle" << endl;
     bool neighbors_were_blocked, conflicts_with_other_obs;
 
     // Find all points in conflict with obstacle
@@ -542,12 +622,13 @@ bool ExplicitEdgeCheck(shared_ptr<ConfigSpace> &C,
         lock_guard<mutex> lock(C->cspace_mutex_);
         obstacle_list_node = C->obstacles_->front_;
         length = C->obstacles_->length_;
-    }
+
     for( int i = 0; i < length; i++ ) {
         if( edge->ExplicitEdgeCheck(obstacle_list_node->obstacle_) ) {
             return true;
         }
         obstacle_list_node = obstacle_list_node->child_; // iterate
+    }
     }
 
     return false;

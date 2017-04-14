@@ -22,8 +22,9 @@ public:
     double change_threshold;            // obstacle change detection
     double goal_threshold;              // goal detection
     bool move_robot_flag;               // true -> drive robot
-    Eigen::VectorXi wraps_;              // wrapping dimensions (0=1st)
+    Eigen::VectorXi wraps;              // wrapping dimensions (0=1st)
     Eigen::VectorXd wrap_points;        // points at which they wrap
+    int num_threads;                    // number of main loop threads to spawn
 
     // Constructor
     Problem(std::string se_t,
@@ -36,7 +37,8 @@ public:
             double g_t,
             bool m_r_f,
             Eigen::VectorXi w,
-            Eigen::VectorXd w_p)
+            Eigen::VectorXd w_p,
+            int n)
         :   search_type(se_t),
             c_space(c_s),
             planning_only_time(p_o_t),
@@ -46,8 +48,9 @@ public:
             change_threshold(c_t),
             goal_threshold(g_t),
             move_robot_flag(m_r_f),
-            wraps_(w),
-            wrap_points(w_p)
+            wraps(w),
+            wrap_points(w_p),
+            num_threads(n)
     {}
 } Problem;
 

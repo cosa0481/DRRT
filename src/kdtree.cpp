@@ -12,13 +12,16 @@
 
 void KDTree::AddVizNode(std::shared_ptr<KDTreeNode> node)
 {
-    std::lock_guard<std::mutex> lock(this->tree_mutex_);
+    // This lock_guard causes a hang up because it is waiting for the mutex
+    // to unlock from smalltest.cpp around Extend
+//    std::lock_guard<std::mutex> lock(this->tree_mutex_);
     this->nodes_.push_back(node);
 }
 
 void KDTree::RemoveVizNode(std::shared_ptr<KDTreeNode> &node)
 {
-    // This lock_guard causes a hang up because it is waiting the mutex to unlock from visualizer.cpp
+    // This lock_guard causes a hang up because it is waiting for the mutex
+    // to unlock from visualizer.cpp
 //    std::lock_guard<std::mutex> lock(this->tree_mutex_);
     this->nodes_.erase(
                 std::remove(this->nodes_.begin(),this->nodes_.end(),node),
@@ -801,8 +804,6 @@ void KDTree::KDFindWithinRange(std::shared_ptr<JList> &S,
     // Find nodes within range
     KDFindWithinRangeInSubtree(this->root, range, queryPoint, S);
 
-//    std::cout << "Found " << S->length_ << " points in Range " << range << std::endl;
-
     if(this->num_wraps_ > 0) {
         // If dimensions wrap around, we need to search vs. identities (ghosts)
         std::shared_ptr<GhostPointIterator> pointIterator
@@ -816,8 +817,6 @@ void KDTree::KDFindWithinRange(std::shared_ptr<JList> &S,
             KDFindWithinRangeInSubtree(this->root, range, thisGhostPoint, S);
         }
     }
-
-//    std::cout << "Found " << S->length_ << " points" << std::endl;
 }
 
 void KDTree::KDFindMoreWithinRange(std::shared_ptr<JList> &L,

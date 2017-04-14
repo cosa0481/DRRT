@@ -216,17 +216,21 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
         prev_pose = Robot->robot_pose;
     }
     double hyper_ball_rad, current_distance, move_distance;
+    // While Robot->goal_reached == false
     while(true) { // will break out when goal is reached
         {
             lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
             elapsed_time = Q->cspace->time_elapsed_;
 
             if(elapsed_time > planning_only_time + slice_time) {
-                hyper_ball_rad = min(Q->cspace->saturation_delta_,
-                                     ball_constant*(
-                                     pow(log(1+Tree->tree_size_)
-                                         /(Tree->tree_size_),
-                                         1/Q->cspace->num_dimensions_) ));
+                {
+                    lock_guard<mutex> lock(Tree->tree_mutex_);
+                    hyper_ball_rad = min(Q->cspace->saturation_delta_,
+                                         ball_constant*(
+                                         pow(log(1+Tree->tree_size_)
+                                             /(Tree->tree_size_),
+                                             1/Q->cspace->num_dimensions_) ));
+                }
 
                 {
                     lock_guard<mutex> lock(Robot->robot_mutex);
@@ -254,6 +258,6 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                 prev_pose = Robot->robot_pose;
             }
         }
-        this_thread::sleep_for(chrono::nanoseconds(10000000)); // 100th of a second
+        this_thread::sleep_for(chrono::nanoseconds(100000000)); // 10th of a second
     }
 }

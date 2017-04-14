@@ -9,6 +9,7 @@ class KDTree;
 class KDTreeNode;
 class Edge;
 struct Queue;
+struct RobotData;
 
 class Obstacle : public std::enable_shared_from_this<Obstacle>
 {
@@ -170,11 +171,17 @@ public:
 
 };
 
+// Obstacle thread function for adding and removing obstacles
+void CheckObstacles(std::shared_ptr<Queue> Q,
+                    std::shared_ptr<KDTree> Tree,
+                    std::shared_ptr<RobotData> Robot,
+                    double ball_constant);
+
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must
 // be DESTROYED PROPERLY using L.EmptyRangeList to avoid problems -collision-
 std::shared_ptr<JList> FindPointsInConflictWithObstacle(
-        std::shared_ptr<ConfigSpace> &S,
+        std::shared_ptr<ConfigSpace> &C,
         std::shared_ptr<KDTree> Tree,
         std::shared_ptr<Obstacle> &O,
         std::shared_ptr<KDTreeNode> &root);
@@ -182,15 +189,15 @@ std::shared_ptr<JList> FindPointsInConflictWithObstacle(
 // This adds the obstacle (checks for edge conflicts with the obstactle
 // and then puts the affected nodes into the appropriate heaps -collision-
 void AddObstacle(std::shared_ptr<KDTree> Tree,
-                 std::shared_ptr<Queue> &queue,
-                 std::shared_ptr<Obstacle>& O,
+                 std::shared_ptr<Queue> &Q,
+                 std::shared_ptr<Obstacle> &O,
                  std::shared_ptr<KDTreeNode> root);
 
 // This removes the obstacle (checks for edge conflicts with the obstacle
 // and then puts the affected nodes into the appropriate heaps)
 void RemoveObstacle(std::shared_ptr<KDTree> Tree,
-                    std::shared_ptr<Queue>& Q,
-                    std::shared_ptr<Obstacle>& O,
+                    std::shared_ptr<Queue> &Q,
+                    std::shared_ptr<Obstacle> &O,
                     std::shared_ptr<KDTreeNode> root,
                     double hyper_ball_rad, double time_elapsed_,
                     std::shared_ptr<KDTreeNode>& move_goal );

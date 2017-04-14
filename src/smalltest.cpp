@@ -35,8 +35,8 @@ vector<double> PathToThetas(vector<Eigen::VectorXd> path)
 //        lines.insert(lines.begin(), Eigen::Vector3d(path_a,path_b,path_c));
         angle = atan2(prev_point(1)-current_point(1),
                       prev_point(0)-current_point(0));
-        x += cos(angle);
-        y += sin(angle);
+        x = cos(angle);
+        y = sin(angle);
         thetas.push_back(atan2(y,x));
     }
     return thetas;
@@ -60,7 +60,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
     // K-D Tree
     shared_ptr<KDTree> kd_tree
-            = make_shared<KDTree>(Q->cspace->num_dimensions_,p.wraps_,p.wrap_points);
+            = make_shared<KDTree>(Q->cspace->num_dimensions_,p.wraps,p.wrap_points);
     kd_tree->SetDistanceFunction(Q->cspace->distanceFunction);
 
     shared_ptr<KDTreeNode> root = make_shared<KDTreeNode>(Q->cspace->start_);
@@ -110,29 +110,18 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
     // Initiate threads
 
-    thread main_loop1 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                               p.ball_constant, p.slice_time, avg_thetas, path);
-    cout << "Started Main Loop Thread 1" << endl;
+    thread obstacle_management = thread(CheckObstacles, Q, kd_tree, robot,
+                                        p.ball_constant);
+    cout << "Started Obstacle Thread" << endl;
 
-    thread main_loop2 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                               p.ball_constant, p.slice_time, avg_thetas, path);
-    cout << "Started Main Loop Thread 2" << endl;
-
-    thread main_loop3 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                               p.ball_constant, p.slice_time, avg_thetas, path);
-    cout << "Started Main Loop Thread 3" << endl;
-
-    thread main_loop4 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                               p.ball_constant, p.slice_time, avg_thetas, path);
-    cout << "Started Main Loop Thread 4" << endl;
-
-    thread main_loop5 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                               p.ball_constant, p.slice_time, avg_thetas, path);
-    cout << "Started Main Loop Thread 5" << endl;
-
-    thread main_loop6 = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                               p.ball_constant, p.slice_time, avg_thetas, path);
-    cout << "Started Main Loop Thread 6" << endl;
+    vector<thread> thread_pool(p.num_threads);
+    int threads = 1;
+    for(auto & thr : thread_pool) {
+        thr = thread(RrtMainLoop, Q, kd_tree, robot,
+                                     start_time, p.ball_constant, p.slice_time,
+                                     avg_thetas, path);
+        cout << "Started Main Loop Thread " << threads++ << endl;
+    }
 
     thread move_robot = thread(RobotMovement, Q, kd_tree, robot,
                                p.planning_only_time, p.slice_time,
@@ -142,353 +131,15 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     move_robot.join();
     cout << "Joined Robot Movement Thread" << endl;
 
-    main_loop1.join();
-    cout << "Joined Main Loop Thread 1" << endl;
-    main_loop2.join();
-    cout << "Joined Main Loop Thread 2" << endl;
-    main_loop3.join();
-    cout << "Joined Main Loop Thread 3" << endl;
-    main_loop4.join();
-    cout << "Joined Main Loop Thread 4" << endl;
-    main_loop5.join();
-    cout << "Joined Main Loop Thread 5" << endl;
-    main_loop6.join();
-    cout << "Joined Main Loop Thread 6" << endl;
+    obstacle_management.join();
+    cout << "Joined Obstacle Thread" << endl;
 
-//    double now_time = GetTimeNs(start_time);
-//    double trunc_elapsed_time;
-//    double time_start, time_end, iter_start, iter_end;
+    threads = 1;
+    for(auto & thr : thread_pool) {
+        thr.join();
+        cout << "Joined Main Loop Thread " << threads++ << endl;
+    }
 
-//    double old_rrtLMC, current_distance, move_distance, this_dist;
-//    Eigen::Vector3d prev_pose;
-//    shared_ptr<Edge> prev_edge;
-//    shared_ptr<ListNode> list_item;
-//    bool removed, added;
-//    shared_ptr<Obstacle> obstacle;
-
-//    {
-//        cout << "locking" << endl;lock_guard<mutex> lock(robot->robot_mutex);
-//        prev_pose = robot->robot_pose;
-//    }
-
-//    // For importance sampling
-//    double f_uniform = 0.9;     // proportion to importance sample
-//    double position_bias;       // cartesian bias
-//    double theta_bias = PI/10;  // orientation bias
-
-//    current_distance = kd_tree->distanceFunction(robot->robot_pose,
-//                                                root->position_);
-
-//    int i = 0;
-//    while(true) {
-//        double hyper_ball_rad = min(Q->cspace->saturation_delta_, p.ball_constant*(
-//                                pow(log(1+kd_tree->tree_size_)
-//                                    /(kd_tree->tree_size_),
-//                                    1/Q->cspace->num_dimensions_) ));
-//        now_time = GetTimeNs(start_time);
-
-//        slice_end = (1+slice_counter)*p.slice_time;
-
-//        /// Check for warm up time
-//        if(Q->cspace->in_warmup_time_
-//                && Q->cspace->warmup_time_ < Q->cspace->time_elapsed_) {
-//            Q->cspace->in_warmup_time_ = false;
-//        }
-
-
-//        /// Update Obstacles
-//        //Obstacle::UpdateObstacles(Q->cspace);
-
-
-//        // Remove obstacles
-//        {
-//            cout << "locking" << endl;lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-//            list_item = Q->cspace->obstacles_->front_;
-//        }
-//        removed = false;
-//        while(list_item != list_item->child_) {
-//            obstacle = list_item->obstacle_;
-
-//            if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
-//                    && (obstacle->start_time_ + obstacle->life_span_
-//                        <= Q->cspace->time_elapsed_)) {
-//                // Time to remove obstacle
-//                cout << "time to remove" << endl;
-//                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
-//                               Q->cspace->time_elapsed_,Q->cspace->move_goal_);
-//                removed = true;
-//            } else if(obstacle->sensible_obstacle_
-//                      && !obstacle->obstacle_used_after_sense_
-//                      && (Q->cspace->distanceFunction(prev_pose,
-//                                                 obstacle->position_)
-//                          < robot_sensor_range + obstacle->radius_)) {
-//                // Place to remove obstacle
-//                // The space that used to be in this obstacle was never
-//                // sampled so there will be a hole in the graph where it used
-//                // to be.
-//                // So require that the next few samples come from that space
-//                cout << "place to remove" << endl;
-//                RandomSampleObs(Q->cspace,kd_tree,obstacle);
-//                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
-//                               Q->cspace->time_elapsed_,Q->cspace->move_goal_);
-//                obstacle->sensible_obstacle_ = false;
-//                obstacle->start_time_ = INF;
-//                removed = true;
-
-//            } else if(Q->cspace->space_has_time_
-//                      && (obstacle->next_direction_change_time_ > prev_pose(2))
-//                      && obstacle->last_direction_change_time_ != prev_pose(2)) {
-//                cout << "direction change" << endl;
-//                // A moving obstacle with unknown path is changing direction,
-//                // so remove its old anticipated trajectory
-//                RemoveObstacle(kd_tree,Q,obstacle,root,hyper_ball_rad,
-//                               Q->cspace->time_elapsed_,Q->cspace->move_goal_);
-//                obstacle->obstacle_used_ = true;
-//                removed = true;
-//            }
-//            list_item = list_item->child_;
-//        }
-//        if(removed) {
-//            cout << "Obstacle Removed" << endl;
-//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
-//                                root,hyper_ball_rad);
-//        }
-
-//        // Add Obstacles
-//        {
-//            cout << "locking" << endl;lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-//            list_item = Q->cspace->obstacles_->front_;
-//        }
-//        added = false;
-//        Eigen::VectorXd robot_pose;
-//        {
-//            cout << "locking" << endl;lock_guard<mutex> lock(robot->robot_mutex);
-//            robot_pose = robot->robot_pose;
-//        }
-//        while(list_item != list_item->child_) {
-//            obstacle = list_item->obstacle_;
-
-//            if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
-//                    && obstacle->start_time_ <= Q->cspace->time_elapsed_
-//                    && Q->cspace->time_elapsed_
-//                    <= obstacle->start_time_ + obstacle->life_span_) {
-//                // Time to add
-//                cout << "time to add" << endl;
-//                /// Adding this causes program to slow considerably
-//                obstacle->obstacle_used_ = true;
-//                AddObstacle(kd_tree,Q,obstacle,root);
-//                // Now check the robot's current move to its target
-//                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
-//                    robot->current_move_invalid = true;
-//                added = true;
-//            } else if(obstacle->sensible_obstacle_
-//                      && obstacle->obstacle_used_after_sense_
-//                      && (Q->cspace->distanceFunction(robot_pose,
-//                                                 obstacle->position_))
-//                      < robot_sensor_range + obstacle->radius_) {
-//                // Place to add
-//                cout << "place to add" << endl;
-//                obstacle->obstacle_used_ = true;
-//                AddObstacle(kd_tree,Q,obstacle,root);
-//                obstacle->sensible_obstacle_ = false;
-//                // Now check the robot's current move to its target
-//                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
-//                    robot->current_move_invalid = true;
-//                added = true;
-//            } else if(Q->cspace->space_has_time_
-//                      && obstacle->next_direction_change_time_ > robot_pose(3)
-//                      && obstacle->last_direction_change_time_
-//                      != robot_pose(3)) {
-//                // Time that a moving obstacle with unknown path changes
-//                // direction
-//                cout << "direction change" << endl;
-//                obstacle->obstacle_used_ = true;
-//                obstacle->ChangeObstacleDirection(Q->cspace,robot_pose(3));
-//                AddObstacle(kd_tree,Q,obstacle,root);
-//                obstacle->last_direction_change_time_ = robot_pose(3);
-//                // Now check the robot's current move to its target
-//                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
-//                    robot->current_move_invalid = true;
-//            } else if(Q->cspace->warmup_time_just_ended_
-//                      && obstacle->obstacle_used_) {
-//                // Warm up time is over, so we need to treat all obstacles
-//                // as if they have just been added
-////                cout << "finished warm up time" << endl;
-////                AddObstacle(kd_tree,Q,obstacle,root);
-//                // Now check the robot's current move to its target
-////                if(robot->robot_edge_used && robot->robot_edge->ExplicitEdgeCheck(obstacle))
-////                    robot->current_move_invalid = true;
-////                added = true;
-//            }
-//            list_item = list_item->child_;
-//        }
-//        if(added) {
-//            PropogateDescendants(Q,kd_tree,robot);
-//            if(!MarkedOS(Q->cspace->move_goal_)) VerifyInQueue(Q,Q->cspace->move_goal_);
-//            cout << "Obstacle Added" << endl;
-//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
-//                                root,hyper_ball_rad);
-//        }
-
-
-//        Q->cspace->time_elapsed_ = (GetTimeNs(start_time)
-//                             - Q->cspace->start_time_ns_)/1000000000.0;
-//        if(Q->cspace->time_elapsed_ >= slice_end) {
-//            cout << "\nIteration: " << i++ << endl << "----------------" << endl;
-//            iter_start = GetTimeNs(start_time);
-
-//            slice_start = now_time;
-//            slice_end = (++slice_counter)*p.slice_time;
-//            trunc_elapsed_time = floor(Q->cspace->time_elapsed_*1000.0)/1000.0;
-
-//            /// Move robot
-//            if(Q->cspace->time_elapsed_ > p.planning_only_time + p.slice_time) {
-//                if(p.move_robot_flag) {
-//                    time_start = GetTimeNs(start_time);
-//                    MoveRobot(Q,kd_tree,root,
-//                              p.slice_time,hyper_ball_rad,robot);
-//                    time_end = GetTimeNs(start_time);
-//                    if(timingex) cout << "MoveRobot: "
-//                                      << (time_end - time_start)/MICROSECOND
-//                                      << endl;
-
-//                } else { cout << "robot not moved" << endl; break; }
-//            }
-//            prev_edge = robot->robot_edge;
-
-
-//            /// Make graph consistent
-//            time_start = GetTimeNs(start_time);
-//            ReduceInconsistency(Q,Q->cspace->move_goal_, Q->cspace->robot_radius_,
-//                                root, hyper_ball_rad);
-//            time_end = GetTimeNs(start_time);
-//            if(timingex) cout << "ReduceInconsistency: "
-//                              << (time_end - time_start)/MICROSECOND << " ms" << endl;
-//            if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
-//                old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
-//            }
-
-//            /// Check for completion
-//            current_distance = kd_tree->distanceFunction(robot->robot_pose,
-//                                                        root->position_);
-//            move_distance = kd_tree->distanceFunction(robot->robot_pose,
-//                                                     prev_pose);
-//            cout << "Distance to goal: " << current_distance << endl;
-//            if(current_distance < p.goal_threshold) {
-//                cout << "Reached goal" << endl;
-//                break;
-//            } else if( move_distance > 10) {
-//                cout << "Impossible move" <<endl;
-//                break;
-//            }
-//            prev_pose = robot->robot_pose;
-
-
-//            /// Sample free space
-//            shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
-//            shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
-//            shared_ptr<double> closest_dist = make_shared<double>(INF);
-
-//            bool importance_sampling = true;
-//            while(importance_sampling) {
-//                new_node = RandNodeOrFromStack(Q->cspace);
-
-//                if(new_node->kd_in_tree_) continue;
-
-//                kd_tree->KDFindNearest(closest_node,closest_dist,
-//                                      new_node->position_);
-
-//                /// Saturate new node
-//                this_dist = kd_tree->distanceFunction(new_node->position_,
-//                                                        closest_node->position_);
-//                if(this_dist > Q->cspace->saturation_delta_ && new_node != Q->cspace->goal_node_) {
-//                    time_start = GetTimeNs(start_time);
-//                    Edge::Saturate(new_node->position_, closest_node->position_,
-//                                   Q->cspace->saturation_delta_, this_dist);
-//                    time_end = GetTimeNs(start_time);
-//                    if(timingex) cout << "Saturate: "
-//                                      << (time_end - time_start)/MICROSECOND
-//                                      << endl;
-//                }
-
-//                /// Check for obstacles
-//                //time_start = GetTimeNs(start_time);
-//                if(ExplicitNodeCheck(Q,new_node)) continue;
-//                //time_end = GetTimeNs(start_time);
-//                if(timingex) cout << "ExplicitNodeCheck: "
-//                                  << (time_end - time_start)/MICROSECOND << " ms" << endl;
-
-//                /// Do importance sampling f_uniform*100% of the time
-//                if(RandDouble(0,1) > f_uniform) break;
-
-//                if(kd_tree->distanceFunction(new_node->position_,
-//                                             kd_tree->root->position_)
-//                        > kd_tree->distanceFunction(Q->cspace->goal_node_->position_,
-//                                                    kd_tree->root->position_))
-//                    continue;
-
-//                if(kd_tree->distanceFunction(new_node-> position_,
-//                                             Q->cspace->goal_node_->position_)
-//                        > kd_tree->distanceFunction(Q->cspace->goal_node_->position_,
-//                                                    kd_tree->root->position_))
-//                    continue;
-
-//                // Find the current node closest line
-//                double dist_node_to_path;
-//                double min_dist_node_to_path = INF;
-//                int min_dist_node_to_path_index = 0;
-//                for(int i = 1; i < robot->best_any_angle_path.size(); i++) {
-//                    dist_node_to_path = DistanceSqrdPointToSegment(new_node->position_,
-//                                             robot->best_any_angle_path.at(i-1).head(2),
-//                                             robot->best_any_angle_path.at(i).head(2));
-//                    if(dist_node_to_path < min_dist_node_to_path) {
-//                        min_dist_node_to_path = dist_node_to_path;
-//                        min_dist_node_to_path_index = i-1;
-//                    }
-//                }
-
-//                /// Theta bias
-//                new_node->position_(2) = RandDouble(avg_thetas[min_dist_node_to_path_index]-theta_bias,
-//                                                   avg_thetas[min_dist_node_to_path_index]+theta_bias);
-
-//                /// Position bias
-//                position_bias = hyper_ball_rad;
-//                double dist = DistanceSqrdPointToSegment(new_node->position_,
-//                            path.at(min_dist_node_to_path_index).head(2),
-//                            path.at(min_dist_node_to_path_index+1).head(2));
-//                if(dist > position_bias) continue;
-
-//                importance_sampling = false;
-//            }
-
-//            /// Extend graph
-//            if(Extend(kd_tree,Q,new_node,closest_node,
-//                      Q->cspace->saturation_delta_,hyper_ball_rad,Q->cspace->move_goal_)) {
-////                // Record data (kd-tree)
-////                kdTree.row(kdTreePos++) = new_node->position_;
-//            }
-
-//            /// Make graph consistent
-//            ReduceInconsistency(Q,Q->cspace->move_goal_,Q->cspace->robot_radius_,
-//                                root,hyper_ball_rad);
-//            if(Q->cspace->move_goal_->rrt_LMC_ != old_rrtLMC) {
-//                old_rrtLMC = Q->cspace->move_goal_->rrt_LMC_;
-//            }
-
-//            // If the difference between the first node and the root is
-//            // > delta, then set its LMC to INF so it can be recalculated
-//            // when the next node is added
-//            /// In general this shouldn't happen because of Saturate()
-//            if(i == 1 && new_node->rrt_parent_used_ && (new_node->rrt_LMC_
-//                   - new_node->rrt_parent_edge_->end_node_->rrt_LMC_ > Q->cspace->saturation_delta_)) {
-//                new_node->rrt_LMC_ = INF;
-//            }
-
-//            iter_end = GetTimeNs(start_time);
-//            cout << "Iteration: "
-//                 << (iter_end - iter_start)/MICROSECOND << " ms" << endl;
-//        }
-//    }
     PrintRrtxPath(Q->cspace->goal_node_);
     return robot;
 }
@@ -548,6 +199,7 @@ int main( int argc, char* argv[] )
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
+    int num_threads = 10;           // number of main loop threads to spawn
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);
@@ -555,7 +207,8 @@ int main( int argc, char* argv[] )
     // Create a new problem for RRTx
     Problem problem = Problem(alg_name, cspace, plan_time, slice_time, delta,
                               ball_const, change_thresh, goal_thresh,
-                              move_robot, wrap_vec, wrap_points_vec);
+                              move_robot, wrap_vec, wrap_points_vec,
+                              num_threads);
 
     // Pointer to visualizer thread (created in RRTX())
     shared_ptr<thread> vis_thread;

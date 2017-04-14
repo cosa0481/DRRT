@@ -117,6 +117,7 @@ public:
 };
 
 typedef struct Queue{
+    std::mutex queuetex;
     std::string type;
     std::shared_ptr<ConfigSpace> cspace;
     std::shared_ptr<BinaryHeap> priority_queue; // nodes to be rewired
