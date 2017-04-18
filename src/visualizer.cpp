@@ -94,23 +94,27 @@ void visualizer(shared_ptr<KDTree> Tree,
 
     // Default hook for exiting: Esc
     // Default hook for fullscreen: tab
+    bool path_drawn = false;
     while( !pangolin::ShouldQuit() ) {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glColor4f(1.0f,1.0f,1.0f,1.0f);
 
         // Draw any-angle best path
-        SceneGraph::GLLineStrip path;
-        path.SetReference(0,0,0);
-        {
-            lock_guard<mutex> lock(Robot->robot_mutex);
-            for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
-                path.SetPoint(Robot->best_any_angle_path.at(i)(1),
-                            Robot->best_any_angle_path.at(i)(0),
-                            0);
+        if(!path_drawn) {
+            SceneGraph::GLLineStrip path;
+            path.SetReference(0,0,0);
+            {
+                lock_guard<mutex> lock(Robot->robot_mutex);
+                for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
+                    path.SetPoint(Robot->best_any_angle_path.at(i)(1),
+                                Robot->best_any_angle_path.at(i)(0),
+                                0);
+                }
             }
+            glGraph.AddChild(&path);
+            path_drawn = true;
         }
-        glGraph.AddChild(&path);
 
         // Add K-D Tree nodes to the frame
         {
