@@ -251,7 +251,8 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                         Robot->goal_reached = true;
                         break;
                     }
-                } else if(move_distance > Q->cspace->saturation_delta_) {
+                } else if(move_distance > 0.5) {
+                    // was saturation delta but 0.5 to debug path jumping problem
                     cout << "Impossible move ... quitting" << endl;
                     exit(-1);
                 }

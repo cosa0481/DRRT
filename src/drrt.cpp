@@ -208,7 +208,10 @@ bool Extend(shared_ptr<KDTree> &Tree,
     // true argument for using KDTreeNodes as elements
     shared_ptr<JList> node_list = make_shared<JList>(true);
     time_start = GetTimeNs(startTime);
-    Tree->KDFindWithinRange(node_list, hyper_ball_rad, new_node->position_);
+    {
+        lock_guard<mutex> lock(Tree->tree_mutex_);
+        Tree->KDFindWithinRange(node_list, hyper_ball_rad, new_node->position_);
+    }
     time_end = GetTimeNs(startTime);
     if(timing) cout << "\tkdFindWithinRange: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
@@ -217,7 +220,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
     // "temp_edge_" of the neighbors. This saves time in the
     // case that trajectory calculation is complicated.
     time_start = GetTimeNs(startTime);
-    FindBestParent( Q->cspace, Tree, new_node, node_list, closest_node, true );
+    FindBestParent(Q->cspace, Tree, new_node, node_list, closest_node, true);
     time_end = GetTimeNs(startTime);
     if(timing) cout << "\tfindBestParent: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
@@ -229,7 +232,10 @@ bool Extend(shared_ptr<KDTree> &Tree,
 
     // Insert the new node into the KDTree
     time_start = GetTimeNs(startTime);
-    Tree->KDInsert(new_node);
+    {
+        lock_guard<mutex> lock(Tree->tree_mutex_);
+        Tree->KDInsert(new_node);
+    }
     time_end = GetTimeNs(startTime);
     if(timing) cout << "\tkdInsert: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
@@ -249,15 +255,18 @@ bool Extend(shared_ptr<KDTree> &Tree,
         if(list_item->key_ != -1.0) {
             // Add to initial out neighbor list of new_node
             // (allows info propogation from new_node to nearNode always)
-            MakeInitialOutNeighborOf( near_node,new_node,near_node->temp_edge_ );
+            {
+                lock_guard<mutex> lock(Tree->tree_mutex_);
+                MakeInitialOutNeighborOf( near_node,new_node,near_node->temp_edge_ );
 
-            // Add to current neighbor list of new_node
-            // (allows info propogation from new_node to nearNode and
-            // vice versa, but only while they are in the D-ball)
-            time_start = GetTimeNs(startTime);
-            MakeNeighborOf( near_node, new_node, near_node->temp_edge_ );
-            time_end = GetTimeNs(startTime);
-            if(timing) cout << "\tmakeNeighborOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+                // Add to current neighbor list of new_node
+                // (allows info propogation from new_node to nearNode and
+                // vice versa, but only while they are in the D-ball)
+                time_start = GetTimeNs(startTime);
+                MakeNeighborOf( near_node, new_node, near_node->temp_edge_ );
+                time_end = GetTimeNs(startTime);
+                if(timing) cout << "\tmakeNeighborOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+            }
 
         }
 
@@ -279,15 +288,18 @@ bool Extend(shared_ptr<KDTree> &Tree,
             // Add to initial in neighbor list of newnode
             // (allows information propogation from new_node to
             // nearNode always)
-            time_start = GetTimeNs(startTime);
-            MakeInitialInNeighborOf( new_node, near_node, this_edge );
-            time_end = GetTimeNs(startTime);
-            if(timing) cout << "\tmakeInitialNeighborOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+            {
+                lock_guard<mutex> lock(Tree->tree_mutex_);
+                time_start = GetTimeNs(startTime);
+                MakeInitialInNeighborOf( new_node, near_node, this_edge );
+                time_end = GetTimeNs(startTime);
+                if(timing) cout << "\tmakeInitialNeighborOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
 
-            // Add to current neighbor list of new_node
-            // (allows info propogation from new_node to nearNode and
-            // vice versa, but only while they are in D-ball)
-            MakeNeighborOf( new_node, near_node, this_edge );
+                // Add to current neighbor list of new_node
+                // (allows info propogation from new_node to nearNode and
+                // vice versa, but only while they are in D-ball)
+                MakeNeighborOf( new_node, near_node, this_edge );
+            }
         } else {
             // Edge cannot be created
             list_item = list_item->child_; // iterate through list
@@ -298,21 +310,24 @@ bool Extend(shared_ptr<KDTree> &Tree,
         // as their parent unless they are not in the relevant
         // portion of the space vs. moveGoal
         time_start = GetTimeNs(startTime);
-        if( near_node->rrt_LMC_ > new_node->rrt_LMC_ + this_edge->dist_
-                && new_node->rrt_parent_edge_->end_node_ != near_node
-                && new_node->rrt_LMC_ + this_edge->dist_ < move_goal->rrt_LMC_ ) {
-            // Make this node the parent of the neighbor node
-            MakeParentOf( new_node, near_node, this_edge);
+        {
+            lock_guard<mutex> lock(Tree->tree_mutex_);
+            if( near_node->rrt_LMC_ > new_node->rrt_LMC_ + this_edge->dist_
+                    && new_node->rrt_parent_edge_->end_node_ != near_node
+                    && new_node->rrt_LMC_ + this_edge->dist_ < move_goal->rrt_LMC_ ) {
+                // Make this node the parent of the neighbor node
+                MakeParentOf( new_node, near_node, this_edge);
 
-            // Recalculate tree cost of neighbor
-            old_LMC = near_node->rrt_LMC_;
-            near_node->rrt_LMC_ = new_node->rrt_LMC_ + this_edge->dist_;
+                // Recalculate tree cost of neighbor
+                old_LMC = near_node->rrt_LMC_;
+                near_node->rrt_LMC_ = new_node->rrt_LMC_ + this_edge->dist_;
 
-            // Insert neighbor into priority queue if cost
-            // reduction is great enough
-            if( old_LMC - near_node->rrt_LMC_ > Q->change_thresh
-                    && near_node != Tree->root ) {
-                VerifyInQueue( Q, near_node );
+                // Insert neighbor into priority queue if cost
+                // reduction is great enough
+                if( old_LMC - near_node->rrt_LMC_ > Q->change_thresh
+                        && near_node != Tree->root ) {
+                    VerifyInQueue( Q, near_node );
+                }
             }
         }
         time_end = GetTimeNs(startTime);
@@ -339,15 +354,17 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
                     shared_ptr<KDTreeNode>& closest_node,
                     bool save_all_edges)
 {
-   // cout << "FindBestParent" << endl;
     /// For function duration testing
     double time_start, time_end; // in nanoseconds
     chrono::time_point<chrono::high_resolution_clock> startTime
             = chrono::high_resolution_clock::now();
 
     // If the list is empty
-    if(node_list->length_ == 0) {
-        if(C->goal_node_ != new_node) node_list->JListPush(closest_node);
+    {
+        lock_guard<mutex> lock(C->cspace_mutex_);
+        if(node_list->length_ == 0) {
+            if(C->goal_node_ != new_node) node_list->JListPush(closest_node);
+        }
     }
 
     // Update LMC value based on nodes in the list
@@ -381,20 +398,26 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
         time_end = GetTimeNs(startTime);
         if(timing) cout << "\t\tExplicitEdgeCheck: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
         if(!edge_is_safe || !thisEdge->ValidMove()) {
-            if(save_all_edges) nearNode->temp_edge_->dist_ = INF;
+            {
+                lock_guard<mutex> lock(Tree->tree_mutex_);
+                if(save_all_edges) nearNode->temp_edge_->dist_ = INF;
+            }
             listItem = listItem->child_; // iterate through list
             continue;
         }
 
-        // Check if need to update rrtParent and rrt_parent_edge_
-        if(new_node->rrt_LMC_ > nearNode->rrt_LMC_ + thisEdge->dist_) {
-            // Found a potential better parent
-            new_node->rrt_LMC_ = nearNode->rrt_LMC_ + thisEdge->dist_;
-            /// This also takes care of some code in Extend I believe
-            time_start = GetTimeNs(startTime);
-            MakeParentOf(nearNode,new_node,thisEdge);
-            time_end = GetTimeNs(startTime);
-            if(timing) cout << "\t\tmakeParentOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+        {
+            lock_guard<mutex> lock(Tree->tree_mutex_);
+            // Check if need to update rrtParent and rrt_parent_edge_
+            if(new_node->rrt_LMC_ > nearNode->rrt_LMC_ + thisEdge->dist_) {
+                // Found a potential better parent
+                new_node->rrt_LMC_ = nearNode->rrt_LMC_ + thisEdge->dist_;
+                /// This also takes care of some code in Extend I believe
+                time_start = GetTimeNs(startTime);
+                MakeParentOf(nearNode,new_node,thisEdge);
+                time_end = GetTimeNs(startTime);
+                if(timing) cout << "\t\tmakeParentOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+            }
         }
 
         listItem = listItem->child_; // iterate thorugh list

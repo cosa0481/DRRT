@@ -90,6 +90,10 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
         AddOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
     }
 
+    // Initiate threads
+    vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
+    cout << "Started Visualizer Thread" << endl;
+
     // Any-Angle Path
     vector<Eigen::VectorXd> path = ThetaStar(Q);
 //    path.push_back(Q->cspace->goal_);
@@ -103,10 +107,6 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     Q->cspace->start_time_ns_
             = chrono::duration_cast<chrono::nanoseconds>(start_time
                                                          -start_time).count();
-
-    // Initiate threads
-    vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
-    cout << "Started Visualizer Thread" << endl;
 
     thread obstacle_management = thread(CheckObstacles, Q, kd_tree, robot,
                                         p.ball_constant);
@@ -192,11 +192,11 @@ int main( int argc, char* argv[] )
     double plan_time = 50.0;        // plan *only* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 5.0;             // distance between graph nodes
-    double ball_const = 100.0;      // search d-ball radius
+    double ball_const = 100.0;      // search d-ball radius (10.0 worked)
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
-    int num_threads = 10;           // number of main loop threads to spawn
+    int num_threads = 2;            // number of main loop threads to spawn (3)
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);
@@ -217,7 +217,7 @@ int main( int argc, char* argv[] )
     // Calculate and display distance traveled
     Eigen::ArrayXXd firstpoints, lastpoints, diff;
     firstpoints = robot_data->robot_move_path.block(0,0,
-                                      robot_data->num_robot_move_points-1,3);
+                                     robot_data->num_robot_move_points-1,3);
     lastpoints = robot_data->robot_move_path.block(1,0,
                                      robot_data->num_robot_move_points-1,3);
     diff = firstpoints - lastpoints;

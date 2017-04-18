@@ -32,16 +32,6 @@ void visualizer(shared_ptr<KDTree> Tree,
     glAxis.SetPose(0,0,0,0,0,0);
     glGraph.AddChild(&glAxis);
 
-    // Draw any-angle best path
-    SceneGraph::GLLineStrip path;
-    path.SetReference(0,0,0);
-    for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
-        path.SetPoint(Robot->best_any_angle_path.at(i)(1),
-                      Robot->best_any_angle_path.at(i)(0),
-                      0);
-    }
-    glGraph.AddChild(&path);
-
     // Define camera render object
     pangolin::OpenGlRenderState stacks3d(
                 pangolin::ProjectionMatrix(resX,resY,fov,fov,resX/2,resY/2,
@@ -108,6 +98,19 @@ void visualizer(shared_ptr<KDTree> Tree,
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glColor4f(1.0f,1.0f,1.0f,1.0f);
+
+        // Draw any-angle best path
+        SceneGraph::GLLineStrip path;
+        path.SetReference(0,0,0);
+        {
+            lock_guard<mutex> lock(Robot->robot_mutex);
+            for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
+                path.SetPoint(Robot->best_any_angle_path.at(i)(1),
+                            Robot->best_any_angle_path.at(i)(0),
+                            0);
+            }
+        }
+        glGraph.AddChild(&path);
 
         // Add K-D Tree nodes to the frame
         {

@@ -40,8 +40,8 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
                 substring = "";
                 line = "";
             }
-            getline(read_stream,line);
-            line = "";
+            //getline(read_stream,line);
+            //line = "";
 
             shared_ptr<Obstacle> static_polygon
                     = make_shared<Obstacle>(3,polygon,C->space_has_theta_);
@@ -623,12 +623,12 @@ bool ExplicitEdgeCheck(shared_ptr<ConfigSpace> &C,
         obstacle_list_node = C->obstacles_->front_;
         length = C->obstacles_->length_;
 
-    for( int i = 0; i < length; i++ ) {
-        if( edge->ExplicitEdgeCheck(obstacle_list_node->obstacle_) ) {
-            return true;
+        for( int i = 0; i < length; i++ ) {
+            if( edge->ExplicitEdgeCheck(obstacle_list_node->obstacle_) ) {
+                return true;
+            }
+            obstacle_list_node = obstacle_list_node->child_; // iterate
         }
-        obstacle_list_node = obstacle_list_node->child_; // iterate
-    }
     }
 
     return false;
