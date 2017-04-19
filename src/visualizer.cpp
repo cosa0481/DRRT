@@ -92,6 +92,8 @@ void visualizer(shared_ptr<KDTree> Tree,
     SceneGraph::GLAxis* pose;
     Eigen::VectorXd current_pose;
 
+    SceneGraph::GLLineStrip* path;
+
     // Default hook for exiting: Esc
     // Default hook for fullscreen: tab
     bool path_drawn = false;
@@ -102,18 +104,19 @@ void visualizer(shared_ptr<KDTree> Tree,
 
         // Draw any-angle best path
         if(!path_drawn) {
-            SceneGraph::GLLineStrip path;
-            path.SetReference(0,0,0);
+            path = new SceneGraph::GLLineStrip();
+            path->SetReference(0,0,0);
             {
                 lock_guard<mutex> lock(Robot->robot_mutex);
                 for( int i = 0; i < Robot->best_any_angle_path.size(); i++) {
-                    path.SetPoint(Robot->best_any_angle_path.at(i)(1),
+                    path->SetPoint(Robot->best_any_angle_path.at(i)(1),
                                 Robot->best_any_angle_path.at(i)(0),
                                 0);
                 }
             }
-            glGraph.AddChild(&path);
+            glGraph.AddChild(path);
             path_drawn = true;
+            if(path->GetPose()[0] == 0) path_drawn = false;
         }
 
         // Add K-D Tree nodes to the frame

@@ -31,7 +31,7 @@ void MoveRobot(shared_ptr<Queue> &Q,
         R->num_robot_move_points += R->num_local_move_points;
 
         if( !Q->cspace->space_has_time_ ) {
-            cout << "new robot pose(w/o time):\n"
+            cout << "new robot pose:\n"
                       << R->robot_pose << endl;
         } else {
             cout << "new robot pose(w/ time):\n"
@@ -251,9 +251,11 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                         Robot->goal_reached = true;
                         break;
                     }
-                } else if(move_distance > 0.5) {
+                } else if(move_distance > 1.5) {
                     // was saturation delta but 0.5 to debug path jumping problem
                     cout << "Impossible move ... quitting" << endl;
+                    char wait;
+                    cin >> wait;
                     exit(-1);
                 }
                 prev_pose = Robot->robot_pose;
