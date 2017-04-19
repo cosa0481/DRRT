@@ -172,13 +172,11 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                 importance_sampling = false;
             }
 
-            // Extend the graph        
-            {
-                //lock_guard<mutex> lock(Tree->tree_mutex_);
-                Extend(Tree,Q,new_node,closest_node,
-                      Q->cspace->saturation_delta_, hyper_ball_rad,
-                      Q->cspace->move_goal_);
-            }
+            // Extend the graph
+            // mutex locks inside this function
+            Extend(Tree,Q,new_node,closest_node,
+                   Q->cspace->saturation_delta_, hyper_ball_rad,
+                   Q->cspace->move_goal_);
 
 
             // Make graph consistent
