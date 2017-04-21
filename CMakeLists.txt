@@ -42,7 +42,6 @@ set( HDRS
                 include/DRRT/datastructures.h
                 include/DRRT/edge.h
                 include/DRRT/dubinsedge.h
-                include/DRRT/holedge.h
                 include/DRRT/distancefunctions.h
                 include/DRRT/visualizer.h
                 include/DRRT/obstacle.h
@@ -50,6 +49,7 @@ set( HDRS
                 include/DRRT/mainloop.h
                 include/DRRT/moverobot.h
                 include/DRRT/sampling.h
+                include/DRRT/triangulatepolygon.h
 		)
 
 set( SRCS
@@ -60,7 +60,6 @@ set( SRCS
                 src/list.cpp
                 src/jlist.cpp
                 src/dubinsedge.cpp
-                src/holedge.cpp
                 src/distancefunctions.cpp
                 src/visualizer.cpp
                 src/obstacle.cpp
@@ -68,6 +67,7 @@ set( SRCS
                 src/mainloop.cpp
                 src/moverobot.cpp
                 src/sampling.cpp
+                src/triangulatepolygon.cpp
 		)
 
 

@@ -9,6 +9,16 @@
 #include <DRRT/dubinsedge.h>
 //#include <DRRT/holedge.h>
 
+class Region{
+public:
+    Eigen::Matrix2Xd region_;
+    Region(){
+        region_ = Eigen::Matrix2Xd();
+    }
+
+    Region(Eigen::Matrix2Xd r) : region_(r) {}
+};
+
 class ConfigSpace{
 public:
     std::mutex cspace_mutex_;         // mutex for accessing obstacle List
@@ -20,6 +30,8 @@ public:
     Eigen::VectorXd width_; // 1xD vector containing upper_bounds_-lower_bounds_
     Eigen::VectorXd start_; // 1xD vector containing start location
     Eigen::VectorXd goal_;  // 1xD vector containing goal location
+
+    Region drivable_region_;    // Drivable region in which to do sampling
 
     std::vector<std::shared_ptr<Edge>> collisions_; // edges known to be in
                                                   // collision with an obstacle
@@ -81,6 +93,8 @@ public:
         : num_dimensions_(D), lower_bounds_(lower), upper_bounds_(upper),
           start_(startpoint), goal_(endpoint)
     {
+        /// Placeholder
+        drivable_region_ = Region();
         obstacles_ = std::make_shared<List>();
 
         hyper_volume_ = 0.0; // flag indicating this needs to be calculated

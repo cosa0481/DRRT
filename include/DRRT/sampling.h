@@ -12,6 +12,11 @@
 // Returns a random double between min and max
 double RandDouble( double min, double max );
 
+/////////////////////// Region2D Functions ///////////////////////
+
+// Returns a matrix of triangles in each row created from the given polygon
+Eigen::MatrixX3d TriangulatePolygon(Eigen::MatrixX2d polygon);
+
 /////////////////////// C-Space Functions ///////////////////////
 // Functions that interact in C-Space, including sampling functions
 
