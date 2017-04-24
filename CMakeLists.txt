@@ -93,8 +93,12 @@ target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 #add_executable( straighttest src/straighttest.cpp ${HDRS} )
 #target_link_libraries( straighttest ${LIBRARY_NAME} )
 
-add_executable( smalltest src/smalltest.cpp ${HDRS} )
-target_link_libraries( smalltest ${LIBRARY_NAME} )
+#add_executable( smalltest src/smalltest.cpp ${HDRS} )
+#target_link_libraries( smalltest ${LIBRARY_NAME} )
+
+add_executable( tripolytest src/triangulatepolygon.cpp
+                            include/DRRT/triangulatepolygon.h )
+target_link_libraries( tripolytest ${LIBRARY_NAME} )
 
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}

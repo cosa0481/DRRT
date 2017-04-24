@@ -1,4 +1,5 @@
 #include <DRRT/triangulatepolygon.h>
+#include <DRRT/sampling.h>
 
 using namespace std;
 
@@ -6,14 +7,57 @@ using namespace std;
 vector<shared_ptr<node>> qs(QSIZE);         // query structure
 vector<shared_ptr<trapezoid>> tr(TRSIZE);   // trapezoid structure
 vector<shared_ptr<segment>> seg(SEGSIZE);   // segment table
+int q_idx;                                  // query structure index
+int tr_idx;                                 // trapezoid structure index
 
-int q_idx;
-int tr_idx;
+// misc.c
+vector<int> permute(SEGSIZE);               // permutation vector
+int choose_idx;                             // permutation vector index
 
+// monotone.c
+vector<shared_ptr<monochain>> mchain(TRSIZE);
+vector<shared_ptr<vertexchain>> vert(SEGSIZE);
+vector<int> mon(SEGSIZE);
+vector<bool> visited(TRSIZE);
+int chain_idx, op_idx, mon_idx;
+
+// From tri.c
+// This functions returns true or false depending upon whether
+// the vertex is inside the polygon or not. The polygon must
+// already have been triangulated before this routine is called.
+// This routine will always detect all the points belonging to
+// the set (polygon-area - polygon-boundary). The return value
+// for points on the boundary is not consistent!
+bool IsPointInsidePolygon(Eigen::Vector2d vertex)
+{
+    shared_ptr<point> v;
+    int trnum, rseg;
+    shared_ptr<trapezoid> t;
+
+    v->x = vertex[0];
+    v->y = vertex[1];
+
+    trnum = LocateEndpoint(v,v,1);
+    t = tr[trnum];
+
+    if(t->state == ST_INVALID) return false;
+
+    if((t->lseg <= 0) || (t->rseg <= 0)) return false;
+
+    rseg = t->rseg;
+    return GreaterThanEqualTo_(*seg[rseg]->v1, *seg[rseg]->v0);
+}
+
+// construct.c
 // Return a new node to be added to the query tree
 int NewNode()
 {
-    if(q_idx < QSIZE) return q_idx++;
+    if(q_idx < QSIZE) {
+        qs.resize(q_idx+1);
+        qs[q_idx] = make_shared<node>();
+        qs[q_idx]->yval = make_shared<point>();
+        return q_idx++;
+    }
     else {
         cout << "NewNode:\tQuery table overflow" << endl;
         return -1;
@@ -24,6 +68,10 @@ int NewNode()
 int NewTrap()
 {
     if(tr_idx < TRSIZE) {
+        tr.resize(tr_idx+1);
+        tr[tr_idx] = make_shared<trapezoid>();
+        tr[tr_idx]->hi = make_shared<point>();
+        tr[tr_idx]->lo = make_shared<point>();
         tr[tr_idx]->lseg = -1;
         tr[tr_idx]->rseg = -1;
         tr[tr_idx]->state = ST_VALID;
@@ -276,6 +324,7 @@ int LocateEndpoint(shared_ptr<point> v, shared_ptr<point> vo, int r)
 // recently been divided because of its insertion
 int MergeTrapezoids(int seg_num, int tfirst, int tlast, int side)
 {
+    cout << "MergeTrapezoids" << endl;
     int t, tnext;
     bool cond;
     int ptnext;
@@ -283,6 +332,10 @@ int MergeTrapezoids(int seg_num, int tfirst, int tlast, int side)
     // First merge polys on the LHS
     t = tfirst;
     while((t > 0) && GreaterThanEqualTo_(*tr[t]->lo, *tr[tlast]->lo)) {
+        cout << "t: " << t << endl;
+        cout << "tlast: " << tlast << endl;
+        cout << "tr[" << t << "]->lo: " << tr[t]->lo->x << "," << tr[t]->lo->y << endl;
+        cout << "tr[" << tlast << "]->lo: " << tr[tlast]->lo->x <<","<< tr[tlast]->lo->y << endl;
         if(side == S_LEFT)
             cond = ((((tnext = tr[t]->d0) > 0)
                      && (tr[tnext]->rseg == seg_num))
@@ -293,10 +346,12 @@ int MergeTrapezoids(int seg_num, int tfirst, int tlast, int side)
                      && (tr[tnext]->lseg == seg_num))
                     || (((tnext = tr[t]->d1) > 0)
                         && (tr[tnext]->lseg == seg_num)));
-
+        cout << "tnext: " << tnext << endl;
         if(cond) {
+            cout << "cond: true" << endl;
             if((tr[t]->lseg == tr[tnext]->lseg)
                     && (tr[t]->rseg == tr[tnext]->rseg)) {
+                cout << "t->lseg = tnext->lseg && t->rseg == tnext->rseg" << endl;
                 // Good neighbors so merge them
                 // Use the upper node as the new node i.e. t
                 ptnext = qs[tr[tnext]->sink]->parent;
@@ -321,9 +376,16 @@ int MergeTrapezoids(int seg_num, int tfirst, int tlast, int side)
                         tr[tr[t]->d1]->u1 = t;
                 }
                 tr[t]->lo = tr[tnext]->lo;
+                cout << "tr[" << tnext << "]->lo: " << tr[tnext]->lo->x <<","<<tr[tnext]->lo->y << endl;
                 tr[tnext]->state = ST_INVALID; // invalidate the lower trapezium
-            } else t = tnext; // not good neighbors
-        } else t = tnext; // do not satisfy the outer if
+            } else {
+                t = tnext; // not good neighbors
+            }
+        } else {
+            cout << "cond: false" << endl;
+            t = tnext; // do not satisfy the outer if
+        }
+        cout << endl;
     }
     return 0;
 }
@@ -334,17 +396,19 @@ int MergeTrapezoids(int seg_num, int tfirst, int tlast, int side)
 // the lower trapezoid dividing all the trapezoids in betwen
 int AddSegment(int seg_num)
 {
+    cout << "AddSegment" << endl;
     shared_ptr<segment> s;
     shared_ptr<segment> so = seg[seg_num];
-    int tu, tl, sk, tfirst, tlast, tnext;
+    int tu, tl, sk, tfirst, tlast;
     int tfirstr, tlastr, tfirstl, tlastl;
-    int i1, i2, t, t1, t2, tn;
+    int i1, i2, t, tn;
     shared_ptr<point> tpt;
     int tritop = 0, tribot = 0;
     bool is_swapped = false;
     int tmptriseg;
 
     s = seg[seg_num];
+    cout << "seg[" << seg_num << "]: " << s << endl;
     if(GreaterThan_(*s->v1, *s->v0)) {
         // Get higher vertex in v0
         int tmp;
@@ -459,7 +523,7 @@ int AddSegment(int seg_num)
 
         tr[tu]->sink = i1;
         tr[tl]->sink = i2;
-        tfirst = tl;
+        tlast = tl;
     } else {
         // v1 already present
         // Get bottommost intersecting trapezoid
@@ -473,6 +537,8 @@ int AddSegment(int seg_num)
 
     t = tfirst; // topmost trapezoid
     while((t > 0) && GreaterThanEqualTo_(*tr[t]->lo, *tr[tlast]->lo)) {
+
+
         // Traverse top to bottom
         int t_sav, tn_sav;
         sk = tr[t]->sink;
@@ -681,12 +747,13 @@ int AddSegment(int seg_num)
             }
 
             t = tr[t]->d1;
+            cout << "t = tr[t]->d1 = " << t << endl;
         } else {
             // Two trapezoids below. Find out which one is intersected by
             // this segment and proceed down that one
             int tmpseg = tr[tr[t]->d0]->rseg;
             double y0, yt;
-            shared_ptr<point> tmppt;
+            shared_ptr<point> tmppt = make_shared<point>();
             int tnext;
             bool i_d0, i_d1;
 
@@ -810,8 +877,24 @@ int AddSegment(int seg_num)
 
     tfirstl = tfirst;
     tlastl = tlast;
+    cout << tr.size() << endl;
+    for(int i = 1; i < tr.size(); i++) {
+        cout << "lseg: " << tr[i]->lseg << endl;
+        cout << "rseg: " << tr[i]->rseg << endl;
+        cout << "tr[" <<i<< "]: " << endl;
+        if(tr[i]->lseg > 0)
+        cout << seg[tr[i]->lseg]->v0->x << "," << seg[tr[i]->lseg]->v0->y << " : "
+             << seg[tr[i]->lseg]->v1->x << "," << seg[tr[i]->lseg]->v1->y
+             << "\n--\n";
+        if(tr[i]->rseg > 0)
+        cout << seg[tr[i]->rseg]->v0->x << "," << seg[tr[i]->rseg]->v0->y << " : "
+             << seg[tr[i]->rseg]->v1->x << "," << seg[tr[i]->rseg]->v1->y
+             << endl;
+    }
+    exit(-1);
     MergeTrapezoids(seg_num,tfirstl,tlastl,S_LEFT);
     MergeTrapezoids(seg_num,tfirstr,tlastr,S_RIGHT);
+    cout << "Merged trapezoids" << endl;
 
     seg[seg_num]->is_inserted = true;
     return 0;
@@ -822,6 +905,15 @@ int AddSegment(int seg_num)
 // when the segment is inserted into the trapezoidation subsequently
 int FindNewRoots(int seg_num)
 {
+    shared_ptr<segment> s = seg[seg_num];
+
+    if(s->is_inserted) return 0;
+
+    s->root0 = LocateEndpoint(s->v0, s->v1, s->root0);
+    s->root0 = tr[s->root0]->sink;
+
+    s->root1 = LocateEndpoint(s->v1, s->v0, s->root1);
+    s->root1 = tr[s->root1]->sink;
     return 0;
 }
 
@@ -829,5 +921,732 @@ int FindNewRoots(int seg_num)
 // Main routine to perform trapezoidation
 int ConstructTrapezoids(int nseg)
 {
+    int root;
+
+    // Add the first segment and get the qury structure and trapezoid
+    // list initialized
+
+    root = InitQueryStructure(ChooseSegment());
+    cout << "Initialized query structure" << endl;
+
+    for(int i = 1; i <= nseg; i++) {
+        seg[i]->root0 = seg[i]->root1 = root;
+    }
+
+    cout << "set roots" << endl;
+
+    for(int h = 1; h <= MathLogstarN(nseg); h++) {
+        for(int i = MathN(nseg,h-1) + 1; i <= MathN(nseg,h); i++)
+            AddSegment(ChooseSegment());
+
+        cout << "added segments" << endl;
+
+        // Find a new rot for each of the segment endpoints
+        for(int i = 1; i <= nseg; i++)
+            FindNewRoots(i);
+
+        cout << "found new roots" << endl;
+    }
+
+    for(int i = MathN(nseg, MathLogstarN(nseg)) + 1; i <= nseg; i++)
+        AddSegment(ChooseSegment());
+
+    cout << "added more segments" << endl;
+
+    return 0;
+}
+
+
+// misc.c
+// Generate a random permutation of the segments 1...n
+int GenerateRandomOrdering(int n)
+{
+    int m;
+    vector<int> st(SEGSIZE);
+
+    choose_idx = 1;
+
+    for(int i = 0; i <= n; i++)
+        st[i] = i;
+
+    for(int i = 1; i <= n; i++) {
+        /// TODO /////////////////////////////////////////////////////////////////////////
+        /// Random number between 1 and n?
+        m = RandDouble(1,n+1-i);
+        permute[i] = st[m];
+        if(m != 1) st[m] = st[1];
+    }
+    return 0;
+}
+
+// Return the next segment in the generated random ordering of
+// all the segments in S
+int ChooseSegment()
+{ return permute[choose_idx++]; }
+
+// Read in the list of vertices
+int ReadSegments(Eigen::MatrixX2d polygon)
+{
+    int npoints, first, last;
+
+    npoints = polygon.rows();
+
+    // For every contour, read in all points
+    // The outer-most contour is read in first (CCW)
+    // Next the inner contours are input (CW)
+    /// Here I'm assuming 1 simple polygon so there is 1 contour
+
+    int i = 1;
+    first = i;
+    last = first + npoints - 1;
+    for(int j = 0; j < npoints; j++, i++) {
+        if(i == last) {
+            seg[i]->next = first;
+            seg[i]->prev = i-1;
+            seg[i-1]->v1 = seg[i]->v0;
+        } else if(i == first) {
+            seg[i]->next = i+1;
+            seg[i]->prev = last;
+            seg[last]->v1 = seg[i]->v0;
+        } else {
+            seg[i]->prev = i-1;
+            seg[i]->next = i+1;
+            seg[i-1]->v1 = seg[i]->v0;
+        }
+        seg[i]->is_inserted = false;
+    }
+    return i-1;
+}
+
+// Get Log*n for given n
+int MathLogstarN(int n)
+{
+    double v = (double) n;
+    int i;
+    for(i = 0; v >= 1; i++) {
+        v = std::log2(v);
+    }
+    return (i-1);
+}
+
+int MathN(int n, int h)
+{
+    double v = (double) n;
+    for(int i = 0; i < h; i++) {
+        v = std::log2(v);
+    }
+    return (int) std::ceil((double) 1.0*n/v);
+}
+
+// monotone.c
+// Function returns true if the trapezoid lies inside the polygon
+bool InsidePolygon(shared_ptr<trapezoid> t)
+{
+    int rseg = t->rseg;
+
+    if(t->state == ST_INVALID) return false;
+    if((t->lseg <= 0) || (t->rseg <= 0)) return false;
+    if(((t->u0 <= 0) && (t->u1 <= 0))
+            || ((t->d0 <= 0) && (t->d1 <= 0))) // triangle
+        return GreaterThan_(*seg[rseg]->v1, *seg[rseg]->v0);
+    return false;
+}
+
+// Return a new mon structure from the table
+int NewMon() { return ++mon_idx; }
+
+// Return a new chain element from the table
+int NewChainElement() { return ++ chain_idx; }
+
+double GetAngle(shared_ptr<point> vp0,
+                shared_ptr<point> vpnext,
+                shared_ptr<point> vp1)
+{
+    shared_ptr<point> v0, v1;
+
+    v0->x = vpnext->x - vp0->x;
+    v0->y = vpnext->y - vp0->y;
+
+    v1->x = vp1->x - vp0->x;
+    v1->y = vp1->y - vp0->y;
+
+    // Sine is positive
+    if(CROSS_SINE(*v0,*v1) >= 0) return DOT(*v0,*v1)/LENGTH(*v0)/LENGTH(*v1);
+    else return (1.0 * DOT(*v0,*v1)/LENGTH(*v0)/LENGTH(*v1) - 2);
+}
+
+// (v0,v1) is the new diagonal to be added to the polygon.
+// Find which chain to use and return the position of v0 and v1 in p and q
+int GetVertexPositions(int v0, int v1, shared_ptr<int> ip, shared_ptr<int> iq)
+{
+    shared_ptr<vertexchain> vp0, vp1;
+    double angle, temp;
+    int tp, tq;
+
+    vp0 = vert[v0];
+    vp1 = vert[v1];
+
+    // P is identified as follows. Scan from (v0,v1) rightwards
+    // until you hit the first segment starting from v0.
+    // That chain is the chain of interest
+    angle = -4.0;
+    for(int i = 0; i < 4; i++) {
+        if(vp0->vnext[i] <= 0) continue;
+        if((temp = GetAngle(vp0->pt,vert[vp0->vnext[i]]->pt, vp1->pt)) > angle) {
+            angle = temp;
+            tp = i;
+        }
+    }
+    *ip = tp;
+
+    // Do similar actions for q
+    angle = -4.0;
+    for(int i = 0; i < 4; i++) {
+        if(vp1->vnext[i] <= 0) continue;
+        if((temp = GetAngle(vp1->pt, vert[vp1->vnext[i]]->pt, vp0->pt)) > angle) {
+            angle = temp;
+            tq = i;
+        }
+    }
+    *iq = tq;
+
+    return 0;
+}
+
+// v0 and v1 are specified in CCW order with respect to the current
+// monotone polygon mcur. Split the current polygon into two polygons
+// using the diagonal (v0,v1)
+int MakeNewMonotonePoly(int mcur, int v0, int v1)
+{
+    int p, q;
+    shared_ptr<int> ip, iq;
+    int mnew = NewMon();
+    int i, j, nf0, nf1;
+    shared_ptr<vertexchain> vp0, vp1;
+
+    vp0 = vert[v0];
+    vp1 = vert[v1];
+
+    GetVertexPositions(v0,v1,ip,iq);
+
+    p = vp0->vpos[*ip];
+    q = vp1->vpos[*iq];
+
+    // At this stage we have the positions of v0 and v1 in the desired chain
+    // Now modify the linked lists
+
+    i = NewChainElement(); // for the new list
+    j = NewChainElement();
+
+    mchain[i]->vnum = v0;
+    mchain[j]->vnum = v1;
+
+    mchain[i]->next = mchain[p]->next;
+    mchain[mchain[p]->next]->prev = i;
+    mchain[i]->prev = j;
+    mchain[j]->next = i;
+    mchain[j]->prev = mchain[q]->prev;
+    mchain[mchain[q]->prev]->next = j;
+
+    mchain[p]->next = q;
+    mchain[q]->prev = p;
+
+    nf0 = vp0->next_free;
+    nf1 = vp1->next_free;
+
+    vp0->vnext[*ip] = v1;
+
+    vp0->vpos[nf0] = i;
+    vp0->vnext[nf0] = mchain[mchain[i]->next]->vnum;
+    vp1->vpos[nf1] = j;
+    vp1->vnext[nf1] = v0;
+
+    vp0->next_free++;
+    vp1->next_free++;
+
+    mon[mcur] = p;
+    mon[mnew] = i;
+    return mnew;
+}
+
+// Recursively visit all the trapezoids
+int TraversePolygon(int mcur, int trnum, int from, int dir)
+{
+    shared_ptr<trapezoid> t = tr[trnum];
+    int howsplit, mnew;
+    int v0, v1, v0next, v1next;
+    int retval, tmp;
+    bool do_switch = false;
+
+    if((trnum <= 0) || visited[trnum]) return 0;
+
+    visited[trnum] = true;
+
+    // We have much more information available here
+    // rseg: goes upwards
+    // lseg: goes downwards
+
+    // Initially assume that dir = TR_FROM_DN (from the left)
+    // Switch v0 and v1 if necessary afterwards
+
+    // Special cases for triangles with cusps at the opposite ends
+    // Take care of these first
+    if((t->u0 <= 0) && (t->u1 <= 0)) {
+        if((t->d0 > 0) && (t->d1 > 0)) {
+            // Downward opening triangle
+            v0 = tr[t->d1]->lseg;
+            v1 = t->lseg;
+            if(from == t->d1) {
+                do_switch = true;
+                mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+            } else {
+                mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+            }
+        } else {
+            retval = SP_NOSPLIT; // Just traverse all neighbors
+            TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+            TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+            TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+            TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+        }
+    } else if((t->d0 <= 0) && (t->d1 <= 0)) {
+        if((t->u0 > 0) && (t->u1 > 0)) {
+            // Upward opening triangle
+            v0 = t->rseg;
+            v1 = tr[t->u0]->rseg;
+            if(from == t->u1) {
+                do_switch = true;
+                mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+            } else {
+                mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+            }
+        } else {
+            retval = SP_NOSPLIT; // Just traverse all neighbors
+            TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+            TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+            TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+            TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+        }
+    } else if((t->u0 > 0) && (t->u1 > 0)) {
+        if((t->d0 > 0) && (t->d1 > 0)) {
+            // Downward + upward cusps
+            v0 = tr[t->d1]->lseg;
+            v1 = tr[t->u0]->rseg;
+            retval = SP_2UP_2DN;
+            if(((dir == TR_FROM_DN) && (t->d1 == from))
+                    || ((dir == TR_FROM_UP) && (t->u1 == from))) {
+                do_switch = true;
+                mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+            } else {
+                mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+            }
+        } else {
+            // Only downward cusp
+            if(EqualTo_(*t->lo,*seg[t->lseg]->v1)) {
+                v0 = tr[t->u0]->rseg;
+                v1 = seg[t->lseg]->next;
+                retval = SP_2UP_LEFT;
+                if((dir == TR_FROM_UP) && (t->u0 == from)) {
+                    do_switch = true;
+                    mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                    TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+                } else {
+                    mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                    TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                }
+            } else {
+                v0 = t->rseg;
+                v1 = tr[t->u0]->rseg;
+                retval = SP_2UP_RIGHT;
+                if((dir == TR_FROM_UP) && (t->u1 == from)) {
+                    do_switch = true;
+                    mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                    TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                } else {
+                    mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                    TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                }
+            }
+        }
+    } else if((t->u0 > 0) || (t->u1 > 0)) {
+        // No downward cusp
+        if((t->d0 > 0) && (t->d1 > 0)) {
+            // Only upward cusp
+            if(EqualTo_(*t->hi, *seg[t->lseg]->v0)) {
+                v0 = tr[t->d1]->lseg;
+                v1 = t->lseg;
+                retval = SP_2DN_LEFT;
+                if(!((dir == TR_FROM_DN) && (t->d0 == from))) {
+                    do_switch = true;
+                    mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                    TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+                } else {
+                    mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                    TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+                }
+            } else {
+                v0 = tr[t->d1]->lseg;
+                v1 = seg[t->rseg]->next;
+                retval = SP_2DN_RIGHT;
+                if((dir == TR_FROM_DN) && (t->d1 == from)) {
+                    do_switch = true;
+                    mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                    TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+                } else {
+                    mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                    TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+                }
+            }
+        } else {
+            // No cusp
+            if(EqualTo_(*t->hi,*seg[t->lseg]->v0)
+                    && EqualTo_(*t->lo, *seg[t->rseg]->v0)) {
+                v0 = t->rseg;
+                v1 = t->lseg;
+                retval = SP_SIMPLE_LRDN;
+                if(dir == TR_FROM_UP) {
+                    do_switch = true;
+                    mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                    TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+                } else {
+                    mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                    TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                }
+            } else if(EqualTo_(*t->hi, *seg[t->rseg]->v1)
+                      && EqualTo_(*t->lo, *seg[t->lseg]->v1)) {
+                v0 = seg[t->rseg]->next;
+                v1 = seg[t->lseg]->next;
+                retval = SP_SIMPLE_LRUP;
+                if(dir == TR_FROM_UP) {
+                    do_switch = true;
+                    mnew = MakeNewMonotonePoly(mcur,v1,v0);
+                    TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->d0,trnum,TR_FROM_UP);
+                } else {
+                    mnew = MakeNewMonotonePoly(mcur,v0,v1);
+                    TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+                    TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                    TraversePolygon(mnew,t->u0,trnum,TR_FROM_DN);
+                    TraversePolygon(mnew,t->u1,trnum,TR_FROM_DN);
+                }
+            } else {
+                // no split passible
+                retval = SP_NOSPLIT;
+                TraversePolygon(mcur,t->u0,trnum,TR_FROM_DN);
+                TraversePolygon(mcur,t->d0,trnum,TR_FROM_UP);
+                TraversePolygon(mcur,t->u1,trnum,TR_FROM_DN);
+                TraversePolygon(mcur,t->d1,trnum,TR_FROM_UP);
+            }
+        }
+    }
+    return retval;
+}
+
+// Main routine to get monotone polygons from the trapezoidation
+// of the polygon
+int MonotonateTrapezoids(int n)
+{
+    // First locate a trapezoid which lies inside the polygon
+    // and which is triangular
+    int i;
+    for(i = 0; i < TRSIZE; i++)
+        if(InsidePolygon(tr[i])) break;
+    int tr_start = i;
+
+    // Initialize the mon data structure and start spanning all the
+    // trapezoids within the polygon
+    for(int i = 1; i <= n; i++) {
+        mchain[i]->prev = seg[i]->prev;
+        mchain[i]->next = seg[i]->next;
+        mchain[i]->vnum = i;
+        vert[i]->pt = seg[i]->v0;
+        vert[i]->vnext[0] = seg[i]->next; // next vertex
+        vert[i]->next_free = 1;
+    }
+
+    chain_idx = n;
+    mon_idx = 0;
+    mon[0] = 1; // position of any vertex in the first chain
+
+    // Traverse the polygon
+    if(tr[tr_start]->u0 > 0)
+        TraversePolygon(0,tr_start,tr[tr_start]->u0,TR_FROM_UP);
+    else if(tr[tr_start]->d0 > 0)
+        TraversePolygon(0,tr_start,tr[tr_start]->d0,TR_FROM_DN);
+
+    // Return the number of polygons created
+    return NewMon();
+}
+
+// A greedy corner-cutting algorithm to triangulate a y-monotone
+// polygon in O(n) time
+// Joseph O-Rourk, Computational Geometry in C.
+int TriangulateSinglePolygon(int nvert, int posmax, int side, Eigen::MatrixX3d op) {
+    vector<int> rc(SEGSIZE); // reflex chain
+    int ri = 0;
+    int endv, tmp, vpos;
+    int v;
+
+    if(side == TRI_RHS) {
+        // RHS segment is a single segment
+        rc[0] = mchain[posmax]->vnum;
+        tmp = mchain[posmax]->next;
+        rc[1] = mchain[tmp]->vnum;
+        ri = 1;
+
+        vpos = mchain[tmp]->next;
+        v = mchain[vpos]->vnum;
+
+        if((endv = mchain[mchain[posmax]->prev]->vnum) == 0) endv = nvert;
+    } else {
+        // LHS is a single segment
+        tmp = mchain[posmax]->next;
+        rc[0] = mchain[tmp]->vnum;
+        tmp = mchain[tmp]->next;
+        rc[1] = mchain[tmp]->vnum;
+        ri = 1;
+
+        vpos = mchain[tmp]->next;
+        v = mchain[vpos]->vnum;
+
+        endv = mchain[posmax]->vnum;
+    }
+
+    while((v != endv) || (ri > 1)) {
+        if(ri > 0) {
+            // Reflex chain is non-empty
+            if(CROSS(*vert[v]->pt, *vert[rc[ri-1]]->pt, *vert[rc[ri]]->pt) > 0) {
+                // Convex corner: OFF WITH ITS HEAD
+                op.resize(op_idx,Eigen::NoChange_t());
+                op(op_idx,0) = rc[ri-1];
+                op(op_idx,1) = rc[ri];
+                op(op_idx,2) = v;
+                op_idx++;
+                ri--;
+            } else {
+                // Non-convex
+                // Add v to the chain
+                ri++;
+                rc[ri] = v;
+                vpos = mchain[vpos]->next;
+                v = mchain[vpos]->vnum;
+            }
+        } else {
+            // Reflex chain empty: add v to the reflex chain and advance it
+            rc[++ri] = v;
+            vpos = mchain[vpos]->next;
+            v = mchain[vpos]->vnum;
+        }
+    } // end while
+
+    // Reached bottom vertex
+    // Add in the triange formed
+    op(op_idx,0) = rc[ri-1];
+    op(op_idx,1) = rc[ri];
+    op(op_idx,2) = v;
+    op_idx++;
+    ri--;
+
+    return 0;
+}
+
+// For each monotype polygon, find the ymax and ymin to determino
+// two y-monotone chains and pass on this monotone polygon for greedy
+// triangulation. Take care not to triangulate duplicate monotone polygons
+int TriangulateMonotonePolygons(int nvert, int nmonpoly, Eigen::MatrixX3d op)
+{
+    shared_ptr<point> ymax, ymin;
+    int p, vfirst, posmax, posmin, v;
+    int vcount;
+    bool processed;
+
+    op_idx = 0;
+    for(int i = 0; i < nmonpoly; i++) {
+        vcount = 1;
+        processed = false;
+        vfirst = mchain[mon[i]]->vnum;
+        ymax = ymin = vert[vfirst]->pt;
+        posmax = posmin = mon[i];
+        mchain[mon[i]]->marked = true;
+        p = mchain[mon[i]]->next;
+        while((v = mchain[p]->vnum) != vfirst) {
+            if(mchain[p]->marked) {
+                processed = true;
+                break;
+            } else {
+                mchain[p]->marked = true;
+            }
+
+            if(GreaterThan_(*vert[v]->pt, *ymax)) {
+                ymax = vert[v]->pt;
+                posmax = p;
+            }
+            if(LessThan_(*vert[v]->pt, *ymin)) {
+                ymin = vert[v]->pt;
+                posmin = p;
+            }
+            p = mchain[p]->next;
+            vcount++;
+        }
+
+        if(processed) continue; // go to next polygon
+
+        if(vcount == 3) {
+            // Already a triangle
+            op.resize(op_idx,Eigen::NoChange_t());
+            op(op_idx,0) = mchain[p]->vnum;
+            op(op_idx,1) = mchain[mchain[p]->next]->vnum;
+            op(op_idx,2) = mchain[mchain[p]->prev]->vnum;
+            op_idx++;
+        } else {
+            // Triangulate the polygon
+            v = mchain[mchain[posmax]->next]->vnum;
+            if(EqualTo_(*vert[v]->pt, *ymin)) {
+                // LHS is a single line
+                TriangulateSinglePolygon(nvert,posmax,TRI_LHS,op);
+            } else {
+                TriangulateSinglePolygon(nvert,posmax,TRI_RHS,op);
+            }
+        }
+    }
+    return op_idx;
+}
+
+// tri.c
+int Initialize(int n)
+{
+    for(int i = 1; i <= n; i++) {
+        seg[i]->is_inserted = false;
+    }
+    GenerateRandomOrdering(n);
+    return 0;
+}
+
+int InitializeSeg(int nsegs)
+{
+    seg.resize(nsegs+1);
+    for(int i = 0; i <= nsegs; i++) {
+        seg[i] = make_shared<segment>();
+        seg[i]->v0 = make_shared<point>();
+        seg[i]->v1 = make_shared<point>();
+    }
+    return 0;
+}
+
+Eigen::MatrixX3d TriangulatePolygon(Eigen::MatrixX2d polygon)
+{
+    int nmonpoly, first, last, n;
+    Eigen::MatrixX3d triangles;
+    int npoints = polygon.rows();
+    int i = 1;
+    first = i;
+    last = first + npoints - 1;
+    InitializeSeg(npoints);
+    for(int j = 0; j < npoints; j++, i++) {
+        seg[i]->v0->x = polygon(j,0);
+        seg[i]->v0->y = polygon(j,1);
+
+        if(i == last) {
+            seg[i]->next = first;
+            seg[i]->prev = i-1;
+            seg[i-1]->v1 = seg[i]->v0;
+        } else if(i == first) {
+            seg[i]->next = i+1;
+            seg[i]->prev = last;
+            seg[last]->v1 = seg[i]->v0;
+        } else {
+            seg[i]->prev = i-1;
+            seg[i]->next = i+1;
+            seg[i-1]->v1 = seg[i]->v0;
+        }
+        seg[i]->is_inserted = false;
+    }
+    n = i-1;
+
+    Initialize(n);
+    cout << "Initialized" << endl;
+    ConstructTrapezoids(n);
+    cout << "Constructed Trapezoids" << endl;
+    nmonpoly = MonotonateTrapezoids(n);
+    TriangulateMonotonePolygons(n, nmonpoly, triangles);
+
+    return triangles;
+}
+
+// main function for testing the triangulate polygon framework
+int main(int argc, char* argv[])
+{
+    // Polygon vertices in CCW order
+    Eigen::MatrixX2d polygon_to_triangulate;
+    polygon_to_triangulate.resize(4,Eigen::NoChange_t());
+
+    polygon_to_triangulate(0,0) = 0;
+    polygon_to_triangulate(0,1) = 0;
+
+    polygon_to_triangulate(1,0) = 1;
+    polygon_to_triangulate(1,1) = 0;
+
+    polygon_to_triangulate(2,0) = 1;
+    polygon_to_triangulate(2,1) = 1;
+
+    polygon_to_triangulate(3,0) = 0;
+    polygon_to_triangulate(3,1) = 1;
+
+    cout << "Created test polygon" << endl;
+
+    Eigen::MatrixX3d triangles = TriangulatePolygon(polygon_to_triangulate);
+    for(int i = 0; i < triangles.rows(); i++) {
+        cout << "Triangle #" << i+1 << ": " << triangles(i,0)
+             << ", " << triangles(i,1) << ", " << triangles(i,2) << endl;
+    }
+
     return 0;
 }

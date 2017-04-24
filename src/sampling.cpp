@@ -17,30 +17,6 @@ double RandDouble( double min, double max )
     return random_double;
 }
 
-/////////////////////// Region2D Functions ///////////////////////
-
-Eigen::MatrixX3d TriangulatePolygon(Eigen::MatrixX2d polygon)
-{
-    Eigen::MatrixX3d triangles;
-
-    int num_mono_polys, count, num_points, genus;
-    int n, i;
-
-    i = 1;
-
-    int first, last;
-
-    num_points = polygon.rows();
-    first = i;
-    last = first + num_points - 1;
-
-    for(int j = 0; j < num_points; j++) {
-
-    }
-
-    return triangles;
-}
-
 /////////////////////// C-Space Functions ///////////////////////
 
 Eigen::VectorXd RandPointDefault(shared_ptr<ConfigSpace> C)

@@ -43,7 +43,7 @@
 // For splitting trapezoids
 #define SP_SIMPLE_LRUP  1
 #define SP_SIMPLE_LRDN  2
-#define SP_2UP_2_DN     3
+#define SP_2UP_2DN      3
 #define SP_2UP_LEFT     4
 #define SP_2UP_RIGHT    5
 #define SP_2DN_LEFT     6
@@ -66,6 +66,10 @@
 #define DOT(v0,v1) ((v0).x * (v1).x + (v0).y * (v1).y)
 
 #define FP_EQUAL(s,t) (std::fabs(s-t) <= EPSILON)
+
+// monotone.c
+#define CROSS_SINE(v0,v1) ((v0).x * (v1).y - (v1).x * (v0).y)
+#define LENGTH(v0) (std::sqrt((v0).x * (v0).x + (v0).y * (v0).y))
 
 struct point{
     double x;
@@ -116,8 +120,13 @@ struct vertexchain{
     int next_free;
 };
 
-int MonotonateTrapezoids(int);
-int TriangulateMonotonePolygons(int,int,Eigen::Vector3d);
+Eigen::MatrixX3d TriangulatePolygon(Eigen::MatrixX2d polygon);
+
+int MonotonateTrapezoids(int n);
+int TriangulateMonotonePolygons(int nvert, int nmonpoly, Eigen::MatrixX3d op);
+
+int TriangulateSinglePolygon(int,int,int,Eigen::MatrixX3d);
+int TraversePolygon(int,int,int,int);
 
 bool GreaterThan_(point v0, point v1);
 bool EqualTo_(point v0, point v1);
@@ -126,10 +135,10 @@ bool LessThan_(point v0, point v1);
 
 int LocateEndpoint(std::shared_ptr<point> v, std::shared_ptr<point> vo, int r);
 int ConstructTrapezoids(int nseg);
-int GenerateRandomOrdering(int);
+int GenerateRandomOrdering(int n);
 int ChooseSegment();
-int ReadSegments(std::string,std::vector<int>);
-int MathLogstarN(int);
-int MathN(int,int);
+int ReadSegments(Eigen::MatrixX2d polygon);
+int MathLogstarN(int n);
+int MathN(int n,int h);
 
 #endif // TRIANGULATEPOLYGON_H

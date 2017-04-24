@@ -11,12 +11,12 @@
 
 class Region{
 public:
-    Eigen::Matrix2Xd region_;
+    Eigen::MatrixX2d region_;
     Region(){
-        region_ = Eigen::Matrix2Xd();
+        region_ = Eigen::MatrixX2d();
     }
 
-    Region(Eigen::Matrix2Xd r) : region_(r) {}
+    Region(Eigen::MatrixX2d r) : region_(r) {}
 };
 
 class ConfigSpace{
