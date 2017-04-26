@@ -32,6 +32,9 @@ set( DRRT_LIBRARIES  ${_LIBRARIES} CACHE INTERNAL "" FORCE )
 include_directories( ${DRRT_INCLUDE_DIRS} )
 
 set( HDRS
+                include/DRRT/tripolyinterface.h
+                include/DRRT/triangulate.h
+
                 include/DRRT/drrt.h
                 include/DRRT/kdtree.h
                 include/DRRT/heap.h
@@ -49,10 +52,14 @@ set( HDRS
                 include/DRRT/mainloop.h
                 include/DRRT/moverobot.h
                 include/DRRT/sampling.h
-                include/DRRT/triangulatepolygon.h
 		)
 
 set( SRCS
+                src/construct.c
+                src/tri.c
+                src/monotone.c
+                src/misc.c
+
 		src/drrt.cpp
                 src/kdtree.cpp
                 src/heap.cpp
@@ -67,10 +74,7 @@ set( SRCS
                 src/mainloop.cpp
                 src/moverobot.cpp
                 src/sampling.cpp
-                src/triangulatepolygon.cpp
 		)
-
-
 
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
@@ -93,12 +97,8 @@ target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 #add_executable( straighttest src/straighttest.cpp ${HDRS} )
 #target_link_libraries( straighttest ${LIBRARY_NAME} )
 
-#add_executable( smalltest src/smalltest.cpp ${HDRS} )
-#target_link_libraries( smalltest ${LIBRARY_NAME} )
-
-add_executable( tripolytest src/triangulatepolygon.cpp
-                            include/DRRT/triangulatepolygon.h )
-target_link_libraries( tripolytest ${LIBRARY_NAME} )
+add_executable( smalltest src/smalltest.cpp ${HDRS} )
+target_link_libraries( smalltest ${LIBRARY_NAME} )
 
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}

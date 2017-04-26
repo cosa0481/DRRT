@@ -127,48 +127,48 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                        initial_distance);
                     }
                 }
-                if(ExplicitNodeCheck(Q,new_node)) continue;
-                if(RandDouble(0,1) > p_uniform) break;
-                if(Tree->distanceFunction(new_node->position_,
-                                          Tree->root->position_)
-                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
-                                             Tree->root->position_))
-                    continue;
-                if(Tree->distanceFunction(new_node->position_,
-                                          Q->cspace->goal_node_->position_)
-                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
-                                             Tree->root->position_))
-                    continue;
+                //if(ExplicitNodeCheck(Q,new_node)) continue;
+//                if(RandDouble(0,1) > p_uniform) break;
+//                if(Tree->distanceFunction(new_node->position_,
+//                                          Tree->root->position_)
+//                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
+//                                             Tree->root->position_))
+//                    continue;
+//                if(Tree->distanceFunction(new_node->position_,
+//                                          Q->cspace->goal_node_->position_)
+//                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
+//                                             Tree->root->position_))
+//                    continue;
 
-                // Find the closest line on the any-angle path to the new node
-                double dist_node_to_path;
-                double min_dist_node_to_path = INF;
-                int min_dist_node_to_path_index = 0;
-                for(int i = 1; i < Robot->best_any_angle_path.size(); i++) {
-                    dist_node_to_path = DistanceSqrdPointToSegment(
-                                new_node->position_,
-                                Robot->best_any_angle_path.at(i-1).head(2),
-                                Robot->best_any_angle_path.at(i).head(2));
-                    if(dist_node_to_path < min_dist_node_to_path) {
-                        min_dist_node_to_path = dist_node_to_path;
-                        min_dist_node_to_path_index = i-1;
-                    }
-                }
+//                // Find the closest line on the any-angle path to the new node
+//                double dist_node_to_path;
+//                double min_dist_node_to_path = INF;
+//                int min_dist_node_to_path_index = 0;
+//                for(int i = 1; i < Robot->best_any_angle_path.size(); i++) {
+//                    dist_node_to_path = DistanceSqrdPointToSegment(
+//                                new_node->position_,
+//                                Robot->best_any_angle_path.at(i-1).head(2),
+//                                Robot->best_any_angle_path.at(i).head(2));
+//                    if(dist_node_to_path < min_dist_node_to_path) {
+//                        min_dist_node_to_path = dist_node_to_path;
+//                        min_dist_node_to_path_index = i-1;
+//                    }
+//                }
 
-                // Calculate theta bias
-                new_node->position_(2)
-                        = RandDouble(thetas[min_dist_node_to_path_index]
-                                     - theta_bias,
-                                     thetas[min_dist_node_to_path_index]
-                                     + theta_bias);
+//                // Calculate theta bias
+//                new_node->position_(2)
+//                        = RandDouble(thetas[min_dist_node_to_path_index]
+//                                     - theta_bias,
+//                                     thetas[min_dist_node_to_path_index]
+//                                     + theta_bias);
 
-                // Calculate position bias
-                position_bias = 2*hyper_ball_rad;
-                double distance = DistanceSqrdPointToSegment(
-                            new_node->position_,
-                            path.at(min_dist_node_to_path_index).head(2),
-                            path.at(min_dist_node_to_path_index+1).head(2));
-                if(distance > position_bias) continue;
+//                // Calculate position bias
+//                position_bias = 2*hyper_ball_rad;
+//                double distance = DistanceSqrdPointToSegment(
+//                            new_node->position_,
+//                            path.at(min_dist_node_to_path_index).head(2),
+//                            path.at(min_dist_node_to_path_index+1).head(2));
+//                if(distance > position_bias) continue;
                 importance_sampling = false;
             }
 

@@ -8,9 +8,17 @@
 #define SAMPLING_H
 
 #include <DRRT/kdtree.h>
+#include <DRRT/tripolyinterface.h>
 
 // Returns a random double between min and max
 double RandDouble( double min, double max );
+
+// Decomposes a polygon into triangles
+// Atul Narkhede and Dinesh Manocha : UNC Chapel Hill : 1995
+// Returns a matrix with each row containing the x,y coordinates for
+// a triangle. The format for a row is
+// x1 y1 x2 y2 x3 y3
+MatrixX6d TriangulatePolygon(Eigen::MatrixX2d polygon);
 
 /////////////////////// C-Space Functions ///////////////////////
 // Functions that interact in C-Space, including sampling functions

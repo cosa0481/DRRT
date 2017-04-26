@@ -7,7 +7,9 @@
                        // obstacle.h which includes distancefunctions.h
 /// Include implementation of desired edge here
 #include <DRRT/dubinsedge.h>
-//#include <DRRT/holedge.h>
+
+// For holding triangles
+typedef Eigen::Matrix<double,Eigen::Dynamic,6> MatrixX6d;
 
 class Region{
 public:
@@ -93,8 +95,20 @@ public:
         : num_dimensions_(D), lower_bounds_(lower), upper_bounds_(upper),
           start_(startpoint), goal_(endpoint)
     {
-        /// Placeholder
-        drivable_region_ = Region();
+        /// TEMP HACK FOR DUBINS SPACE
+        // Should create a square defined as a polygon CCW
+        Eigen::MatrixX2d sampling_area;
+        sampling_area.resize(4,Eigen::NoChange_t());
+        sampling_area(0,0) = 0;
+        sampling_area(0,1) = 0;
+        sampling_area(1,0) = 50;
+        sampling_area(1,1) = 0;
+        sampling_area(2,0) = 50;
+        sampling_area(2,1) = 50;
+        sampling_area(3,0) = 0;
+        sampling_area(3,1) = 50;
+        drivable_region_ = Region(sampling_area);
+
         obstacles_ = std::make_shared<List>();
 
         hyper_volume_ = 0.0; // flag indicating this needs to be calculated

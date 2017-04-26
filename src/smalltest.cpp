@@ -95,10 +95,11 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     cout << "Started Visualizer Thread" << endl;
 
     // Any-Angle Path
-    vector<Eigen::VectorXd> path = ThetaStar(Q);
-//    path.push_back(Q->cspace->goal_);
-    robot->best_any_angle_path = path;
-    vector<double> thetas = PathToThetas(path); // prints the path
+//    vector<Eigen::VectorXd> path = ThetaStar(Q);
+//    robot->best_any_angle_path = path;
+//    vector<double> thetas = PathToThetas(path); // prints the path
+    vector<Eigen::VectorXd> path;
+    vector<double> thetas;
 
     /// End Initialization
 
@@ -189,7 +190,7 @@ int main( int argc, char* argv[] )
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
     string obstacle_file = argv[1]; // obstacle file
-    double plan_time = 50.0;        // plan *only* for this long
+    double plan_time = 50.0;        // plan *ONLY* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 5.0;             // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius (10.0 worked)

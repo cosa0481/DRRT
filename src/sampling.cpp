@@ -17,25 +17,90 @@ double RandDouble( double min, double max )
     return random_double;
 }
 
+MatrixX6d TriangulatePolygon(Eigen::MatrixX2d polygon)
+{
+    MatrixX6d triangles;
+
+    double vertices[polygon.rows()][2];
+//    cout << "Polygon" << endl;
+    for(int i = 0; i < polygon.rows(); i++) {
+//        cout << i+1 << ": " << polygon(i,0) << "," << polygon(i,1) << endl;
+        vertices[i][0] = polygon(i,0);
+        vertices[i][1] = polygon(i,1);
+    }
+
+
+    // Populates the tris matrix with the index of the vertex
+    // used to create the triangle in that row
+    int tris[50][3];
+//    cout << "triangulate_polygon(npoints,vertices,triangles)" << endl;
+    int num_triangles = triangulate_polygon(polygon.rows(),vertices,tris);
+
+    triangles.resize(num_triangles,Eigen::NoChange_t());
+    for(int i = 0; i < num_triangles; i++) {
+        triangles(i,0) = polygon(tris[i][0]-1,0); // x1
+        triangles(i,1) = polygon(tris[i][0]-1,1); // y1
+        triangles(i,2) = polygon(tris[i][1]-1,0); // x2
+        triangles(i,3) = polygon(tris[i][1]-1,1); // y2
+        triangles(i,4) = polygon(tris[i][2]-1,0); // x3
+        triangles(i,5) = polygon(tris[i][2]-1,1); // y3
+//        cout << "Triangle #" << i+1 << ": "
+//             << triangles(i,0) << "," << triangles(i,1) << " : "
+//             << triangles(i,2) << "," << triangles(i,3) << " : "
+//             << triangles(i,4) << "," << triangles(i,5) << endl;
+    }
+
+    return triangles;
+}
+
 /////////////////////// C-Space Functions ///////////////////////
 
 Eigen::VectorXd RandPointDefault(shared_ptr<ConfigSpace> C)
 {
-    double rand;
-    double first;
-    Eigen::VectorXd second(C->width_.size());
+    double randvar;
+    int num_triangles;
+    Eigen::VectorXd point(C->width_.size());
 
-    for( int i = 0; i < C->width_.size(); i++ ) {
-        rand = RandDouble(0,C->num_dimensions_);
-        first = rand * C->width_(i);
-        second(i) = C->lower_bounds_(i) + first;
+    // This comes back in rows of x1 y1 x2 y2 x3 y3
+    MatrixX6d triangles;
+    {
+        lock_guard<mutex> lock(C->cspace_mutex_);
+        triangles = TriangulatePolygon(C->drivable_region_.region_);
+    }
+    num_triangles = triangles.rows();
+    Eigen::Vector2d rand;
+    Eigen::MatrixX2d points;
+    points.resize(num_triangles,Eigen::NoChange_t());
+    for(int i = 0; i < num_triangles; i++) {
+        rand(0) = RandDouble(0,1);
+        rand(1) = RandDouble(0,1);
+
+        points(i,0) = (1-sqrt(rand(0))) * triangles(i,0)
+                    + (sqrt(rand(0))*(1-rand(1))) * triangles(i,2)
+                    + (rand(1)*sqrt(rand(0))) * triangles(i,4);
+        points(i,1) = (1-sqrt(rand(0))) * triangles(i,1)
+                    + (sqrt(rand(0))*(1-rand(1))) * triangles(i,3)
+                    + (rand(1)*sqrt(rand(0))) * triangles(i,5);
     }
 
-    /// TEMPORARY HACK?
-    while(second(2) > 2*PI) second(2) -= 2*PI;
-    while(second(2) < -2*PI) second(2) += 2*PI;
+    randvar = RandDouble(0,num_triangles);
+    point(0) = points(floor(randvar),0);
+    point(1) = points(floor(randvar),1);
+    point(2) = C->lower_bounds_(2)
+              + RandDouble(0,C->num_dimensions_) * C->width_(2);
+
+//    for( int i = 0; i < C->width_.size(); i++ ) {
+//        rand = RandDouble(0,C->num_dimensions_);
+//        first = rand * C->width_(i);
+//        second(i) = C->lower_bounds_(i) + first;
+//    }
+
+    /// TEMPORARY HACK for Dubin's model
+    while(point(2) > 2*PI) point(2) -= 2*PI;
+    while(point(2) < -2*PI) point(2) += 2*PI;
     ///
-    return second;
+//    cout << "Sampled point:\n" << point << endl;
+    return point;
 }
 
 shared_ptr<KDTreeNode> RandNodeDefault(shared_ptr<ConfigSpace> C)
