@@ -8,9 +8,10 @@ list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules )
 set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_PATH} )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" )
 
-find_package( Eigen3 REQUIRED )
-find_package( Pangolin REQUIRED )
-find_package( SceneGraph REQUIRED )
+find_package( Eigen3        REQUIRED )
+find_package( Pangolin      REQUIRED )
+find_package( SceneGraph    REQUIRED )
+find_package( Bullet        REQUIRED )
 
 set( _INCLUDE_DIRS
 		${CMAKE_BINARY_DIR}
@@ -18,20 +19,27 @@ set( _INCLUDE_DIRS
                 ${EIGEN3_INCLUDE_DIRS}
                 ${Pangolin_INCLUDE_DIRS}
                 ${SceneGraph_INCLUDE_DIRS}
+                ${BULLET_INCLUDE_DIR}
 		)
 
 set( _LIBRARIES
                 ${Pangolin_LIBRARIES}
                 ${SceneGraph_LIBRARIES}
+                ${BULLET_LIBRARIES}
 		)
+message(STATUS ${BULLET_LIBRARIES})
 
 # Expose these for third parties
-set( DRRT_INCLUDE_DIRS ${_INCLUDE_DIRS}  CACHE INTERNAL "" FORCE )
-set( DRRT_LIBRARIES  ${_LIBRARIES} CACHE INTERNAL "" FORCE )
+set( DRRT_INCLUDE_DIRS  ${_INCLUDE_DIRS}    CACHE INTERNAL "" FORCE )
+set( DRRT_LIBRARIES     ${_LIBRARIES}       CACHE INTERNAL "" FORCE )
 
 include_directories( ${DRRT_INCLUDE_DIRS} )
 
+# Required for bullet to compile everything with double precision instead of float
+add_definitions(-DBT_USE_DOUBLE_PRECISION)
+
 set( HDRS
+                # tripoly lib headers
                 include/DRRT/tripolyinterface.h
                 include/DRRT/triangulate.h
 
@@ -55,6 +63,7 @@ set( HDRS
 		)
 
 set( SRCS
+                # tripoly lib .c files
                 src/construct.c
                 src/tri.c
                 src/monotone.c

@@ -1,6 +1,7 @@
 #ifndef DRRT_DATA_STRUCTURES_H
 #define DRRT_DATA_STRUCTURES_H
 
+
 #include <DRRT/list.h>
 #include <DRRT/heap.h>
 #include <DRRT/edge.h> // includes jlist.h which includes
@@ -10,6 +11,7 @@
 
 // For holding triangles
 typedef Eigen::Matrix<double,Eigen::Dynamic,6> MatrixX6d;
+
 
 class Region{
 public:
@@ -32,6 +34,12 @@ public:
     Eigen::VectorXd width_; // 1xD vector containing upper_bounds_-lower_bounds_
     Eigen::VectorXd start_; // 1xD vector containing start location
     Eigen::VectorXd goal_;  // 1xD vector containing goal location
+
+    // Bullet Collision Detection
+    btCollisionConfiguration* bt_collision_configuration_;
+    btCollisionDispatcher* bt_dispatcher_;
+    btBroadphaseInterface* bt_broadphase_;
+    btCollisionWorld* bt_collision_world_;
 
     Region drivable_region_;    // Drivable region in which to do sampling
 
@@ -95,6 +103,20 @@ public:
         : num_dimensions_(D), lower_bounds_(lower), upper_bounds_(upper),
           start_(startpoint), goal_(endpoint)
     {
+        // Bullet configuration
+        bt_collision_configuration_ = new btDefaultCollisionConfiguration();
+        bt_dispatcher_ = new btCollisionDispatcher(bt_collision_configuration_);
+        /// Generalize the size boundaries
+        btVector3 world_min((btScalar)0,(btScalar)0,(btScalar)0);
+        btVector3 world_max((btScalar)50,(btScalar)50,(btScalar)0.1);
+        // There may be a faster broadphase
+        // True for disabling raycast accelerator
+        bt_broadphase_ = new bt32BitAxisSweep3(world_min,world_max,
+                                               20000,0,true);
+        bt_collision_world_ = new btCollisionWorld(bt_dispatcher_,
+                                                   bt_broadphase_,
+                                                   bt_collision_configuration_);
+
         /// TEMP HACK FOR DUBINS SPACE
         // Should create a square defined as a polygon CCW
         Eigen::MatrixX2d sampling_area;

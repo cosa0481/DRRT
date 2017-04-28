@@ -3,6 +3,8 @@
 
 using namespace std;
 
+bool timinged = false;
+
 /////////////////////// Critical Functions ///////////////////////
 
 /////////////////////// Static Edge Functions ///////////////////////
@@ -710,6 +712,7 @@ void DubinsEdge::CalculateTrajectory()
 
     int trajLength = first_path_x.size() + second_path_x.size() + third_path_x.size();
     Eigen::VectorXd traj1(trajLength), traj2(trajLength);
+    this->trajectory_.resize(trajLength,Eigen::NoChange_t());
 
     if( this->w_dist_ == INF ) {
         this->dist_ = INF;
@@ -833,33 +836,46 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
     // r*S->min_turn_radius_ of the 2D segment from startNode to endNode
     // Thus, the edge is safe if a robot with this additional radius can
     // traverse that segment
-    if(!ExplicitEdgeCheck2D(obstacle,
-                            this->start_node_->position_,
-                            this->end_node_->position_,
-                            this->cspace_->robot_radius_
-                            + 2*this->cspace_->min_turn_radius_)) {
-        return false;
-    }
+//    if(!DetectBulletCollision(obstacle,
+//                              this->start_node_->position_,
+//                              this->end_node_->position_)
+//            /*ExplicitEdgeCheck2D(obstacle,
+//                            this->start_node_->position_,
+//                            this->end_node_->position_,
+//                            this->cspace_->robot_radius_
+//                            + 2*this->cspace_->min_turn_radius_)*/) {
+//        return false;
+//    }
 
     // If the segment was in conflict then we need to do the full check
     // check of the trajectory segments
     // Could be improved using a function that can check arcs of the
     // Dubin's path at once instead of just line segments stored in trajectory
     int count = 0;
+    chrono::steady_clock::time_point t1, t2, f1, f2;
+    double delta;
+    f1 = chrono::steady_clock::now();
     for(int i = 1; i < this->trajectory_.rows(); i++) {
-        if((this->trajectory_.row(i)(0) > 0.001 || this->trajectory_.row(i)(1) > 0.001
-            || this->trajectory_.row(i)(0) < -0.001 || this->trajectory_.row(i)(1) < -0.001)
-                && (this->trajectory_.row(i-1)(0) != this->trajectory_.row(i)(0)
-                || this->trajectory_.row(i-1)(1) != this->trajectory_.row(i)(1))) {
-//            std::cout << "row: " << i+1 << std::endl;
-            count++;
-            if(ExplicitEdgeCheck2D(obstacle,
-                                   this->trajectory_.row(i-1),
-                                   this->trajectory_.row(i),
-                                   this->cspace_->robot_radius_)) {
-                return true;
-            }
+        count++;
+        t1 = chrono::steady_clock::now();
+        if(DetectBulletCollision(obstacle,
+                                 this->trajectory_.row(i-1),
+                                 this->trajectory_.row(i))
+                /*ExplicitEdgeCheck2D(obstacle,
+                               this->trajectory_.row(i-1),
+                               this->trajectory_.row(i),
+                               this->cspace_->robot_radius_)*/) {
+            t2 = chrono::steady_clock::now();
+            delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+            if(timinged) cout << "\tDetectBulletCollision: " << delta << " ms" << endl;
+            return true;
         }
+        t2 = chrono::steady_clock::now();
+        delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+        if(timinged) cout << "\tDetectBulletCollision: " << delta << " ms" << endl;
     }
+    f2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(f2 - f1).count();
+    if(timinged) cout << "\tExplicitEdgeCheck(obstacle): " << delta << " ms" << endl;
     return false;
 }

@@ -2,6 +2,8 @@
 #define OBSTACLE_H
 
 #include <DRRT/distancefunctions.h>
+#include <bullet/btBulletCollisionCommon.h>
+#include <bullet/BulletCollision/CollisionShapes/btConvexHullShape.h>
 
 class ConfigSpace;
 class JList;
@@ -33,7 +35,13 @@ public:
                                         // after the robot senses this
                                         // obstacle (false)
 
+    std::shared_ptr<ConfigSpace> cspace;
+
     Eigen::VectorXd position_;   // initial position of obstacle
+
+    // Bullet data
+    std::shared_ptr<btCollisionObject> collision_object_;
+    std::shared_ptr<btConvexHullShape> collision_shape_;
 
     // Data for all D-dimensional ball obstacles (kind=1) as a
     // bound on obstacle (all kinds)
@@ -96,6 +104,9 @@ public:
           obstacle_used_(false), sensible_obstacle_(false),
           obstacle_used_after_sense_(false), polygon_(polygon)
     {
+        // Initialize collision object (unsure if this should be here)
+        collision_object_ = std::make_shared<btCollisionObject>();
+
         Eigen::VectorXd pos;
         if(ConfigSpace_has_theta) {
             pos = Eigen::Vector3d();
@@ -152,6 +163,10 @@ public:
     static void ReadTimeObstaclesFromFile(std::string obstacle_file);
     static void ReadDynamicTimeObstaclesFromFile(std::string obstacle_file);
 
+    // Update obstacle position
+    void UpdatePosition(Eigen::VectorXd new_position)
+    { this->position_ = new_position; }
+
     // Moves obstacles around or remove them
     static void UpdateObstacles(std::shared_ptr<ConfigSpace>& C);
     // Adds the obstacle to the ConfigSpace
@@ -176,6 +191,12 @@ void CheckObstacles(std::shared_ptr<Queue> Q,
                     std::shared_ptr<KDTree> Tree,
                     std::shared_ptr<RobotData> Robot,
                     double ball_constant);
+
+// Detect 2D collision between obstacle O and the
+// line segment start_point -> end_point
+bool DetectBulletCollision(std::shared_ptr<Obstacle> &O,
+                           Eigen::VectorXd start_point,
+                           Eigen::VectorXd end_point);
 
 // This returns a -rangeList- (see KDTree code) containing all points
 // that are in conflict with the obstacle. Note that rangeList must

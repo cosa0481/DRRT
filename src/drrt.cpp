@@ -197,32 +197,34 @@ bool Extend(shared_ptr<KDTree> &Tree,
             double hyper_ball_rad,
             shared_ptr<KDTreeNode> &move_goal)
 {
-    //cout << "Extend" << endl;
+    if(timing) cout << "EXTEND" << endl;
     /// For timing
-    chrono::time_point<chrono::high_resolution_clock> startTime
-            = chrono::high_resolution_clock::now();
-    double time_start, time_end;
+    chrono::steady_clock::time_point t1, f1;
+    chrono::steady_clock::time_point t2, f2;
+    double deltat;
 
     // Find all nodes within the (shrinking) hyper ball of
     // (saturated) new_node
     // true argument for using KDTreeNodes as elements
     shared_ptr<JList> node_list = make_shared<JList>(true);
-    time_start = GetTimeNs(startTime);
+    t1 = chrono::steady_clock::now();
     {
         lock_guard<mutex> lock(Tree->tree_mutex_);
         Tree->KDFindWithinRange(node_list, hyper_ball_rad, new_node->position_);
     }
-    time_end = GetTimeNs(startTime);
-    if(timing) cout << "\tkdFindWithinRange: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+    t2 = chrono::steady_clock::now();
+    deltat = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timing) cout << "KDFindWithinRange: " << deltat << " s" << endl;
 
     // Try to find and link to best parent. This also saves
     // the edges from new_node to the neighbors in the field
     // "temp_edge_" of the neighbors. This saves time in the
     // case that trajectory calculation is complicated.
-    time_start = GetTimeNs(startTime);
+    t1 = chrono::steady_clock::now();
     FindBestParent(Q->cspace, Tree, new_node, node_list, closest_node, true);
-    time_end = GetTimeNs(startTime);
-    if(timing) cout << "\tfindBestParent: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+    t2 = chrono::steady_clock::now();
+    deltat = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timing) cout << "FindBestParent: " << deltat << " s" << endl;
 
     // If no parent was found then ignore this node
     if( !new_node->rrt_parent_used_ ) {
@@ -231,13 +233,14 @@ bool Extend(shared_ptr<KDTree> &Tree,
     }
 
     // Insert the new node into the KDTree
-    time_start = GetTimeNs(startTime);
+    t1 = chrono::steady_clock::now();
     {
         lock_guard<mutex> lock(Tree->tree_mutex_);
         Tree->KDInsert(new_node);
     }
-    time_end = GetTimeNs(startTime);
-    if(timing) cout << "\tkdInsert: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+    t2 = chrono::steady_clock::now();
+    deltat = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timing) cout << "KDInsert: " << deltat << " s" << endl;
 
     // Second pass, if there was a parent, then link with neighbors
     // and rewire neighbors that would do better to use new_node as
@@ -257,15 +260,18 @@ bool Extend(shared_ptr<KDTree> &Tree,
             // (allows info propogation from new_node to nearNode always)
             {
                 lock_guard<mutex> lock(Tree->tree_mutex_);
-                MakeInitialOutNeighborOf( near_node,new_node,near_node->temp_edge_ );
+                MakeInitialOutNeighborOf(near_node,new_node,
+                                         near_node->temp_edge_);
 
                 // Add to current neighbor list of new_node
                 // (allows info propogation from new_node to nearNode and
                 // vice versa, but only while they are in the D-ball)
-                time_start = GetTimeNs(startTime);
-                MakeNeighborOf( near_node, new_node, near_node->temp_edge_ );
-                time_end = GetTimeNs(startTime);
-                if(timing) cout << "\tmakeNeighborOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+                t1 = chrono::steady_clock::now();
+                MakeNeighborOf(near_node, new_node, near_node->temp_edge_);
+                t2 = chrono::steady_clock::now();
+                deltat = chrono::duration_cast<chrono::duration<double> >
+                        (t2 - t1).count();
+                if(timing) cout << "MakeNeighborOf: " << deltat << " s" << endl;
             }
 
         }
@@ -274,15 +280,19 @@ bool Extend(shared_ptr<KDTree> &Tree,
         // the reverse of each other, therefore we need to calculate
         // and check the trajectory along the edge from nearNode to new_node
         this_edge = Edge::NewEdge( Q->cspace, Tree, near_node, new_node );
-        time_start = GetTimeNs(startTime);
+        t1 = chrono::steady_clock::now();
         this_edge->CalculateTrajectory();
-        time_end = GetTimeNs(startTime);
-        if(timing) cout << "\tcalculateTrajectory: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+        t2 = chrono::steady_clock::now();
+        deltat = chrono::duration_cast<chrono::duration<double> >
+                (t2 - t1).count();
+        if(timing) cout << "CalculateTrajectory: " << deltat << " s" << endl;
 
-        time_start = GetTimeNs(startTime);
+        t1 = chrono::steady_clock::now();
         bool edge_is_safe = !ExplicitEdgeCheck(Q->cspace,this_edge);
-        time_end = GetTimeNs(startTime);
-        if(timing) cout << "\tExplicitEdgeCheck: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+        t2 = chrono::steady_clock::now();
+        deltat = chrono::duration_cast<chrono::duration<double> >
+                (t2 - t1).count();
+        if(timing) cout << "ExplicitEdgeCheck: " << deltat << " s" << endl;
         if( this_edge->ValidMove()
                 && edge_is_safe ) {
             // Add to initial in neighbor list of newnode
@@ -290,10 +300,13 @@ bool Extend(shared_ptr<KDTree> &Tree,
             // nearNode always)
             {
                 lock_guard<mutex> lock(Tree->tree_mutex_);
-                time_start = GetTimeNs(startTime);
+                t1 = chrono::steady_clock::now();
                 MakeInitialInNeighborOf( new_node, near_node, this_edge );
-                time_end = GetTimeNs(startTime);
-                if(timing) cout << "\tmakeInitialNeighborOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+                t2 = chrono::steady_clock::now();
+                deltat = chrono::duration_cast<chrono::duration<double> >
+                        (t2 - t1).count();
+                if(timing) cout << "MakeInitialNeighborOf: "
+                                << deltat << " s" << endl;
 
                 // Add to current neighbor list of new_node
                 // (allows info propogation from new_node to nearNode and
@@ -309,7 +322,7 @@ bool Extend(shared_ptr<KDTree> &Tree,
         // Rewire neighbors that would do better to use this node
         // as their parent unless they are not in the relevant
         // portion of the space vs. moveGoal
-        time_start = GetTimeNs(startTime);
+        t1 = chrono::steady_clock::now();
         {
             lock_guard<mutex> lock(Tree->tree_mutex_);
             if( near_node->rrt_LMC_ > new_node->rrt_LMC_ + this_edge->dist_
@@ -330,8 +343,10 @@ bool Extend(shared_ptr<KDTree> &Tree,
                 }
             }
         }
-        time_end = GetTimeNs(startTime);
-        if(timing) cout << "\tRewiringNeighbors: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+        t2 = chrono::steady_clock::now();
+        deltat = chrono::duration_cast<chrono::duration<double> >
+                (t2 - t1).count();
+        if(timing) cout << "MakeParentOf: " << deltat << " s" << endl;
 
         list_item = list_item->child_; // iterate through list
     }
@@ -354,10 +369,10 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
                     shared_ptr<KDTreeNode>& closest_node,
                     bool save_all_edges)
 {
-    /// For function duration testing
-    double time_start, time_end; // in nanoseconds
-    chrono::time_point<chrono::high_resolution_clock> startTime
-            = chrono::high_resolution_clock::now();
+    if(timing) cout << "\tFINDBESTPARENT" << endl;
+    chrono::steady_clock::time_point t1;
+    chrono::steady_clock::time_point t2;
+    double delta;
 
     // If the list is empty
     {
@@ -384,19 +399,19 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
         // constraints of the state space and the dynamics
         // of the robot
         thisEdge = Edge::NewEdge(C, Tree, new_node, nearNode);
-        time_start = GetTimeNs(startTime);
+        t1 = chrono::steady_clock::now();
         thisEdge->CalculateTrajectory();
-        time_end = GetTimeNs(startTime);
-        if(timing) cout << "\t\tcalculateTrajectory: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+        t2 = chrono::steady_clock::now();
+        delta = chrono::duration_cast<chrono::duration<double> >
+                (t2 - t1).count();
+        if(timing) cout << "\tCalculateTrajectory " << delta << " s" << endl;
 
         if( save_all_edges ) nearNode->temp_edge_ = thisEdge;
 
         // Check for validity vs edge collisions vs obstacles and
         // vs the time-dynamics of the robot and space
-        time_start = GetTimeNs(startTime);
         bool edge_is_safe = !ExplicitEdgeCheck(C,thisEdge);
-        time_end = GetTimeNs(startTime);
-        if(timing) cout << "\t\tExplicitEdgeCheck: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+
         if(!edge_is_safe || !thisEdge->ValidMove()) {
             {
                 lock_guard<mutex> lock(Tree->tree_mutex_);
@@ -413,10 +428,12 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
                 // Found a potential better parent
                 new_node->rrt_LMC_ = nearNode->rrt_LMC_ + thisEdge->dist_;
                 /// This also takes care of some code in Extend I believe
-                time_start = GetTimeNs(startTime);
+                t1 = chrono::steady_clock::now();
                 MakeParentOf(nearNode,new_node,thisEdge);
-                time_end = GetTimeNs(startTime);
-                if(timing) cout << "\t\tmakeParentOf: " << (time_end - time_start)/MICROSECOND << " ms" << endl;
+                t2 = chrono::steady_clock::now();
+                delta = chrono::duration_cast<chrono::duration<double> >
+                        (t2 - t1).count();
+                if(timing) cout << "\tMakeParentOf " << delta << " s" << endl;
             }
         }
 

@@ -31,10 +31,10 @@ void MoveRobot(shared_ptr<Queue> &Q,
         R->num_robot_move_points += R->num_local_move_points;
 
         if( !Q->cspace->space_has_time_ ) {
-            cout << "new robot pose:\n"
+            cout << "New Robot Pose:\n"
                       << R->robot_pose << endl;
         } else {
-            cout << "new robot pose(w/ time):\n"
+            cout << "New robot pose(w/ time):\n"
                       << R->robot_pose << endl;
         }
 

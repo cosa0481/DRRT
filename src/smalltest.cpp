@@ -190,7 +190,7 @@ int main( int argc, char* argv[] )
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
     string obstacle_file = argv[1]; // obstacle file
-    double plan_time = 50.0;        // plan *ONLY* for this long
+    double plan_time = 120.0;        // plan *ONLY* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 5.0;             // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius (10.0 worked)
@@ -237,6 +237,12 @@ int main( int argc, char* argv[] )
               << " s" << endl;
 
     vis_thread->join();
+
+    // Delete bullet pointers
+    delete cspace->bt_collision_configuration_;
+    delete cspace->bt_dispatcher_;
+    delete cspace->bt_broadphase_;
+    delete cspace->bt_collision_world_;
 
     return 0;
 }

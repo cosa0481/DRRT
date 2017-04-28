@@ -8,6 +8,8 @@
 
 using namespace std;
 
+bool timingml = false;
+
 void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  shared_ptr<RobotData> Robot,
                  chrono::time_point<chrono::high_resolution_clock> start_time,
@@ -16,6 +18,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  vector<double> thetas,
                  vector<Eigen::VectorXd> path)
 {
+    chrono::steady_clock::time_point t1,t2,i1,i2;
+    double delta;
+
     double slice_start = chrono::duration_cast<chrono::nanoseconds>(
                 start_time-start_time).count();
     double slice_end;
@@ -80,6 +85,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
             cout << this_thread::get_id() << " Iteration " << i++
                  << "\n--------------------------------" << endl;
+            i1 = chrono::steady_clock::now();
 
             {
                 lock_guard<mutex> lock(Q->queuetex);
@@ -127,7 +133,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                        initial_distance);
                     }
                 }
-                //if(ExplicitNodeCheck(Q,new_node)) continue;
+                if(ExplicitNodeCheck(Q,new_node)) continue;
 //                if(RandDouble(0,1) > p_uniform) break;
 //                if(Tree->distanceFunction(new_node->position_,
 //                                          Tree->root->position_)
@@ -174,9 +180,13 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
             // Extend the graph
             // mutex locks inside this function
+            t1 = chrono::steady_clock::now();
             Extend(Tree,Q,new_node,closest_node,
                    Q->cspace->saturation_delta_, hyper_ball_rad,
                    Q->cspace->move_goal_);
+            t2 = chrono::steady_clock::now();
+            delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+            if(timingml) cout << "Extend: " << delta << " s" << endl;
 
 
             // Make graph consistent
@@ -196,9 +206,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                 } // unlock cspace_mutex_
             } // unlock queuetex
 
-            iter_end = GetTimeNs(start_time);
-            cout << "Duration: " << (iter_end - iter_start)/MICROSECOND
-                 << " ms\n" << endl;
+            i2 = chrono::steady_clock::now();
+            delta = chrono::duration_cast<chrono::duration<double> >(i2 - i1).count();
+            cout << "Duration: " << delta << " s\n" << endl;
 
             {
                 lock_guard<mutex> lock(Robot->robot_mutex);
