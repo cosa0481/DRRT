@@ -868,6 +868,8 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
             t2 = chrono::steady_clock::now();
             delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
             if(timinged) cout << "\tDetectBulletCollision: " << delta << " ms" << endl;
+            shared_ptr<Edge> this_edge = this->GetPointer();
+            this->cspace_->AddVizEdge(this_edge);
             return true;
         }
         t2 = chrono::steady_clock::now();

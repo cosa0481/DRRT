@@ -103,7 +103,13 @@ void MoveRobot(shared_ptr<Queue> &Q,
 
         // Save first local path point
         R->num_local_move_points = 1;
+        /// EIGEN BLOCK ASSERTION FAILED
+        /// This may be where it's happening
+        /// Assertion failed: ((i>=0) && ( ((BlockRows==1) && (BlockCols==XprType::ColsAtCompileTime) && i<xpr.rows()) ||((BlockRows==XprType::RowsAtCompileTime) && (BlockCols==1) && i<xpr.cols()))), function Block, file /usr/local/include/eigen3/Eigen/src/Core/Block.h, line 119.
+
         R->robot_local_path.row(R->num_local_move_points-1) = R->robot_pose;
+
+        cout << "Added robot pose to local move path" << endl;
 
         // Starting at current location (and looking ahead to nextNode), follow
         // parent pointers back for appropriate distance (or root or dead end)

@@ -8,7 +8,7 @@
 
 using namespace std;
 
-bool timingml = false;
+bool timingml = true;
 
 void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  shared_ptr<RobotData> Robot,
@@ -28,7 +28,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
     double now = GetTimeNs(start_time);
     double elapsed_time;
-    double iter_start, iter_end;
+    double iter_start/*, iter_end*/;
 
     double old_rrt_LMC, current_distance, initial_distance;
     Eigen::Vector3d prev_pose;
@@ -39,9 +39,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     }
 
     // Importance sampling
-    double p_uniform = 0.9;
-    double position_bias;
-    double theta_bias = PI/10;
+//    double p_uniform = 0.9;
+//    double position_bias;
+//    double theta_bias = PI/10;
 
     current_distance = Tree->distanceFunction(prev_pose,
                                               Tree->root->position_);

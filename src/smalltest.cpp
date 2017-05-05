@@ -84,7 +84,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     shared_ptr<RobotData> robot
             = make_shared<RobotData>(Q->cspace->goal_, goal,
                                      MAXPATHNODES, Q->cspace->num_dimensions_);
-    robot->robot_sensor_range = 20.0;
+    robot->robot_sensor_range = 5.0;
 
     if(Q->cspace->space_has_time_) {
         AddOtherTimesToRoot(Q->cspace,kd_tree,goal,root,Q->type);
@@ -93,6 +93,31 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     // Initiate threads
     vis = make_shared<thread>(visualizer, kd_tree, robot, Q);
     cout << "Started Visualizer Thread" << endl;
+
+
+    for(int i = 0; i < 50; i++) {
+        for(int j = 0; j < 50; j++) {
+            shared_ptr<KDTreeNode> node = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,-3*PI/4));
+            kd_tree->AddVizNode(node);
+        }
+    }
+    for(int i = 0; i < 50; i++) {
+        for(int j = 0; j < 50; j++) {
+            shared_ptr<KDTreeNode> node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,-3*PI/4));
+            shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i+1,j+1,-3*PI/4));
+            shared_ptr<Edge> edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
+            edge->CalculateTrajectory();
+            ExplicitEdgeCheck(Q->cspace,edge);
+            node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,-3*PI/4));
+            node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i-1,j+1,-3*PI/4));
+            edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
+            edge->CalculateTrajectory();
+            ExplicitEdgeCheck(Q->cspace,edge);
+        }
+    }
+    cout << "done" << endl;
+    vis->join();
+    exit(1);
 
     // Any-Angle Path
 //    vector<Eigen::VectorXd> path = ThetaStar(Q);
@@ -165,7 +190,7 @@ int main( int argc, char* argv[] )
 
     Eigen::Vector3d start, goal;
     start << 0.0, 0.0, -3*PI/4;
-    goal << 49.0, 49.0, -3*PI/4;    // where the robot begins
+    goal << 20.0, 20.0, -3*PI/4;    // where the robot begins
 
     shared_ptr<ConfigSpace> cspace
             = make_shared<ConfigSpace>(dims,lbound,ubound,start,goal);
@@ -190,14 +215,14 @@ int main( int argc, char* argv[] )
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
     string obstacle_file = argv[1]; // obstacle file
-    double plan_time = 120.0;        // plan *ONLY* for this long
+    double plan_time = 100.0;        // plan *ONLY* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 5.0;             // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius (10.0 worked)
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
-    int num_threads = 4;            // number of main loop threads to spawn (3)
+    int num_threads = 1;            // number of main loop threads to spawn (3)
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);

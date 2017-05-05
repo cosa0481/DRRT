@@ -12,7 +12,6 @@
 // For holding triangles
 typedef Eigen::Matrix<double,Eigen::Dynamic,6> MatrixX6d;
 
-
 class Region{
 public:
     Eigen::MatrixX2d region_;
@@ -107,7 +106,7 @@ public:
         bt_collision_configuration_ = new btDefaultCollisionConfiguration();
         bt_dispatcher_ = new btCollisionDispatcher(bt_collision_configuration_);
         /// Generalize the size boundaries
-        btVector3 world_min((btScalar)0,(btScalar)0,(btScalar)0);
+        btVector3 world_min((btScalar)0,(btScalar)0,(btScalar)-0.1);
         btVector3 world_max((btScalar)50,(btScalar)50,(btScalar)0.1);
         // There may be a faster broadphase
         // True for disabling raycast accelerator
@@ -150,7 +149,7 @@ public:
     // Add Edge to vizualizer
     void AddVizEdge(std::shared_ptr<Edge> &edge)
     {
-        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
+//        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
         this->collisions_.push_back(edge);
 
     }
@@ -158,7 +157,7 @@ public:
     // Remove Edge from vizualizer
     void RemoveVizEdge(std::shared_ptr<Edge> &edge)
     {
-        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
+//        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
         this->collisions_.erase(
                     std::remove(this->collisions_.begin(),
                                 this->collisions_.end(),edge),
@@ -280,6 +279,7 @@ typedef struct RobotData{
           dist_along_robot_edge(0.0),
           time_along_robot_edge(0.0)
     {
+        robot_pose.resize(dimensions);
         robot_local_path.resize(maxPathNodes,dimensions);
         robot_move_path.resize(maxPathNodes,dimensions);
     }

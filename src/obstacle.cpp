@@ -45,42 +45,41 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
             //getline(read_stream,line);
             //line = "";
 
-            // Create polygon representation
-            shared_ptr<Obstacle> static_polygon
+            shared_ptr<Obstacle> new_obstacle
                     = make_shared<Obstacle>(3,polygon,C->space_has_theta_);
-            static_polygon->cspace = C;
+            new_obstacle->cspace = C;
 
             // Add to Bullet
             shared_ptr<btCollisionObject> obstacle
                     = make_shared<btCollisionObject>();
-            // Set origin of the obstacle
-            /// This might need to be 0,0,0
-            obstacle->getWorldTransform().setOrigin(
-                        btVector3((btScalar) static_polygon->position_(0),
-                                  (btScalar) static_polygon->position_(1),
-                                  (btScalar) 0));
             // Set the shape of the obstacle
             shared_ptr<btConvexHullShape> collision_shape
                     = make_shared<btConvexHullShape>();
-            for(int i = 0; i < static_polygon->polygon_.rows(); i++) {
+            for(int i = 0; i < new_obstacle->polygon_.rows(); i++) {
                 collision_shape->addPoint(
-                            btVector3((btScalar) static_polygon->polygon_(i,0),
-                                      (btScalar) static_polygon->polygon_(i,1),
-                                      (btScalar) 0));
+                            btVector3((btScalar) new_obstacle->polygon_(i,0),
+                                      (btScalar) new_obstacle->polygon_(i,1),
+                                      (btScalar) -0.1));
                 collision_shape->addPoint(
-                            btVector3((btScalar) static_polygon->polygon_(i,0),
-                                      (btScalar) static_polygon->polygon_(i,1),
+                            btVector3((btScalar) new_obstacle->polygon_(i,0),
+                                      (btScalar) new_obstacle->polygon_(i,1),
                                       (btScalar) 0.1));
             }
             obstacle->setCollisionShape(collision_shape.get());
             C->bt_collision_world_->addCollisionObject(obstacle.get());
+            // Set origin of the obstacle
+            obstacle->getWorldTransform().setOrigin(
+                        btVector3((btScalar) new_obstacle->position_(0),
+                                  (btScalar) new_obstacle->position_(1),
+                                  (btScalar) 0));
+
             // Add reference to the obstacle's btCollisionObject
             // to Obstacle object
-            static_polygon->collision_object_ = obstacle;
-            static_polygon->collision_shape_ = collision_shape;
+            new_obstacle->collision_object_ = obstacle;
+            new_obstacle->collision_shape_ = collision_shape;
 
             // Add to ConfigSpace
-            static_polygon->AddObsToConfigSpace(C);
+            new_obstacle->AddObsToConfigSpace(C);
         }
     }
     else { cout << "Error opening obstacle file" << endl; }
@@ -224,6 +223,157 @@ void Obstacle::ChangeObstacleDirection(std::shared_ptr<ConfigSpace> C,
         this->path_.row(i)(1) = low_point(1) + my*(ts(length-i+1) - low_point(3));
         this->path_.row(i)(3) = ts(length-i+1);
     }
+}
+
+/// TO BE CALLED IN PLACE OF ExplicitEdgeCheck2D
+bool DetectBulletCollision(shared_ptr<Obstacle> &O,
+                           Eigen::VectorXd start_point,
+                           Eigen::VectorXd end_point)
+{
+
+    chrono::steady_clock::time_point t1, f1;
+    chrono::steady_clock::time_point t2, f2;
+    double delta;
+
+    f1 = chrono::steady_clock::now();
+
+    /// BULLET COLLISION DETECTION
+    t1 = chrono::steady_clock::now();
+    btCollisionObject* segment = new btCollisionObject();
+
+    // Get length of line segment
+    double x = end_point(0) - start_point(0);
+    double y = end_point(1) - start_point(1);
+    double length = sqrt((x*x) + (y*y));
+
+    // Create box around segment that is longer than it by 2 robot_radius_
+    // and that has width 2 robot_radius_
+    btBoxShape* segment_box = new btBoxShape(
+                btVector3((btScalar) O->cspace->robot_radius_,
+                          (btScalar) O->cspace->robot_radius_ + length/2,
+                          (btScalar) 0.1));
+
+    // Set the collision shape of the segment collision object
+    segment->setCollisionShape(segment_box);
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tEverythingElse: " << delta << " s" << endl;
+
+    // Add the collision object to the collision world
+    t1 = chrono::steady_clock::now();
+    O->cspace->bt_collision_world_->addCollisionObject(segment);
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tAddObject: " << delta << " s" << endl;
+
+    // Set origin to be center of the line segement
+    segment->getWorldTransform().setOrigin(
+                btVector3((btScalar) (start_point(0) + end_point(0))/2,
+                          (btScalar) (start_point(1) + end_point(1))/2,
+                          (btScalar) 0));
+    // Calculate angle between the start and end points to determine the
+    // yaw rotation of the collision object
+    double angle = atan2(end_point(1) - start_point(1),
+                         end_point(0) - start_point(0));
+    x = cos(angle);
+    y = cos(angle);
+    segment->getWorldTransform().setRotation(
+                btQuaternion((btScalar) 0,              // roll
+                             (btScalar) 0,              // pitch
+                             (btScalar) atan2(y,x)));   // yaw
+
+    // Check for collisions
+    t1 = chrono::steady_clock::now();
+    O->cspace->bt_collision_world_->performDiscreteCollisionDetection();
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tCollisionDetection: " << delta << " s" << endl;
+
+    // Number of manifolds is the number of collisions
+    t1 = chrono::steady_clock::now();
+    int num_manifolds
+            = O->cspace->bt_collision_world_->getDispatcher()
+            ->getNumManifolds();
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tGetNumManifolds: " << delta << " s" << endl;
+
+    t1 = chrono::steady_clock::now();
+    vector<int> num_contacts(num_manifolds);
+    shared_ptr<btPersistentManifold> contact_manifold;
+    const btCollisionObject* obA;
+    const btCollisionObject* obB;
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tDefineManifoldVars: " << delta << " s" << endl;
+    for(int i = 0; i < num_manifolds; i++) {
+        t1 = chrono::steady_clock::now();
+        contact_manifold
+                = make_shared<btPersistentManifold>(*O->cspace->bt_collision_world_->getDispatcher()
+                ->getManifoldByIndexInternal(i));
+        obA = contact_manifold->getBody0();
+        obB = contact_manifold->getBody1();
+        contact_manifold->refreshContactPoints(obA->getWorldTransform(),
+                                               obB->getWorldTransform());
+        num_contacts[i] = contact_manifold->getNumContacts();
+        t2 = chrono::steady_clock::now();
+        delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+        if(timingobs) cout << "\t\tGetNumContacts: " << delta << " s" << endl;
+    }
+    // Remove this segment collision object from the collision world
+    t1 = chrono::steady_clock::now();
+    O->cspace->bt_collision_world_->removeCollisionObject(segment);
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tRemoveObject: " << delta << " s" << endl;
+
+    // If there are any manifolds then there is at least one collision.
+    /// NEED TO IGNORE OBSTACLE-OBSTACLE COLLISIONS
+    t1 = chrono::steady_clock::now();
+    for(int i = 0; i < num_manifolds; i++) {
+        if(num_contacts[i] > 0) {
+//            shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
+//            shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
+//            shared_ptr<Edge> _de = Edge::NewEdge(O->cspace,
+//                                                 make_shared<KDTree>(),
+//                                                 _s,
+//                                                 _e);
+//            O->cspace->AddVizEdge(_de);
+//            cout << "collision" << endl;
+//            // For each contact point in that manifold
+//            for(int j = 0; j < num_contacts[i]; j++) {
+//                // Get the contact information
+//                btManifoldPoint& pt = contact_manifold->getContactPoint(j);
+//                btVector3 ptA = pt.getPositionWorldOnA();
+//                double pt_dist = pt.getDistance();
+//                cout << "Segment:" << endl;
+//                cout << "\tstart: " << start_point(0)
+//                     << "," << start_point(1) << endl;
+//                cout << "\tend: " << end_point(0)
+//                     << "," << end_point(1) << endl;
+//                cout << "\tcontact point: " << ptA.getX()
+//                     << "," << ptA.getY() << endl;
+//                cout << "\tcontact dist: " << pt_dist << endl;
+//            }
+//            /// EXIT
+//            exit(1);
+            t2 = chrono::steady_clock::now();
+            delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+            if(timingobs) cout << "\t\tLastLoop: " << delta << " s" << endl;
+            f2 = chrono::steady_clock::now();
+            delta = chrono::duration_cast<chrono::duration<double> >(f2 - f1).count();
+            if(timingobs) cout << "\t\tFuncTime: " << delta << " s" << endl;
+            return true;
+        }
+    }
+    t2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
+    if(timingobs) cout << "\t\tLastLoop: " << delta << " s" << endl;
+    f2 = chrono::steady_clock::now();
+    delta = chrono::duration_cast<chrono::duration<double> >(f2 - f1).count();
+    if(timingobs) cout << "\t\tFuncTime: " << delta << " s" << endl;
+//    cout << "no collision" << endl;
+    return false;
 }
 
 void CheckObstacles(shared_ptr<Queue> Q,
@@ -534,147 +684,6 @@ void RemoveObstacle(std::shared_ptr<KDTree> Tree,
     }
     Tree->EmptyRangeList(node_list);
     O->obstacle_used_ = false;
-}
-
-/// TO BE CALLED IN PLACE OF ExplicitEdgeCheck2D
-bool DetectBulletCollision(shared_ptr<Obstacle> &O,
-                           Eigen::VectorXd start_point,
-                           Eigen::VectorXd end_point)
-{
-
-    chrono::steady_clock::time_point t1, f1;
-    chrono::steady_clock::time_point t2, f2;
-    double delta;
-
-    f1 = chrono::steady_clock::now();
-
-    /// BULLET COLLISION DETECTION
-    t1 = chrono::steady_clock::now();
-    btCollisionObject* segment = new btCollisionObject();
-    // Set origin to be center of the line segement
-    segment->getWorldTransform().setOrigin(
-                btVector3((btScalar) (start_point(0) + end_point(0))/2,
-                          (btScalar) (start_point(1) + end_point(1))/2,
-                          (btScalar) 0));
-    // Calculate angle between the start and end points to determine the
-    // yaw rotation of the collision object
-    double angle = atan2(end_point(1) - start_point(1),
-                         end_point(0) - start_point(0));
-    double x = cos(angle);
-    double y = cos(angle);
-    segment->getWorldTransform().setRotation(
-                btQuaternion((btScalar) 0,              // roll
-                             (btScalar) 0,              // pitch
-                             (btScalar) atan2(y,x)));   // yaw
-    // Get length of line segment
-    x = end_point(0) - start_point(0);
-    y = end_point(1) - start_point(1);
-    double length = sqrt((x*x) + (y*y));
-    // Create box around segment that is longer than it by 2 robot_radius_
-    // and that has width 2 robot_radius_
-    btBoxShape* segment_box = new btBoxShape(
-                btVector3((btScalar) O->cspace->robot_radius_,
-                          (btScalar) O->cspace->robot_radius_ + length/2,
-                          (btScalar) 0.1));
-    // Set the collision shape of the segment collision object
-    segment->setCollisionShape(segment_box);
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tEverythingElse: " << delta << " s" << endl;
-
-    // Add the collision object to the collision world
-    t1 = chrono::steady_clock::now();
-    O->cspace->bt_collision_world_->addCollisionObject(segment);
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tAddObject: " << delta << " s" << endl;
-
-    // Check for collisions
-    t1 = chrono::steady_clock::now();
-    O->cspace->bt_collision_world_->performDiscreteCollisionDetection();
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tCollisionDetection: " << delta << " s" << endl;
-
-    // Number of manifolds is the number of collisions
-    t1 = chrono::steady_clock::now();
-    int num_manifolds
-            = O->cspace->bt_collision_world_->getDispatcher()
-            ->getNumManifolds();
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tGetNumManifolds: " << delta << " s" << endl;
-
-    t1 = chrono::steady_clock::now();
-    vector<int> num_contacts(num_manifolds);
-    shared_ptr<btPersistentManifold> contact_manifold;
-    const btCollisionObject* obA;
-    const btCollisionObject* obB;
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tDefineManifoldVars: " << delta << " s" << endl;
-    for(int i = 0; i < num_manifolds; i++) {
-        t1 = chrono::steady_clock::now();
-        contact_manifold
-                = make_shared<btPersistentManifold>(*O->cspace->bt_collision_world_->getDispatcher()
-                ->getManifoldByIndexInternal(i));
-        obA = contact_manifold->getBody0();
-        obB = contact_manifold->getBody1();
-        contact_manifold->refreshContactPoints(obA->getWorldTransform(),
-                                               obB->getWorldTransform());
-        num_contacts[i] = contact_manifold->getNumContacts();
-        t2 = chrono::steady_clock::now();
-        delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-        if(timingobs) cout << "\t\tGetNumContacts: " << delta << " s" << endl;
-
-//        cout << "number of contact points: " << num_contacts << endl;
-        // For each contact point in that manifold
-//        for(int j = 0; j < num_contacts; j++) {
-//            // Get the contact information
-//            btManifoldPoint& pt = contact_manifold->getContactPoint(j);
-//            btVector3 ptA = pt.getPositionWorldOnA();
-//            btVector3 ptB = pt.getPositionWorldOnB();
-//            double pt_dist = pt.getDistance();
-//            cout << "Segment:" << endl;
-//            cout << "start:\n" << start_point << endl;
-//            cout << "end:\n" << end_point << endl;
-//            cout << "Contact point:" << endl;
-//            cout << "ptA: " << ptA.getX() << "," << ptA.getY() << endl;
-////            cout << "ptB: " << ptB.getX() << "," << ptB.getY() << endl;
-//            cout << "dist: " << pt_dist << endl;
-//        }
-
-    }
-    // Remove this segment collision object from the collision world
-    t1 = chrono::steady_clock::now();
-    O->cspace->bt_collision_world_->removeCollisionObject(segment);
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tRemoveObject: " << delta << " s" << endl;
-
-    // If there are any manifolds then there is at least one collision.
-    /// NEED TO IGNORE OBSTACLE-OBSTACLE COLLISIONS
-    t1 = chrono::steady_clock::now();
-    for(int i = 4; i < num_manifolds; i++) {
-        if(num_contacts[i] > 0) {
-//            cout << "collision" << endl;
-            t2 = chrono::steady_clock::now();
-            delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-            if(timingobs) cout << "\t\tLastLoop: " << delta << " s" << endl;
-            f2 = chrono::steady_clock::now();
-            delta = chrono::duration_cast<chrono::duration<double> >(f2 - f1).count();
-            if(timingobs) cout << "\t\tFuncTime: " << delta << " s" << endl;
-            return true;
-        }
-    }
-    t2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-    if(timingobs) cout << "\t\tLastLoop: " << delta << " s" << endl;
-    f2 = chrono::steady_clock::now();
-    delta = chrono::duration_cast<chrono::duration<double> >(f2 - f1).count();
-    if(timingobs) cout << "\t\tFuncTime: " << delta << " s" << endl;
-//    cout << "no collision" << endl;
-    return false;
 }
 
 bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,

@@ -13,7 +13,7 @@ void visualizer(shared_ptr<KDTree> Tree,
     double dist = 10; // straighttest:10 smalltest:10 largetest:20
     double fov = 420; // field of view (this just worked best)
 
-    bool show_collision_edges = false;
+    bool show_collision_edges = true;
 
     /// Build display
     // Create OpenGL window
@@ -147,14 +147,16 @@ void visualizer(shared_ptr<KDTree> Tree,
                 for(int p = 0; p < collisions_.size(); p++) {
                     edge = new SceneGraph::GLLineStrip();
                     edge->SetPoint(Eigen::Vector3d(
-                                collisions_.at(p)->start_node_->position_(0),
                                 collisions_.at(p)->start_node_->position_(1),
+                                collisions_.at(p)->start_node_->position_(0),
                                 0.0));
                     edge->SetPoint(Eigen::Vector3d(
-                                collisions_.at(p)->end_node_->position_(0),
                                 collisions_.at(p)->end_node_->position_(1),
+                                collisions_.at(p)->end_node_->position_(0),
                                 0.0));
                     Q->cspace->RemoveVizEdge(collisions_.at(p));
+                    // Show in red
+                    edge->SetColor(SceneGraph::GLColor(Eigen::Vector4d(1,0,0,1)));
                     glGraph.AddChild(edge);
                 }
             }
