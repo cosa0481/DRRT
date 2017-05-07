@@ -13,7 +13,10 @@ std::shared_ptr<Edge> Edge::NewEdge(std::shared_ptr<ConfigSpace> C,
                                     std::shared_ptr<KDTreeNode>& start_node,
                                     std::shared_ptr<KDTreeNode>& end_node)
 {
-    return std::make_shared<DubinsEdge>(C,Tree,start_node,end_node);
+    std::shared_ptr<Edge> new_edge
+            = std::make_shared<DubinsEdge>(C,Tree,start_node,end_node);
+    new_edge->dist_ = C->distanceFunction(start_node->position_,end_node->position_);
+    return new_edge;
 }
 
 // For the Dubin's Car Model, Saturate x,y,theta
@@ -438,6 +441,12 @@ void DubinsEdge::CalculateTrajectory()
         }
     }
 
+    /// FOR DEBUGGING BULLET
+    if(this->dist_ <= 2.0
+            && this->start_node_->position_(2)
+            == this->end_node_->position_(2))
+        bestTrajType = "0s0";
+
     /// END determine best path
     /// BEGIN calculate trajectory from path
     // Now save the best path in the trajectory field
@@ -552,11 +561,16 @@ void DubinsEdge::CalculateTrajectory()
             p1(1) = rsr_tangent_y(0);
             p2(0) = rsr_tangent_x(1);
             p2(1) = rsr_tangent_y(1);
-        } else { // bestTrajType == "rsl"
+        } else if( bestTrajType == "rsl" ) {
             p1(0) = rsl_tangent_x(0);
             p1(1) = rsl_tangent_y(0);
             p2(0) = rsl_tangent_x(1);
             p2(1) = rsl_tangent_y(1);
+        } else { // bestTrajType = "0s0"
+            p1(0) = this->start_node_->position_(0);
+            p1(1) = this->start_node_->position_(1);
+            p2(0) = this->end_node_->position_(0);
+            p2(1) = this->end_node_->position_(1);
         }
 
         Eigen::Vector2d ptemp1, ptemp2;
@@ -867,17 +881,15 @@ bool DubinsEdge::ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)
                                this->cspace_->robot_radius_)*/) {
             t2 = chrono::steady_clock::now();
             delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-            if(timinged) cout << "\tDetectBulletCollision: " << delta << " ms" << endl;
-            shared_ptr<Edge> this_edge = this->GetPointer();
-            this->cspace_->AddVizEdge(this_edge);
+            if(timinged) cout << "\tDetectBulletCollision: " << delta << " s" << endl;
             return true;
         }
         t2 = chrono::steady_clock::now();
         delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
-        if(timinged) cout << "\tDetectBulletCollision: " << delta << " ms" << endl;
+        if(timinged) cout << "\tDetectBulletCollision: " << delta << " s" << endl;
     }
     f2 = chrono::steady_clock::now();
     delta = chrono::duration_cast<chrono::duration<double> >(f2 - f1).count();
-    if(timinged) cout << "\tExplicitEdgeCheck(obstacle): " << delta << " ms" << endl;
+    if(timinged) cout << "\tExplicitEdgeCheck(obstacle): " << delta << " s" << endl;
     return false;
 }

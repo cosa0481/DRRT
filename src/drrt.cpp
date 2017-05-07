@@ -370,8 +370,8 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
                     bool save_all_edges)
 {
     if(timing) cout << "\tFINDBESTPARENT" << endl;
-    chrono::steady_clock::time_point t1;
-    chrono::steady_clock::time_point t2;
+    chrono::steady_clock::time_point t1, w1;
+    chrono::steady_clock::time_point t2, w2;
     double delta;
 
     // If the list is empty
@@ -391,6 +391,7 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
     shared_ptr<JListNode> listItem = node_list->front_;
     shared_ptr<KDTreeNode> nearNode;
     shared_ptr<Edge> thisEdge;
+    w1 = chrono::steady_clock::now();
     while(listItem->child_ != listItem) {
         nearNode = listItem->node_;
 
@@ -398,7 +399,12 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
         // that gets from newNode to nearNode while obeying the
         // constraints of the state space and the dynamics
         // of the robot
+        t1 = chrono::steady_clock::now();
         thisEdge = Edge::NewEdge(C, Tree, new_node, nearNode);
+        t2 = chrono::steady_clock::now();
+        delta = chrono::duration_cast<chrono::duration<double> >
+                (t2 - t1).count();
+        if(timing) cout << "\tCreateNewEdge " << delta << " s" << endl;
         t1 = chrono::steady_clock::now();
         thisEdge->CalculateTrajectory();
         t2 = chrono::steady_clock::now();
@@ -410,7 +416,12 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
 
         // Check for validity vs edge collisions vs obstacles and
         // vs the time-dynamics of the robot and space
+        t1 = chrono::steady_clock::now();
         bool edge_is_safe = !ExplicitEdgeCheck(C,thisEdge);
+        t2 = chrono::steady_clock::now();
+        delta = chrono::duration_cast<chrono::duration<double> >
+                (t2 - t1).count();
+        if(timing) cout << "\tExplicitEdgeCheck: " << delta << " s" << endl;
 
         if(!edge_is_safe || !thisEdge->ValidMove()) {
             {
@@ -421,6 +432,10 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
             continue;
         }
 
+        w2 = chrono::steady_clock::now();
+        delta = chrono::duration_cast<chrono::duration<double> >
+                (w2 - w1).count();
+        if(timing) cout << "\tFind safe candidate: " << delta << " s" << endl;
         {
             lock_guard<mutex> lock(Tree->tree_mutex_);
             // Check if need to update rrtParent and rrt_parent_edge_
@@ -436,6 +451,7 @@ void FindBestParent(shared_ptr<ConfigSpace> &C,
                 if(timing) cout << "\tMakeParentOf " << delta << " s" << endl;
             }
         }
+        w1 = chrono::steady_clock::now();
 
         listItem = listItem->child_; // iterate thorugh list
     }

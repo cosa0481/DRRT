@@ -13,7 +13,8 @@ void visualizer(shared_ptr<KDTree> Tree,
     double dist = 10; // straighttest:10 smalltest:10 largetest:20
     double fov = 420; // field of view (this just worked best)
 
-    bool show_collision_edges = true;
+    bool show_collision_edges = false;
+    bool show_trajectories = false;
 
     /// Build display
     // Create OpenGL window
@@ -73,6 +74,8 @@ void visualizer(shared_ptr<KDTree> Tree,
             polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(0)(1),
                                               this_obstacle->polygon_.row(0)(0),
                                               0.0));
+            // Show obstacles in black
+            polygon->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0,0,0,1)));
             glGraph.AddChild(polygon);
         }
     }
@@ -86,6 +89,7 @@ void visualizer(shared_ptr<KDTree> Tree,
     // For edges
     SceneGraph::GLLineStrip* edge;
     vector<shared_ptr<Edge>> collisions_;
+    vector<shared_ptr<Edge>> trajectories_;
 
     // For robot poses
     vector<Eigen::VectorXd> poses;
@@ -123,6 +127,7 @@ void visualizer(shared_ptr<KDTree> Tree,
         {
             lock_guard<mutex> lock(Tree->tree_mutex_);
             nodes = Tree->nodes_;
+//            cout << "nodes to display: " << nodes.size() << endl;
             for( int k = 0; k < nodes.size(); k++ ) {
                 box = new SceneGraph::GLBox();
                 box->SetScale(0.15);
@@ -140,6 +145,27 @@ void visualizer(shared_ptr<KDTree> Tree,
         }
 
         /// Display collision lines
+        if(show_trajectories) {
+            {
+                lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                trajectories_ = Q->cspace->trajectories_;
+                for(int p = 0; p < trajectories_.size(); p++) {
+                    edge = new SceneGraph::GLLineStrip();
+                    edge->SetPoint(Eigen::Vector3d(
+                                trajectories_.at(p)->start_node_->position_(1),
+                                trajectories_.at(p)->start_node_->position_(0),
+                                0.0));
+                    edge->SetPoint(Eigen::Vector3d(
+                                trajectories_.at(p)->end_node_->position_(1),
+                                trajectories_.at(p)->end_node_->position_(0),
+                                0.0));
+                    Q->cspace->RemoveVizEdge(trajectories_.at(p),"traj");
+                    // Show in green
+                    edge->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0,1,0,1)));
+                    glGraph.AddChild(edge);
+                }
+            }
+        }
         if(show_collision_edges) {
             {
                 lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
@@ -154,13 +180,14 @@ void visualizer(shared_ptr<KDTree> Tree,
                                 collisions_.at(p)->end_node_->position_(1),
                                 collisions_.at(p)->end_node_->position_(0),
                                 0.0));
-                    Q->cspace->RemoveVizEdge(collisions_.at(p));
+                    Q->cspace->RemoveVizEdge(collisions_.at(p),"coll");
                     // Show in red
                     edge->SetColor(SceneGraph::GLColor(Eigen::Vector4d(1,0,0,1)));
                     glGraph.AddChild(edge);
                 }
             }
         }
+
 
         // Update robot pose (x,y,z, r,p,y)
         {

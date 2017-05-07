@@ -13,6 +13,7 @@
 using namespace std;
 
 bool timingex = false;
+bool debug_bullet = false;
 
 chrono::time_point<chrono::high_resolution_clock> start_time;
 
@@ -83,7 +84,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     // Robot
     shared_ptr<RobotData> robot
             = make_shared<RobotData>(Q->cspace->goal_, goal,
-                                     MAXPATHNODES, Q->cspace->num_dimensions_);
+                                     Q->cspace->num_dimensions_);
     robot->robot_sensor_range = 5.0;
 
     if(Q->cspace->space_has_time_) {
@@ -95,29 +96,126 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     cout << "Started Visualizer Thread" << endl;
 
 
-    for(int i = 0; i < 50; i++) {
-        for(int j = 0; j < 50; j++) {
-            shared_ptr<KDTreeNode> node = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,-3*PI/4));
-            kd_tree->AddVizNode(node);
+    if(debug_bullet) {
+        int grid_size = 50;
+        double gran = 1;
+        for(double i = -1; i < grid_size; i = i + gran) {
+            for(double j = -1; j < grid_size; j = j + gran) {
+                // +,0
+                shared_ptr<KDTreeNode> node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,0));
+                shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i+gran,j,0));
+                shared_ptr<Edge> edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
+                edge->CalculateTrajectory();
+    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
+    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
+    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
+    //                // Visualize trajectories
+    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
+    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
+
+    //                double _angle = atan2(end_point(1)-start_point(1),
+    //                              end_point(0)-start_point(0));
+    //                double _x = cos(_angle);
+    //                double _y = sin(_angle);
+    //                _angle = atan2(_y,_x);
+    //                _s->position_(2) = _angle;
+    //                _e->position_(2) = _angle;
+    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
+    //                                                     make_shared<KDTree>(),
+    //                                                     _s,
+    //                                                     _e);
+    //                Q->cspace->AddVizEdge(_de);
+    //            }
+                ExplicitEdgeCheck(Q->cspace,edge);
+
+                // 0,+
+                node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,PI/2));
+                node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j+gran,PI/2));
+                edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
+                edge->CalculateTrajectory();
+    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
+    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
+    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
+    //                // Visualize trajectories
+    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
+    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
+
+    //                double _angle = atan2(end_point(1)-start_point(1),
+    //                              end_point(0)-start_point(0));
+    //                double _x = cos(_angle);
+    //                double _y = sin(_angle);
+    //                _angle = atan2(_y,_x);
+    //                _s->position_(2) = _angle;
+    //                _e->position_(2) = _angle;
+    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
+    //                                                     make_shared<KDTree>(),
+    //                                                     _s,
+    //                                                     _e);
+    //                Q->cspace->AddVizEdge(_de);
+    //            }
+                ExplicitEdgeCheck(Q->cspace,edge);
+
+                // +,+
+                node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,PI/4));
+                node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i+gran,j+gran,PI/4));
+                edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
+                edge->CalculateTrajectory();
+                ExplicitEdgeCheck(Q->cspace,edge);
+    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
+    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
+    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
+    //                // Visualize trajectories
+    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
+    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
+
+    //                double _angle = atan2(end_point(1)-start_point(1),
+    //                              end_point(0)-start_point(0));
+    //                double _x = cos(_angle);
+    //                double _y = sin(_angle);
+    //                _angle = atan2(_y,_x);
+    //                _s->position_(2) = _angle;
+    //                _e->position_(2) = _angle;
+    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
+    //                                                     make_shared<KDTree>(),
+    //                                                     _s,
+    //                                                     _e);
+    //                Q->cspace->AddVizEdge(_de);
+    //            }
+                ExplicitEdgeCheck(Q->cspace,edge);
+
+                // -,+
+                node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,3*PI/4));
+                node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i-gran,j+gran,3*PI/4));
+                edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
+                edge->CalculateTrajectory();
+                ExplicitEdgeCheck(Q->cspace,edge);
+    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
+    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
+    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
+    //                // Visualize trajectories
+    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
+    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
+
+    //                double _angle = atan2(end_point(1)-start_point(1),
+    //                              end_point(0)-start_point(0));
+    //                double _x = cos(_angle);
+    //                double _y = sin(_angle);
+    //                _angle = atan2(_y,_x);
+    //                _s->position_(2) = _angle;
+    //                _e->position_(2) = _angle;
+    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
+    //                                                     make_shared<KDTree>(),
+    //                                                     _s,
+    //                                                     _e);
+    //                Q->cspace->AddVizEdge(_de);
+    //            }
+                ExplicitEdgeCheck(Q->cspace,edge);
+            }
         }
+        cout << "done" << endl;
+        vis->join();
+        exit(1);
     }
-    for(int i = 0; i < 50; i++) {
-        for(int j = 0; j < 50; j++) {
-            shared_ptr<KDTreeNode> node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,-3*PI/4));
-            shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i+1,j+1,-3*PI/4));
-            shared_ptr<Edge> edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
-            edge->CalculateTrajectory();
-            ExplicitEdgeCheck(Q->cspace,edge);
-            node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,-3*PI/4));
-            node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i-1,j+1,-3*PI/4));
-            edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
-            edge->CalculateTrajectory();
-            ExplicitEdgeCheck(Q->cspace,edge);
-        }
-    }
-    cout << "done" << endl;
-    vis->join();
-    exit(1);
 
     // Any-Angle Path
 //    vector<Eigen::VectorXd> path = ThetaStar(Q);
@@ -190,7 +288,7 @@ int main( int argc, char* argv[] )
 
     Eigen::Vector3d start, goal;
     start << 0.0, 0.0, -3*PI/4;
-    goal << 20.0, 20.0, -3*PI/4;    // where the robot begins
+    goal << 49.0, 49.0, -3*PI/4;    // where the robot begins
 
     shared_ptr<ConfigSpace> cspace
             = make_shared<ConfigSpace>(dims,lbound,ubound,start,goal);
@@ -215,14 +313,14 @@ int main( int argc, char* argv[] )
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
     string obstacle_file = argv[1]; // obstacle file
-    double plan_time = 100.0;        // plan *ONLY* for this long
+    double plan_time = 50.0;        // plan *ONLY* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 5.0;             // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius (10.0 worked)
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
-    int num_threads = 1;            // number of main loop threads to spawn (3)
+    int num_threads = 4;            // number of main loop threads to spawn (3)
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);

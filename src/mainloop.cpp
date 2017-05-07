@@ -8,7 +8,7 @@
 
 using namespace std;
 
-bool timingml = true;
+bool timingml = false;
 
 void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  shared_ptr<RobotData> Robot,
@@ -83,7 +83,8 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             slice_start = now;
             slice_end = (++slice_counter)*slice_time;
 
-            cout << this_thread::get_id() << " Iteration " << i++
+            if(timingml)
+                cout << this_thread::get_id() << " Iteration " << i++
                  << "\n--------------------------------" << endl;
             i1 = chrono::steady_clock::now();
 
@@ -208,7 +209,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
             i2 = chrono::steady_clock::now();
             delta = chrono::duration_cast<chrono::duration<double> >(i2 - i1).count();
-            cout << "Duration: " << delta << " s\n" << endl;
+            if(timingml) cout << "Duration: " << delta << " s\n" << endl;
+
+//            this_thread::sleep_for(chrono::nanoseconds(1000000000));
 
             {
                 lock_guard<mutex> lock(Robot->robot_mutex);

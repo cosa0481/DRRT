@@ -98,7 +98,6 @@ bool BinaryHeap::AddToHeap(std::shared_ptr<KDTreeNode> &node)
         BubbleUp( index_of_last_ );
     } else {
         // Node is already in heap
-        std::cout << "node already in heap" << std::endl;
         return false;
     }
     return true;

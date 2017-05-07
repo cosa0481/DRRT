@@ -44,6 +44,7 @@ public:
 
     std::vector<std::shared_ptr<Edge>> collisions_; // edges known to be in
                                                   // collision with an obstacle
+    std::vector<std::shared_ptr<Edge>> trajectories_;
 
     double (*distanceFunction)(Eigen::VectorXd a, Eigen::VectorXd b);
 
@@ -119,15 +120,16 @@ public:
         /// TEMP HACK FOR DUBINS SPACE
         // Should create a square defined as a polygon CCW
         Eigen::MatrixX2d sampling_area;
+        double space_size_mult = 5;
         sampling_area.resize(4,Eigen::NoChange_t());
         sampling_area(0,0) = 0;
         sampling_area(0,1) = 0;
-        sampling_area(1,0) = 50;
+        sampling_area(1,0) = upper(0)*space_size_mult;
         sampling_area(1,1) = 0;
-        sampling_area(2,0) = 50;
-        sampling_area(2,1) = 50;
+        sampling_area(2,0) = upper(0)*space_size_mult;
+        sampling_area(2,1) = upper(1)*space_size_mult;
         sampling_area(3,0) = 0;
-        sampling_area(3,1) = 50;
+        sampling_area(3,1) = upper(1)*space_size_mult;
         drivable_region_ = Region(sampling_area);
 
         obstacles_ = std::make_shared<List>();
@@ -147,21 +149,32 @@ public:
     { distanceFunction = func; }
 
     // Add Edge to vizualizer
-    void AddVizEdge(std::shared_ptr<Edge> &edge)
+    void AddVizEdge(std::shared_ptr<Edge> &edge, std::string type)
     {
 //        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
-        this->collisions_.push_back(edge);
+        if(type == "coll") {
+            this->collisions_.push_back(edge);
+        } else if(type == "traj") {
+            this->trajectories_.push_back(edge);
+        }
 
     }
 
     // Remove Edge from vizualizer
-    void RemoveVizEdge(std::shared_ptr<Edge> &edge)
+    void RemoveVizEdge(std::shared_ptr<Edge> &edge, std::string type)
     {
 //        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
-        this->collisions_.erase(
-                    std::remove(this->collisions_.begin(),
-                                this->collisions_.end(),edge),
-                    this->collisions_.end());
+        if(type == "coll") {
+            this->collisions_.erase(
+                        std::remove(this->collisions_.begin(),
+                                    this->collisions_.end(),edge),
+                        this->collisions_.end());
+        } else if(type == "traj") {
+            this->trajectories_.erase(
+                        std::remove(this->trajectories_.begin(),
+                                    this->trajectories_.end(),edge),
+                        this->trajectories_.end());
+        }
     }
 };
 
@@ -263,7 +276,6 @@ typedef struct RobotData{
     // Constructor
     RobotData(Eigen::VectorXd rP,
               std::shared_ptr<KDTreeNode> nMT,
-              int maxPathNodes,
               int dimensions)
         : robot_pose(rP),
           next_robot_pose(rP),
@@ -280,8 +292,8 @@ typedef struct RobotData{
           time_along_robot_edge(0.0)
     {
         robot_pose.resize(dimensions);
-        robot_local_path.resize(maxPathNodes,dimensions);
-        robot_move_path.resize(maxPathNodes,dimensions);
+        robot_local_path.resize(MAXPATHNODES,dimensions);
+        robot_move_path.resize(MAXPATHNODES,dimensions);
     }
 
 } RobotData;

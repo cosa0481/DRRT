@@ -22,7 +22,7 @@
 #define PI 3.1415926536
 #define INF 1000000000000 // Infinity value for distance
 #define MICROSECOND 1000000 // for timing
-#define MAXPATHNODES 1000000
+#define MAXPATHNODES 1000
 #define DELTA 10 // should be changed if delta is changed in executable
 
 /* Returns the distance between two points in the projection of a Dubin's space
