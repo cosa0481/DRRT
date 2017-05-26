@@ -127,11 +127,13 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
 
     vector<thread> thread_pool(p.num_threads);
     int threads = 1;
+    cout << "Started Main Loop Thread: ";
     for(auto & thr : thread_pool) {
         thr = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
                      p.ball_constant, p.slice_time);
-        cout << "Started Main Loop Thread " << threads++ << endl;
+        cout << threads++ << " ";
     }
+    cout << endl;
 
     thread move_robot = thread(RobotMovement, Q, kd_tree, robot,
                                p.planning_only_time, p.slice_time,
@@ -145,10 +147,12 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     cout << "Joined Obstacle Thread" << endl;
 
     threads = 1;
+    cout << "Joined Main Loop Thread: ";
     for(auto & thr : thread_pool) {
         thr.join();
-        cout << "Joined Main Loop Thread " << threads++ << endl;
+        cout << threads++ << " ";
     }
+    cout << endl;
 
     //PrintRrtxPath(Q->cspace->goal_node_);
     return robot;
