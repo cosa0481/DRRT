@@ -886,67 +886,71 @@ void AddOtherTimesToRoot(shared_ptr<ConfigSpace> &C,
                          shared_ptr<KDTreeNode> &root,
                          string search_type)
 {
-    double insertStep = 2.0;
+    double insert_step = 2.0;
 
-    double lastTimeToInsert = goal->position_(2)
+    double last_time_to_insert = goal->position_(2)
             - Tree->distanceFunction(root->position_,goal->position_)
             /C->robot_velocity_;
-    double firstTimeToInsert = C->start_(2) + insertStep;
-    shared_ptr<KDTreeNode> previousNode = root;
-    bool safeToGoal = true;
-    Eigen::VectorXd newPose;
-    shared_ptr<KDTreeNode> newNode;
-    shared_ptr<Edge> thisEdge;
-    for( double timeToInsert = firstTimeToInsert;
-         timeToInsert < lastTimeToInsert;
-         timeToInsert += insertStep ) {
-        newPose = root->position_;
-        newPose(2) = timeToInsert;
+    double first_time_to_insert = C->start_(2) + insert_step;
+    shared_ptr<KDTreeNode> previous_node = root;
+    bool safe_to_goal = true;
+    Eigen::VectorXd new_pose;
+    shared_ptr<KDTreeNode> new_node;
+    shared_ptr<Edge> this_edge;
+    for( double time_to_insert = first_time_to_insert;
+         time_to_insert < last_time_to_insert;
+         time_to_insert += insert_step ) {
+        new_pose = root->position_;
+        new_pose(2) = time_to_insert;
 
-        newNode = make_shared<KDTreeNode>(newPose);
+        new_node = make_shared<KDTreeNode>(new_pose);
 
-        // Edge from newNode to previousNode
-        thisEdge = Edge::NewEdge( C, Tree, newNode, previousNode );
-        thisEdge->CalculateHoverTrajectory();
+        // Edge from new_node to previous_node
+        this_edge = Edge::NewEdge( C, Tree, new_node, previous_node );
+        this_edge->CalculateHoverTrajectory();
 
         if( search_type == "RRT*" ) {
             // Make this node the parent of the neighbor node
-            newNode->rrt_parent_edge_ = thisEdge;
-            newNode->rrt_parent_used_ = true;
+            new_node->rrt_parent_edge_ = this_edge;
+            new_node->rrt_parent_used_ = true;
         } else if( search_type == "RRT#" ) {
             // Make this node the parent of the neighbor node
-            newNode->rrt_parent_edge_ = thisEdge;
-            newNode->rrt_parent_used_ = true;
-            MakeNeighborOf( newNode, previousNode, thisEdge );
+            new_node->rrt_parent_edge_ = this_edge;
+            new_node->rrt_parent_used_ = true;
+            MakeNeighborOf( new_node, previous_node, this_edge );
         } else if( search_type == "RRTx" ) {
-            MakeParentOf( previousNode, newNode, thisEdge);
-            MakeInitialOutNeighborOf( previousNode, newNode, thisEdge );
+            MakeParentOf( previous_node, new_node, this_edge);
+            MakeInitialOutNeighborOf( previous_node, new_node, this_edge );
             // Initial neighbor list edge
-            MakeInitialInNeighborOf( newNode, previousNode, thisEdge );
+            MakeInitialInNeighborOf( new_node, previous_node, this_edge );
         }
 
         // Make sure this edge is safe
-        if( ExplicitEdgeCheck( C, thisEdge ) ) {
+        if( ExplicitEdgeCheck( C, this_edge ) ) {
             // Not safe
-            thisEdge->dist_ = INF;
-            safeToGoal = false;
-            newNode->rrt_LMC_ = INF;
-            newNode->rrt_tree_cost_ = INF;
-        } else if( safeToGoal ) {
+            this_edge->dist_ = INF;
+            safe_to_goal = false;
+            new_node->rrt_LMC_ = INF;
+            new_node->rrt_tree_cost_ = INF;
+        } else if( safe_to_goal ) {
             // If the edge has safe path all the way to the "real" goal
-            // then make the cost of reaching "real" goal 0 from newNode
-            thisEdge->dist_ = 0.0;
-            newNode->rrt_LMC_ = 0.0;
-            newNode->rrt_tree_cost_ = 0.0;
+            // then make the cost of reaching "real" goal 0 from new_node
+            this_edge->dist_ = 0.0;
+            new_node->rrt_LMC_ = 0.0;
+            new_node->rrt_tree_cost_ = 0.0;
         } else {
-            thisEdge->dist_ = INF;
-            newNode->rrt_LMC_ = INF;
-            newNode->rrt_tree_cost_ = INF;
+            this_edge->dist_ = INF;
+            new_node->rrt_LMC_ = INF;
+            new_node->rrt_tree_cost_ = INF;
         }
 
-        Tree->KDInsert(newNode);
+        /// Mutex lock added 5/8
+        {
+            lock_guard<mutex> lock(Tree->tree_mutex_);
+            Tree->KDInsert(new_node);
+        }
 
-        previousNode = newNode;
+        previous_node = new_node;
     }
 }
 
@@ -1046,13 +1050,16 @@ void FindNewTarget(shared_ptr<ConfigSpace> &C,
         searchBallRad *= 2;
         if( searchBallRad > maxSearchBallRad ) {
             // Unable to find a valid move target so sample randomly
+            /// Added mutex lock 5/8
             shared_ptr<KDTreeNode> newNode = RandNodeDefault(C);
             double thisDist = Tree->distanceFunction(newNode->position_,
                                                      robPose);
-            Edge::Saturate(
-                        newNode->position_,
-                        robPose, C->saturation_delta_, thisDist);
-            Tree->KDInsert(newNode);
+            Edge::Saturate(newNode->position_, robPose,
+                           C->saturation_delta_, thisDist);
+            {
+                lock_guard<mutex> lock(Tree->tree_mutex_);
+                Tree->KDInsert(newNode);
+            }
         }
         Tree->KDFindMoreWithinRange( L, searchBallRad, robPose );
 

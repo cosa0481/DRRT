@@ -22,7 +22,7 @@ public:
     Region(Eigen::MatrixX2d r) : region_(r) {}
 };
 
-class ConfigSpace{
+class ConfigSpace : public std::enable_shared_from_this<ConfigSpace> {
 public:
     std::mutex cspace_mutex_;         // mutex for accessing obstacle List
     int num_dimensions_;              // dimensions
@@ -117,21 +117,6 @@ public:
                                                    bt_broadphase_,
                                                    bt_collision_configuration_);
 
-        /// TEMP HACK FOR DUBINS SPACE
-        // Should create a square defined as a polygon CCW
-        Eigen::MatrixX2d sampling_area;
-        double space_size_mult = 5;
-        sampling_area.resize(4,Eigen::NoChange_t());
-        sampling_area(0,0) = 0;
-        sampling_area(0,1) = 0;
-        sampling_area(1,0) = upper(0)*space_size_mult;
-        sampling_area(1,1) = 0;
-        sampling_area(2,0) = upper(0)*space_size_mult;
-        sampling_area(2,1) = upper(1)*space_size_mult;
-        sampling_area(3,0) = 0;
-        sampling_area(3,1) = upper(1)*space_size_mult;
-        drivable_region_ = Region(sampling_area);
-
         obstacles_ = std::make_shared<List>();
 
         hyper_volume_ = 0.0; // flag indicating this needs to be calculated
@@ -148,16 +133,42 @@ public:
                                            Eigen::VectorXd b))
     { distanceFunction = func; }
 
+    std::shared_ptr<ConfigSpace> GetPointer()
+    { return shared_from_this(); }
+
     // Add Edge to vizualizer
-    void AddVizEdge(std::shared_ptr<Edge> &edge, std::string type)
+    void AddVizEdge(std::shared_ptr<Edge> &edge, std::string type, bool vis)
     {
 //        std::lock_guard<std::mutex> lock(this->cspace_mutex_);
-        if(type == "coll") {
-            this->collisions_.push_back(edge);
-        } else if(type == "traj") {
-            this->trajectories_.push_back(edge);
-        }
+        // For adding a trajectory edge to the vizualiser
+        if(vis) {
+            for(int k = 1; k < edge->trajectory_.rows(); k++) {
+                Eigen::VectorXd _start_point = edge->trajectory_.row(k-1);
+                Eigen::VectorXd _end_point = edge->trajectory_.row(k);
 
+                std::shared_ptr<KDTreeNode> _s
+                        = std::make_shared<KDTreeNode>(_start_point);
+                std::shared_ptr<KDTreeNode> _e
+                        = std::make_shared<KDTreeNode>(_end_point);
+
+                double _angle = atan2(_end_point(1) - _start_point(1),
+                                      _end_point(0) - _start_point(0));
+                double _x = cos(_angle);
+                double _y = sin(_angle);
+                _angle = atan2(_y,_x);
+                _s->position_(2) = _angle;
+                _e->position_(2) = _angle;
+
+                std::shared_ptr<Edge> _de
+                     = Edge::NewEdge(this->GetPointer(),
+                                     std::make_shared<KDTree>(), _s, _e);
+                if(type == "coll") {
+                    this->collisions_.push_back(_de);
+                } else if(type == "traj") {
+                    this->trajectories_.push_back(_de);
+                }
+            }
+        }
     }
 
     // Remove Edge from vizualizer
@@ -270,8 +281,11 @@ typedef struct RobotData{
     double robot_sensor_range;  // distance at which the robot notices obstacles
 
     // Optimal path as determined by the Theta*
-    // Any Angle search algorithm
-    std::vector<Eigen::VectorXd> best_any_angle_path;
+    // Any Angle search algorithm path and angles
+    // These are defined in each iteration of the main loop
+    // Starts at ConfigSpace->start_ (0,0)
+    std::vector<Eigen::VectorXd> best_any_angle_path; // vector of points that define the path
+    std::vector<double> thetas;     // vector of angles corresponding to the lines in the path
 
     // Constructor
     RobotData(Eigen::VectorXd rP,

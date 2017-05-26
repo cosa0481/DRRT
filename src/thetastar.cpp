@@ -14,9 +14,35 @@ double DistFunc(Eigen::VectorXd a, Eigen::VectorXd b)
     return sqrt(temp.sum());
 }
 
+// Takes path from Theta* and returns avg theta of each line for theta bias
+vector<double> PathToThetas(vector<Eigen::VectorXd> path)
+{
+    vector<double> thetas;
+    double angle, x = 0, y = 0;
+    Eigen::VectorXd current_point, prev_point;
+//    cout << "Any-Angle Path:" << endl;
+    for( int i = 0; i < path.size(); i++ ) {
+//        cout << path.at(i) << endl << endl;
+        if(i==0) continue;
+        current_point = path.at(i);
+        prev_point = path.at(i-1);
+//        path_a = (current_point(1)-prev_point(1))
+//                /(current_point(0)-prev_point(0));
+//        path_b = -1;
+//        path_c = min(abs(current_point(1)),abs(prev_point(1)));
+//        lines.insert(lines.begin(), Eigen::Vector3d(path_a,path_b,path_c));
+        angle = atan2(prev_point(1)-current_point(1),
+                      prev_point(0)-current_point(0));
+        x = cos(angle);
+        y = sin(angle);
+        thetas.push_back(atan2(y,x));
+    }
+    return thetas;
+}
+
 vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
 {
-    cout << "Theta*\n------" << endl;
+//    cout << "Theta*\n------" << endl;
     Eigen::VectorXi wrap_vec(1);
     Eigen::VectorXd wrap_points_vec(1);
     wrap_vec(0) = 2;
@@ -46,7 +72,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         }
     }
 
-    cout << "Building K-D Tree of ConfigSpace" << endl;
+//    cout << "Building K-D Tree of ConfigSpace" << endl;
     Eigen::MatrixX3d points;
     Eigen::Vector3d this_point;
     shared_ptr<KDTreeNode> new_node;
@@ -91,8 +117,8 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
 
     // This is where the robot starts
     shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>();
-    double x_start = 49;
-    double y_start = 49;
+    double x_start = Q->cspace->goal_(0);
+    double y_start = Q->cspace->goal_(1);
     tree->GetNodeAt(Eigen::Vector3d(x_start,y_start,
                                     -PI+x_start/sqrt(x_start*x_start
                                                      +y_start*y_start)),
@@ -103,7 +129,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     open_set->AddToHeap(goal); // add starting position_
     closed_set = make_shared<JList>(true); // Uses KDTreeNodes
 
-    cout << "Searching for Best Any-Angle Path" << endl;
+//    cout << "Searching for Best Any-Angle Path" << endl;
 
     shared_ptr<KDTreeNode> node, end_node, min_neighbor;
     end_node = make_shared<KDTreeNode>(Eigen::Vector3d(-1,-1,-1));
@@ -114,7 +140,8 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         open_set->PopHeap(node);
 
         if(node == start) {
-            cout << "Found Any-Angle Path" << endl;
+//            cout << "Found Any-Angle Path" << endl;
+//            cout << "------\nTheta* Completed" << endl;
             vector<Eigen::VectorXd> path = GetPath(start);
             return path;
         }

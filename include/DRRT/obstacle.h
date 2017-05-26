@@ -168,7 +168,7 @@ public:
     { this->position_ = new_position; }
 
     // Moves obstacles around or remove them
-    static void UpdateObstacles(std::shared_ptr<ConfigSpace>& C);
+    static bool UpdateObstacles(std::shared_ptr<ConfigSpace>& C);
     // Adds the obstacle to the ConfigSpace
     void AddObsToConfigSpace(std::shared_ptr<ConfigSpace>& C);
     // Decrease life of obstacle

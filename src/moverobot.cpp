@@ -8,6 +8,8 @@
 
 using namespace std;
 
+bool show_movement = false;
+
 void MoveRobot(shared_ptr<Queue> &Q,
                shared_ptr<KDTree> &Tree,
                shared_ptr<KDTreeNode> &root,
@@ -19,9 +21,11 @@ void MoveRobot(shared_ptr<Queue> &Q,
     // it moved since the last update (as well as the total path that
     // it has followed)
     if( R->moving ) {
-        cout << "Moving "
-                  << Tree->distanceFunction(R->robot_pose,R->next_robot_pose)
-                  << " units" << endl;
+        if(show_movement) {
+            cout << "Moving "
+                 << Tree->distanceFunction(R->robot_pose,R->next_robot_pose)
+                 << " units" << endl;
+        }
         R->robot_pose = R->next_robot_pose;
 
         //R.robot_move_path[R.num_robot_move_points+1:R.num_robot_move_points+R.num_local_move_points,:] = R.robot_local_path[1:R.num_local_move_points,:];
@@ -31,7 +35,8 @@ void MoveRobot(shared_ptr<Queue> &Q,
         R->num_robot_move_points += R->num_local_move_points;
 
         if( !Q->cspace->space_has_time_ ) {
-            cout << "New Robot Pose:\n"
+            if(show_movement)
+                cout << "New Robot Pose:\n"
                       << R->robot_pose << endl;
         } else {
             cout << "New robot pose(w/ time):\n"
@@ -43,8 +48,10 @@ void MoveRobot(shared_ptr<Queue> &Q,
         // Movement has just started, so remember that the robot is now moving
         R->moving = true;
 
-        cout << "First pose:" << endl;
-        cout << R->robot_pose << endl;
+        if(show_movement) {
+            cout << "First pose:" << endl;
+            cout << R->robot_pose << endl;
+        }
 
         if( !Q->cspace->move_goal_->rrt_parent_used_ ) {
             // no parent has been found for the node at the robots position_
@@ -109,7 +116,7 @@ void MoveRobot(shared_ptr<Queue> &Q,
 
         R->robot_local_path.row(R->num_local_move_points-1) = R->robot_pose;
 
-        cout << "Added robot pose to local move path" << endl;
+        //cout << "Added robot pose to local move path" << endl;
 
         // Starting at current location (and looking ahead to nextNode), follow
         // parent pointers back for appropriate distance (or root or dead end)
@@ -222,6 +229,9 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
         prev_pose = Robot->robot_pose;
     }
     double hyper_ball_rad, current_distance, move_distance;
+    chrono::steady_clock::time_point start_movement, end_movement;
+    bool started = false;
+    bool ended = false;
     // While Robot->goal_reached == false
     while(true) { // will break out when goal is reached
         {
@@ -229,6 +239,10 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             elapsed_time = Q->cspace->time_elapsed_;
 
             if(elapsed_time > planning_only_time + slice_time) {
+                if(!started) {
+                    start_movement = chrono::steady_clock::now();
+                    started = true;
+                }
                 {
                     lock_guard<mutex> lock(Tree->tree_mutex_);
                     hyper_ball_rad = min(Q->cspace->saturation_delta_,
@@ -248,13 +262,17 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                                            prev_pose);
                 }
 
-                cout << "Distance to goal: " << current_distance << endl;
-                cout << "Move Distance: " << move_distance << endl;
+                if(show_movement) {
+                    cout << "Distance to goal: " << current_distance << endl;
+                    cout << "Move Distance: " << move_distance << endl;
+                }
                 if(current_distance < goal_threshold) {
-                    cout << "Reached goal" << endl;
+                    cout << "\nReached goal" << endl;
                     {
                         lock_guard<mutex> lock(Robot->robot_mutex);
                         Robot->goal_reached = true;
+                        end_movement = chrono::steady_clock::now();
+                        ended = true;
                         break;
                     }
                 } else if(move_distance > 1.5) {
@@ -268,5 +286,28 @@ void RobotMovement(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             }
         }
         this_thread::sleep_for(chrono::nanoseconds(100000000)); // 10th of a second
+    }
+    if(ended) {
+        // Calculate and display distance traveled
+        // 3 block for [x y theta]
+        Eigen::ArrayXXd firstpoints, lastpoints, diff;
+        firstpoints = Robot->robot_move_path.block(0,0,
+                                         Robot->num_robot_move_points-1,3);
+        lastpoints = Robot->robot_move_path.block(1,0,
+                                         Robot->num_robot_move_points-1,3);
+        diff = firstpoints - lastpoints;
+        diff = diff*diff;
+        for( int i = 0; i < diff.rows(); i++ ) {
+            diff.col(0)(i) = diff.row(i).sum();
+        }
+
+        double move_length = diff.col(0).sqrt().sum();
+        cout << "\nRobot travel distance: " << move_length
+                  << " m" << endl;
+
+        // Calculate and display time travelled
+        double delta = chrono::duration_cast<chrono::duration<double>>
+                       (end_movement - start_movement).count();
+        cout << "Robot travel time: " << delta << " s\n" << endl;
     }
 }

@@ -8,15 +8,13 @@
 
 using namespace std;
 
-bool timingml = false;
+bool timingml = false; // Use to check on frame rate
 
 void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  shared_ptr<RobotData> Robot,
                  chrono::time_point<chrono::high_resolution_clock> start_time,
                  double ball_constant,
-                 double slice_time,
-                 vector<double> thetas,
-                 vector<Eigen::VectorXd> path)
+                 double slice_time)
 {
     chrono::steady_clock::time_point t1,t2,i1,i2;
     double delta;
@@ -39,9 +37,11 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     }
 
     // Importance sampling
-//    double p_uniform = 0.9;
-//    double position_bias;
-//    double theta_bias = PI/10;
+    double p_uniform = 0.9;
+    double position_bias = 6;
+    double theta_bias = PI/10;
+//    bool use_theta_star = true;
+    bool rand = true;
 
     current_distance = Tree->distanceFunction(prev_pose,
                                               Tree->root->position_);
@@ -108,75 +108,137 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             shared_ptr<KDTreeNode> new_node = make_shared<KDTreeNode>();
             shared_ptr<KDTreeNode> closest_node = make_shared<KDTreeNode>();
             shared_ptr<double> closest_dist = make_shared<double>(INF);
+            Eigen::MatrixX2d sampling_area;
 
-            // Importance sample
-//            cout << "Main Loop " << this_thread::get_id() << endl;
-            bool importance_sampling = true;
-            while(importance_sampling) {
-                new_node = RandNodeOrFromStack(Q->cspace);
-                if(new_node->kd_in_tree_) continue;
-                {
-                    lock_guard<mutex> lock(Tree->tree_mutex_);
-                    Tree->KDFindNearest(closest_node,closest_dist,
-                                        new_node->position_);
+            if(RandDouble(0,1) > p_uniform) { // Sampling randomly
+                rand = true;
+                // Create a square defined as a polygon CCW
+                double space_size_mult = 5; /// temp hack need to hash out how bounds defined
+                sampling_area.resize(4,Eigen::NoChange_t());
+                sampling_area(0,0) = 0;
+                sampling_area(0,1) = 0;
+                sampling_area(1,0) = Q->cspace->upper_bounds_(0)*space_size_mult;
+                sampling_area(1,1) = 0;
+                sampling_area(2,0) = Q->cspace->upper_bounds_(0)*space_size_mult;
+                sampling_area(2,1) = Q->cspace->upper_bounds_(1)*space_size_mult;
+                sampling_area(3,0) = 0;
+                sampling_area(3,1) = Q->cspace->upper_bounds_(1)*space_size_mult;
+                Q->cspace->drivable_region_ = Region(sampling_area);
+            } else { // Sampling inside Theta* bounds
+                rand = false;
+                sampling_area.resize(2*Robot->best_any_angle_path.size(),
+                                     Eigen::NoChange_t());
+
+                // Create line parallel to the line segment and use it's endpoints
+                // Need to go counterclockwise for sampling_area
+                vector<Eigen::VectorXd> points;
+                Eigen::VectorXd start_point, end_point, new_start, new_end;
+                double dx, dy, perp_x, perp_y, norm_len;
+                for(int i = 1; i < Robot->best_any_angle_path.size(); i++) {
+                    start_point = Robot->best_any_angle_path[i-1];
+                    end_point = Robot->best_any_angle_path[i];
+
+                    dx = end_point(0) - start_point(0);
+                    dy = end_point(1) - start_point(1);
+                    perp_x = dy;
+                    perp_y = -dx;
+                    norm_len = sqrt(perp_x * perp_x + perp_y * perp_y);
+                    perp_x = perp_x / norm_len;
+                    perp_y = perp_y / norm_len;
+                    perp_x *= position_bias/2;
+                    perp_y *= position_bias/2;
+
+                    new_start.resize(start_point.rows()); // VectorXd stores 1 column
+                    new_end.resize(end_point.rows());
+                    new_start(0) = start_point(0) + perp_x;
+                    new_start(1) = start_point(1) + perp_y;
+                    new_end(0) = end_point(0) + perp_x;
+                    new_end(1) = end_point(1) + perp_y;
+
+                    points.push_back(new_start);
+                    if(i == Robot->best_any_angle_path.size() - 1) // upper right point
+                        points.push_back(new_end);
+                }
+                for(int i = Robot->best_any_angle_path.size()-1; i > 0; i--) {
+                    start_point = Robot->best_any_angle_path[i];
+                    end_point = Robot->best_any_angle_path[i-1];
+
+                    dx = end_point(0) - start_point(0);
+                    dy = end_point(1) - start_point(1);
+                    perp_x = dy;
+                    perp_y = -dx;
+                    norm_len = sqrt(perp_x * perp_x + perp_y * perp_y);
+                    perp_x = perp_x / norm_len;
+                    perp_y = perp_y / norm_len;
+                    perp_x *= position_bias/2;
+                    perp_y *= position_bias/2;
+
+                    new_start.resize(start_point.rows()); // VectorXd stores 1 column
+                    new_end.resize(end_point.rows());
+                    new_start(0) = start_point(0) + perp_x;
+                    new_start(1) = start_point(1) + perp_y;
+                    new_end(0) = end_point(0) + perp_x;
+                    new_end(1) = end_point(1) + perp_y;
+
+                    points.push_back(new_start);
+                    if(i == 1) // bottom left point
+                        points.push_back(new_end);
                 }
 
-                // Saturate this node
-                initial_distance = Tree->distanceFunction(new_node->position_,
-                                                      closest_node->position_);
-                {
-                    lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-                    if(initial_distance > Q->cspace->saturation_delta_
-                            && new_node != Q->cspace->goal_node_) {
-                        Edge::Saturate(new_node->position_,
-                                       closest_node->position_,
-                                       Q->cspace->saturation_delta_,
-                                       initial_distance);
+                for(int i = 0; i < points.size(); i++) {
+                    sampling_area(i,0) = points[i](0);
+                    sampling_area(i,1) = points[i](1);
+                }
+
+                points.clear();
+
+                Q->cspace->drivable_region_.region_ = sampling_area;
+            }
+            new_node = RandNodeOrFromStack(Q->cspace);
+            if(new_node->kd_in_tree_) continue;
+            {
+                lock_guard<mutex> lock(Tree->tree_mutex_);
+                Tree->KDFindNearest(closest_node,closest_dist,
+                                    new_node->position_);
+            }
+
+            // Saturate this node
+            initial_distance = Tree->distanceFunction(new_node->position_,
+                                                  closest_node->position_);
+            {
+                lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+                if(initial_distance > Q->cspace->saturation_delta_
+                        && new_node != Q->cspace->goal_node_) {
+                    Edge::Saturate(new_node->position_,
+                                   closest_node->position_,
+                                   Q->cspace->saturation_delta_,
+                                   initial_distance);
+                }
+            }
+            if(ExplicitNodeCheck(Q,new_node)) continue;
+            // Calculate new node angle if importance sampling this iteration
+            if(!rand) {
+                // Find the closest line on the any-angle path to the new node
+                double dist_node_to_path;
+                double min_dist_node_to_path = INF;
+                int min_dist_node_to_path_index = 0;
+                for(int i = 1; i < Robot->best_any_angle_path.size(); i++) {
+                    dist_node_to_path = DistanceSqrdPointToSegment(
+                                new_node->position_,
+                                Robot->best_any_angle_path.at(i-1).head(2),
+                                Robot->best_any_angle_path.at(i).head(2));
+                    if(dist_node_to_path < min_dist_node_to_path) {
+                        min_dist_node_to_path = dist_node_to_path;
+                        min_dist_node_to_path_index = i-1;
                     }
                 }
-                if(ExplicitNodeCheck(Q,new_node)) continue;
-//                if(RandDouble(0,1) > p_uniform) break;
-//                if(Tree->distanceFunction(new_node->position_,
-//                                          Tree->root->position_)
-//                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
-//                                             Tree->root->position_))
-//                    continue;
-//                if(Tree->distanceFunction(new_node->position_,
-//                                          Q->cspace->goal_node_->position_)
-//                    > Tree->distanceFunction(Q->cspace->goal_node_->position_,
-//                                             Tree->root->position_))
-//                    continue;
 
-//                // Find the closest line on the any-angle path to the new node
-//                double dist_node_to_path;
-//                double min_dist_node_to_path = INF;
-//                int min_dist_node_to_path_index = 0;
-//                for(int i = 1; i < Robot->best_any_angle_path.size(); i++) {
-//                    dist_node_to_path = DistanceSqrdPointToSegment(
-//                                new_node->position_,
-//                                Robot->best_any_angle_path.at(i-1).head(2),
-//                                Robot->best_any_angle_path.at(i).head(2));
-//                    if(dist_node_to_path < min_dist_node_to_path) {
-//                        min_dist_node_to_path = dist_node_to_path;
-//                        min_dist_node_to_path_index = i-1;
-//                    }
-//                }
-
-//                // Calculate theta bias
-//                new_node->position_(2)
-//                        = RandDouble(thetas[min_dist_node_to_path_index]
-//                                     - theta_bias,
-//                                     thetas[min_dist_node_to_path_index]
-//                                     + theta_bias);
-
-//                // Calculate position bias
-//                position_bias = 2*hyper_ball_rad;
-//                double distance = DistanceSqrdPointToSegment(
-//                            new_node->position_,
-//                            path.at(min_dist_node_to_path_index).head(2),
-//                            path.at(min_dist_node_to_path_index+1).head(2));
-//                if(distance > position_bias) continue;
-                importance_sampling = false;
+                // Calculate theta bias
+                new_node->position_(2)
+                        = RandDouble(Robot->thetas[min_dist_node_to_path_index]
+                                     - theta_bias,
+                                     Robot->thetas[min_dist_node_to_path_index]
+                                     + theta_bias);
             }
 
             // Extend the graph

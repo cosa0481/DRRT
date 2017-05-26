@@ -27,7 +27,6 @@ set( _LIBRARIES
                 ${SceneGraph_LIBRARIES}
                 ${BULLET_LIBRARIES}
 		)
-message(STATUS ${BULLET_LIBRARIES})
 
 # Expose these for third parties
 set( DRRT_INCLUDE_DIRS  ${_INCLUDE_DIRS}    CACHE INTERNAL "" FORCE )
@@ -88,28 +87,15 @@ set( SRCS
 
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
-# VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )?
+
+# VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )???
 add_library( ${LIBRARY_NAME} ${SRCS} ${HDRS} )
 target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
-
-#add_executable( heaptest src/heap.cpp ${HDRS} )
-#target_link_libraries( heaptest ${LIBRARY_NAME} )
-
-#add_executable( listtest src/list.cpp ${HDRS} )
-#target_link_libraries( listtest ${LIBRARY_NAME} )
-
-#add_executable( jlisttest src/jlist.cpp ${HDRS} )
-#target_link_libraries( jlisttest ${LIBRARY_NAME} )
-
-#add_executable( largetest src/largetest.cpp ${HDRS} )
-#target_link_libraries( largetest ${LIBRARY_NAME} )
-
-#add_executable( straighttest src/straighttest.cpp ${HDRS} )
-#target_link_libraries( straighttest ${LIBRARY_NAME} )
 
 add_executable( smalltest src/smalltest.cpp ${HDRS} )
 target_link_libraries( smalltest ${LIBRARY_NAME} )
 
+# VV Needed for release???
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}
 #    LIB_NAME ${LIBRARY_NAME}

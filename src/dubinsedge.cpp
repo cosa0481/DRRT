@@ -4,6 +4,7 @@
 using namespace std;
 
 bool timinged = false;
+bool vis_traj = true;
 
 /////////////////////// Critical Functions ///////////////////////
 
@@ -724,7 +725,9 @@ void DubinsEdge::CalculateTrajectory()
     this->edge_type_ = bestTrajType;
     this->w_dist_ = bestDist; // distance that the robot moves in the workspace
 
-    int trajLength = first_path_x.size() + second_path_x.size() + third_path_x.size();
+    int trajLength = first_path_x.size()
+                   + second_path_x.size()
+                   + third_path_x.size();
     Eigen::VectorXd traj1(trajLength), traj2(trajLength);
     this->trajectory_.resize(trajLength,Eigen::NoChange_t());
 

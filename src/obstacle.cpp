@@ -1,5 +1,6 @@
 #include <DRRT/obstacle.h>
 #include <DRRT/drrt.h>
+#include <DRRT/thetastar.h>
 
 using namespace std;
 
@@ -115,12 +116,13 @@ void Obstacle::ReadDynamicTimeObstaclesFromFile(string obstacle_file)
 
 }
 
-void Obstacle::UpdateObstacles(shared_ptr<ConfigSpace> &C)
+bool Obstacle::UpdateObstacles(shared_ptr<ConfigSpace> &C)
 {
     lock_guard<mutex> lock(C->cspace_mutex_);
     shared_ptr<ListNode> obstacle_list_node = C->obstacles_->front_;
     shared_ptr<Obstacle> this_obstacle;
     Eigen::VectorXd new_position;
+    bool moved = false;
     for(int i = 0; i < C->obstacles_->length_; i++) {
         this_obstacle = obstacle_list_node->obstacle_;
         /// GET NEW OBSTACLE POSITION
@@ -130,10 +132,14 @@ void Obstacle::UpdateObstacles(shared_ptr<ConfigSpace> &C)
         //        updatedWorld.setIdentity();
         //        updatedWorld.setOrigin(btVector3(x, y, z));
         //        obstacle->setWorldTransform(updatedWorld);
-        new_position = this_obstacle->position_;
-        this_obstacle->UpdatePosition(new_position);
+        new_position = this_obstacle->position_; // currently just sets to same
+        if(new_position != this_obstacle->position_) {
+            this_obstacle->UpdatePosition(new_position);
+            moved = true;
+        }
         obstacle_list_node = obstacle_list_node->child_;
     }
+    return moved;
 }
 
 void Obstacle::AddObsToConfigSpace(shared_ptr<ConfigSpace> &C)
@@ -379,7 +385,7 @@ void CheckObstacles(shared_ptr<Queue> Q,
                     double ball_constant)
 {
     bool reached_goal = false;
-    bool added, removed;
+    bool added, removed, moved;
     shared_ptr<ListNode> obstacle_node;
     shared_ptr<Obstacle> obstacle;
     double time_elapsed;
@@ -387,7 +393,7 @@ void CheckObstacles(shared_ptr<Queue> Q,
     while(!reached_goal) {
 
         // Update dynamic obstacle positions
-        Obstacle::UpdateObstacles(Q->cspace);
+        moved = Obstacle::UpdateObstacles(Q->cspace);
 
         {
             lock_guard<mutex> lock(Tree->tree_mutex_);
@@ -455,6 +461,10 @@ void CheckObstacles(shared_ptr<Queue> Q,
                         ReduceInconsistency(Q,Q->cspace->move_goal_,
                                             Q->cspace->robot_radius_,
                                             Tree->root,hyper_ball_rad);
+                    }
+                    if(removed || added || moved) {
+                        Robot->best_any_angle_path = ThetaStar(Q);;
+                        Robot->thetas = PathToThetas(Robot->best_any_angle_path);
                     }
                 } // unlock tree mutex
             } // unlock cspace_mutex_
@@ -816,6 +826,9 @@ bool ExplicitEdgeCheck(shared_ptr<ConfigSpace> &C,
     double delta;
     if(timingobs) cout << "EXPLICITEDGECHECK" << endl;
 
+    bool vis_traj = false;
+    bool vis_coll = false;
+
     shared_ptr<ListNode> obstacle_list_node;
     int length;
     {
@@ -831,13 +844,13 @@ bool ExplicitEdgeCheck(shared_ptr<ConfigSpace> &C,
                 if(timingobs) cout << "ExplicitEdgeCheck(obstacle): " << delta << " s" << endl;
                 delta = chrono::duration_cast<chrono::duration<double> >(t2 - f1).count();
                 if(timingobs) cout << "ExplicitEdgeCheck: " << delta << " s" << endl;
-                C->AddVizEdge(edge,"coll");
+                C->AddVizEdge(edge,"coll",vis_coll);
                 return true;
             }
             t2 = chrono::steady_clock::now();
             delta = chrono::duration_cast<chrono::duration<double> >(t2 - t1).count();
             if(timingobs) cout << "ExplicitEdgeCheck(obstacle): " << delta << " s" << endl;
-            C->AddVizEdge(edge,"traj");
+            C->AddVizEdge(edge,"traj",vis_traj);
             obstacle_list_node = obstacle_list_node->child_; // iterate
         }
         f2 = chrono::steady_clock::now();

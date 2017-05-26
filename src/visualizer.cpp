@@ -15,6 +15,7 @@ void visualizer(shared_ptr<KDTree> Tree,
 
     bool show_collision_edges = false;
     bool show_trajectories = false;
+    bool draw_current_traj = false;
 
     /// Build display
     // Create OpenGL window
@@ -82,11 +83,18 @@ void visualizer(shared_ptr<KDTree> Tree,
 
     // For the K-D Tree nodes
     vector<shared_ptr<KDTreeNode>> nodes;
+    int num_nodes = 0;
     Eigen::VectorXd kdnode;
+    SceneGraph::GLText* node_count
+            = new SceneGraph::GLText("", 5,-5,0);
+    glGraph.AddChild(node_count);
+
     SceneGraph::GLBox* box;
     SceneGraph::GLAxis* axis;
 
     // For edges
+    SceneGraph::GLLineStrip* traj_line;
+    vector<SceneGraph::GLLineStrip*> traj_lines;
     SceneGraph::GLLineStrip* edge;
     vector<shared_ptr<Edge>> collisions_;
     vector<shared_ptr<Edge>> trajectories_;
@@ -123,11 +131,47 @@ void visualizer(shared_ptr<KDTree> Tree,
             if(path->GetPose()[0] == 0) path_drawn = false;
         }
 
+        for(auto line : traj_lines) {
+            glGraph.RemoveChild(line);
+        }
+
+        // Draw current trajectory
+        if(draw_current_traj) {
+            {
+                lock_guard<mutex> lock(Robot->robot_mutex);
+                {
+                    lock_guard<mutex> lock(Tree->tree_mutex_);
+                    shared_ptr<KDTreeNode> node = make_shared<KDTreeNode>();
+                    shared_ptr<double> dist = make_shared<double>(INF);
+                    Tree->KDFindNearest(node,dist,Robot->robot_pose);
+                    Eigen::MatrixXd traj = node->rrt_parent_edge_->trajectory_;
+                    traj_lines = vector<SceneGraph::GLLineStrip*>(traj.rows());
+                    while(node->rrt_parent_used_) {
+                        traj_line = new SceneGraph::GLLineStrip();
+                        traj_line->SetReference(0,0,0);
+                        for(int i = 1; i < traj.rows(); i++) {
+                            traj_line->SetPoint(traj(i-1,1),
+                                                traj(i-1,0),
+                                                0);
+                            traj_line->SetPoint(traj(i,1),
+                                                traj(i,0),
+                                                0);
+                        }
+                        traj_line->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0.5,1,1,1)));
+                        traj_lines.push_back(traj_line);
+                        glGraph.AddChild(traj_line);
+                        node = node->rrt_parent_edge_->end_node_;
+                    }
+                }
+            }
+        }
+
         // Add K-D Tree nodes to the frame
         {
             lock_guard<mutex> lock(Tree->tree_mutex_);
             nodes = Tree->nodes_;
 //            cout << "nodes to display: " << nodes.size() << endl;
+            /// Write num_nodes to screen with label "Total Nodes: "
             for( int k = 0; k < nodes.size(); k++ ) {
                 box = new SceneGraph::GLBox();
                 box->SetScale(0.15);
@@ -141,6 +185,12 @@ void visualizer(shared_ptr<KDTree> Tree,
                                  0.0,0.0,PI/2 - kdnode(2));
                 glGraph.AddChild(axis);
                 Tree->RemoveVizNode(nodes.at(k));
+                num_nodes++;
+                stringstream disp_nodes_stream("");
+                disp_nodes_stream << "Total Nodes: " << num_nodes + 0;
+                node_count->SetText(disp_nodes_stream.str());
+                node_count->set_color(SceneGraph::GLColor(Eigen::Vector4d(0.5,1,0.5,1)));
+//                cout << disp_nodes_stream.str() << endl;
             }
         }
 
@@ -208,4 +258,6 @@ void visualizer(shared_ptr<KDTree> Tree,
     delete(box);
     delete(axis);
     delete(pose);
+    delete(node_count);
+    delete(traj_line);
 }

@@ -5,6 +5,8 @@
 
 double DistFunc(Eigen::VectorXd a, Eigen::VectorXd b);
 
+std::vector<double> PathToThetas(std::vector<Eigen::VectorXd> path);
+
 std::vector<Eigen::VectorXd> ThetaStar(std::shared_ptr<Queue> Q);
 
 bool UpdateVertex(std::shared_ptr<Queue> Q,

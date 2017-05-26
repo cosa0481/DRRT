@@ -17,32 +17,6 @@ bool debug_bullet = false;
 
 chrono::time_point<chrono::high_resolution_clock> start_time;
 
-// Takes path from Theta* and returns avg theta of each line for theta bias
-vector<double> PathToThetas(vector<Eigen::VectorXd> path)
-{
-    vector<double> thetas;
-    double angle, x = 0, y = 0;
-    Eigen::VectorXd current_point, prev_point;
-    cout << "Any-Angle Path:" << endl;
-    for( int i = 0; i < path.size(); i++ ) {
-        cout << path.at(i) << endl << endl;
-        if(i==0) continue;
-        current_point = path.at(i);
-        prev_point = path.at(i-1);
-//        path_a = (current_point(1)-prev_point(1))
-//                /(current_point(0)-prev_point(0));
-//        path_b = -1;
-//        path_c = min(abs(current_point(1)),abs(prev_point(1)));
-//        lines.insert(lines.begin(), Eigen::Vector3d(path_a,path_b,path_c));
-        angle = atan2(prev_point(1)-current_point(1),
-                      prev_point(0)-current_point(0));
-        x = cos(angle);
-        y = sin(angle);
-        thetas.push_back(atan2(y,x));
-    }
-    return thetas;
-}
-
 /// AlGORITHM CONTROL FUNCTION
 // This function runs RRTx with the parameters defined in main()
 shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
@@ -106,26 +80,6 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
                 shared_ptr<KDTreeNode> node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i+gran,j,0));
                 shared_ptr<Edge> edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
                 edge->CalculateTrajectory();
-    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
-    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
-    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
-    //                // Visualize trajectories
-    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
-    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
-
-    //                double _angle = atan2(end_point(1)-start_point(1),
-    //                              end_point(0)-start_point(0));
-    //                double _x = cos(_angle);
-    //                double _y = sin(_angle);
-    //                _angle = atan2(_y,_x);
-    //                _s->position_(2) = _angle;
-    //                _e->position_(2) = _angle;
-    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
-    //                                                     make_shared<KDTree>(),
-    //                                                     _s,
-    //                                                     _e);
-    //                Q->cspace->AddVizEdge(_de);
-    //            }
                 ExplicitEdgeCheck(Q->cspace,edge);
 
                 // 0,+
@@ -133,26 +87,6 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
                 node2 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j+gran,PI/2));
                 edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
                 edge->CalculateTrajectory();
-    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
-    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
-    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
-    //                // Visualize trajectories
-    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
-    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
-
-    //                double _angle = atan2(end_point(1)-start_point(1),
-    //                              end_point(0)-start_point(0));
-    //                double _x = cos(_angle);
-    //                double _y = sin(_angle);
-    //                _angle = atan2(_y,_x);
-    //                _s->position_(2) = _angle;
-    //                _e->position_(2) = _angle;
-    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
-    //                                                     make_shared<KDTree>(),
-    //                                                     _s,
-    //                                                     _e);
-    //                Q->cspace->AddVizEdge(_de);
-    //            }
                 ExplicitEdgeCheck(Q->cspace,edge);
 
                 // +,+
@@ -161,27 +95,6 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
                 edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
                 edge->CalculateTrajectory();
                 ExplicitEdgeCheck(Q->cspace,edge);
-    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
-    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
-    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
-    //                // Visualize trajectories
-    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
-    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
-
-    //                double _angle = atan2(end_point(1)-start_point(1),
-    //                              end_point(0)-start_point(0));
-    //                double _x = cos(_angle);
-    //                double _y = sin(_angle);
-    //                _angle = atan2(_y,_x);
-    //                _s->position_(2) = _angle;
-    //                _e->position_(2) = _angle;
-    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
-    //                                                     make_shared<KDTree>(),
-    //                                                     _s,
-    //                                                     _e);
-    //                Q->cspace->AddVizEdge(_de);
-    //            }
-                ExplicitEdgeCheck(Q->cspace,edge);
 
                 // -,+
                 node1 = make_shared<KDTreeNode>(Eigen::Vector3d(i,j,3*PI/4));
@@ -189,40 +102,16 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
                 edge = Edge::NewEdge(Q->cspace, kd_tree, node1, node2);
                 edge->CalculateTrajectory();
                 ExplicitEdgeCheck(Q->cspace,edge);
-    //            for(int k = 1; k < edge->trajectory_.rows(); k++) {
-    //                Eigen::VectorXd start_point = edge->trajectory_.row(k-1);
-    //                Eigen::VectorXd end_point = edge->trajectory_.row(k);
-    //                // Visualize trajectories
-    //                shared_ptr<KDTreeNode> _s = make_shared<KDTreeNode>(start_point);
-    //                shared_ptr<KDTreeNode> _e = make_shared<KDTreeNode>(end_point);
-
-    //                double _angle = atan2(end_point(1)-start_point(1),
-    //                              end_point(0)-start_point(0));
-    //                double _x = cos(_angle);
-    //                double _y = sin(_angle);
-    //                _angle = atan2(_y,_x);
-    //                _s->position_(2) = _angle;
-    //                _e->position_(2) = _angle;
-    //                shared_ptr<Edge> _de = Edge::NewEdge(Q->cspace,
-    //                                                     make_shared<KDTree>(),
-    //                                                     _s,
-    //                                                     _e);
-    //                Q->cspace->AddVizEdge(_de);
-    //            }
-                ExplicitEdgeCheck(Q->cspace,edge);
             }
         }
-        cout << "done" << endl;
+        cout << "collision minefield completed" << endl;
         vis->join();
-        exit(1);
+        exit(0);
     }
 
     // Any-Angle Path
-//    vector<Eigen::VectorXd> path = ThetaStar(Q);
-//    robot->best_any_angle_path = path;
-//    vector<double> thetas = PathToThetas(path); // prints the path
-    vector<Eigen::VectorXd> path;
-    vector<double> thetas;
+    robot->best_any_angle_path = ThetaStar(Q);
+    robot->thetas = PathToThetas(robot->best_any_angle_path);
 
     /// End Initialization
 
@@ -240,7 +129,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
     int threads = 1;
     for(auto & thr : thread_pool) {
         thr = thread(RrtMainLoop, Q, kd_tree, robot, start_time,
-                     p.ball_constant, p.slice_time, thetas, path);
+                     p.ball_constant, p.slice_time);
         cout << "Started Main Loop Thread " << threads++ << endl;
     }
 
@@ -261,7 +150,7 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
         cout << "Joined Main Loop Thread " << threads++ << endl;
     }
 
-    PrintRrtxPath(Q->cspace->goal_node_);
+    //PrintRrtxPath(Q->cspace->goal_node_);
     return robot;
 }
 
@@ -287,7 +176,7 @@ int main( int argc, char* argv[] )
     ubound << envRad, envRad, 2*PI;
 
     Eigen::Vector3d start, goal;
-    start << 0.0, 0.0, -3*PI/4;
+    start << 0.0, 0.0, -3*PI/4;     // robot destination
     goal << 49.0, 49.0, -3*PI/4;    // where the robot begins
 
     shared_ptr<ConfigSpace> cspace
@@ -295,11 +184,11 @@ int main( int argc, char* argv[] )
     cspace->SetDistanceFunction(distance_function);
 
     cspace->obs_delta_ = -1.0;
-    cspace->collision_distance_ = 0.1;
-    cspace->robot_radius_ = 0.5;
-    cspace->robot_velocity_ = 20.0;
-    cspace->min_turn_radius_ = 1.0;
-    cspace->prob_goal_ = 0.01;           // probability of sampling the goal node
+    cspace->collision_distance_ = 0.1; // distance to be considered a collision
+    cspace->robot_radius_ = 0.5;       // robot radius
+    cspace->robot_velocity_ = 20.0;    // robot velocity
+    cspace->min_turn_radius_ = 1.0;    // robot minimum turn radius
+    cspace->prob_goal_ = 0.01;         // probability of sampling the goal node
     cspace->space_has_time_ = false;
     cspace->space_has_theta_ = true;   // Dubin's car model
 
@@ -313,14 +202,14 @@ int main( int argc, char* argv[] )
     /// Parameters
     string alg_name = "RRTx";       // running RRTx
     string obstacle_file = argv[1]; // obstacle file
-    double plan_time = 50.0;        // plan *ONLY* for this long
+    double plan_time = 30.0;        // plan *ONLY* for this long
     double slice_time = 1.0/100;    // iteration time limit
     double delta = 5.0;             // distance between graph nodes
     double ball_const = 100.0;      // search d-ball radius (10.0 worked)
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
-    int num_threads = 4;            // number of main loop threads to spawn (3)
+    int num_threads = 20;            // number of main loop threads to spawn (3)
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);
@@ -334,30 +223,17 @@ int main( int argc, char* argv[] )
     // Pointer to visualizer thread (created in RRTX())
     shared_ptr<thread> vis_thread;
 
+    chrono::steady_clock::time_point start_alg = chrono::steady_clock::now();
+
     /// Run RRTx
     shared_ptr<RobotData> robot_data = Rrtx(problem, vis_thread);
 
-    /// Save data
-    // Calculate and display distance traveled
-    Eigen::ArrayXXd firstpoints, lastpoints, diff;
-    firstpoints = robot_data->robot_move_path.block(0,0,
-                                     robot_data->num_robot_move_points-1,3);
-    lastpoints = robot_data->robot_move_path.block(1,0,
-                                     robot_data->num_robot_move_points-1,3);
-    diff = firstpoints - lastpoints;
-    diff = diff*diff;
-    for( int i = 0; i < diff.rows(); i++ ) {
-        diff.col(0)(i) = diff.row(i).sum();
-    }
-
-    double moveLength = diff.col(0).sqrt().sum();
-    cout << "Robot traveled: " << moveLength
-              << " units" << endl;
+    chrono::steady_clock::time_point end_alg = chrono::steady_clock::now();
 
     // Calculate and display time elapsed
-    double totalTime = GetTimeNs(start_time);
-    cout << "Total time: " << totalTime/1000000000.0
-              << " s" << endl;
+    double total_time = chrono::duration_cast<chrono::duration<double>>
+                        (end_alg - start_alg).count();
+    cout << "\nTotal time: " << total_time << " s" << endl;
 
     vis_thread->join();
 
