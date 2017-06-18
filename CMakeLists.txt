@@ -59,7 +59,7 @@ set( HDRS
                 include/DRRT/mainloop.h
                 include/DRRT/moverobot.h
                 include/DRRT/sampling.h
-
+                include/DRRT/region.h
 		)
 
 set( SRCS
@@ -83,6 +83,7 @@ set( SRCS
                 src/mainloop.cpp
                 src/moverobot.cpp
                 src/sampling.cpp
+                src/region.cpp
 		)
 
 set( LIBRARY_NAME ${PROJECT_NAME} )

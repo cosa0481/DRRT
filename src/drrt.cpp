@@ -100,6 +100,7 @@ bool CheckNeighborsForEdgeProblems(shared_ptr<ConfigSpace>& C,
     return false;
 }
 
+//TODO SAMPLE INSIDE OBSTACLE AFTER OBSTACLE DISAPPEARS
 void RandomSampleObs(shared_ptr<ConfigSpace> &C,
                      shared_ptr<KDTree> Tree,
                      shared_ptr<Obstacle> &O)
@@ -124,22 +125,23 @@ void RandomSampleObs(shared_ptr<ConfigSpace> &C,
         if(C->hyper_volume_ == 0.0) C->hyper_volume_ = C->width_.head(2).prod();
     } else cout << "Not coded yet" << endl;
 
-    double num_obs_samples = Tree->tree_size_
-            * o_hyper_volume_bound/C->hyper_volume_ + 1.0;
-    Eigen::VectorXd new_point;
-    Eigen::Array2d temp, temp1;
-    for(int i = 0; i < num_obs_samples; i++) {
-        new_point = RandPointDefault(C);
-        temp = O->position_;
-        temp = temp - O->radius_;
-        temp1 = new_point.head(2);
-        temp1 = temp1*2.0*O->radius_;
-        new_point.head(2) = temp + temp1;
-        if(true/*UNDEFINED SYMBOLQuickCheck2D(C,new_point.head(2),O)*/) {
-            shared_ptr<KDTreeNode> point = make_shared<KDTreeNode>(new_point);
-            C->sample_stack_->JListPush(point);
-        }
-    }
+//    double num_obs_samples = Tree->tree_size_
+//            * o_hyper_volume_bound/C->hyper_volume_ + 1.0;
+//    Eigen::VectorXd new_point;
+//    Eigen::Array2d temp, temp1;
+    ///TEMP COMMENT OUT UNTIL TODO COMPLETED
+//    for(int i = 0; i < num_obs_samples; i++) {
+//        new_point = RandPointDefault(C);
+//        temp = O->position_;
+//        temp = temp - O->radius_;
+//        temp1 = new_point.head(2);
+//        temp1 = temp1*2.0*O->radius_;
+//        new_point.head(2) = temp + temp1;
+//        if(true/*UNDEFINED SYMBOLQuickCheck2D(C,new_point.head(2),O)*/) {
+//            shared_ptr<KDTreeNode> point = make_shared<KDTreeNode>(new_point);
+//            C->sample_stack_->JListPush(point);
+//        }
+//    }
 }
 
 Eigen::Vector2d FindTransformObjToTimeOfPoint(shared_ptr<Obstacle> O,

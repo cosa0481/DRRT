@@ -65,7 +65,7 @@ Eigen::VectorXd RandPointDefault(shared_ptr<ConfigSpace> C)
     MatrixX6d triangles;
     {
         lock_guard<mutex> lock(C->cspace_mutex_);
-        triangles = TriangulatePolygon(C->drivable_region_.region_);
+        triangles = TriangulatePolygon(C->drivable_region_.GetPolygon());
     }
     num_triangles = triangles.rows();
     Eigen::Vector2d rand;

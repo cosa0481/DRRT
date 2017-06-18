@@ -6,6 +6,10 @@ using namespace std;
 
 bool timingobs = false;
 
+Eigen::MatrixX2d Obstacle::GetPosition()
+{ return this->shape_.GetGlobalPose(this->origin_.head(2)); }
+
+// Reads 2D polygon obstacles from file
 void Obstacle::ReadObstaclesFromFile(string obstacle_file,
                                      shared_ptr<ConfigSpace>& C)
 {
@@ -23,6 +27,23 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
         line = "";
 //        cout << "polygons in file: " << num_polygons << endl;
         for(int i = 0; i < num_polygons; i++) {
+            // Read through obstacle delimiter line "----"
+            getline(read_stream, line);
+            line = "";
+            // Get origin of polygon
+            getline(read_stream, line);
+            line_stream = stringstream(line);
+            getline(line_stream, substring, ',');
+            /// NEED TO GENERALIZE SIZE
+            // This causes a problem in the distanceFunction if it's 2d
+            // instead of 3d. Problem occurs in QuickCheck2D
+            Eigen::Vector3d origin;
+            origin(0) = stod(substring);
+            getline(line_stream, substring);
+            origin(1) = stod(substring);
+            origin(2) = 0.0;
+            line = "";
+//            cout << "polygon " << i+1 << " origin:\n" << origin << endl;
             // Get number of points in this polygon
             getline(read_stream, line);
             num_points = stoi(line);
@@ -47,7 +68,8 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
             //line = "";
 
             shared_ptr<Obstacle> new_obstacle
-                    = make_shared<Obstacle>(3,polygon,C->space_has_theta_);
+                    = make_shared<Obstacle>(3, polygon,
+                                            C->space_has_theta_, origin);
             new_obstacle->cspace = C;
 
             // Add to Bullet
@@ -56,14 +78,15 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
             // Set the shape of the obstacle
             shared_ptr<btConvexHullShape> collision_shape
                     = make_shared<btConvexHullShape>();
-            for(int i = 0; i < new_obstacle->polygon_.rows(); i++) {
+            Eigen::MatrixX2d obstacle_pos = new_obstacle->GetPosition();
+            for(int i = 0; i < obstacle_pos.rows(); i++) {
                 collision_shape->addPoint(
-                            btVector3((btScalar) new_obstacle->polygon_(i,0),
-                                      (btScalar) new_obstacle->polygon_(i,1),
+                            btVector3((btScalar) obstacle_pos(i,0),
+                                      (btScalar) obstacle_pos(i,1),
                                       (btScalar) -0.1));
                 collision_shape->addPoint(
-                            btVector3((btScalar) new_obstacle->polygon_(i,0),
-                                      (btScalar) new_obstacle->polygon_(i,1),
+                            btVector3((btScalar) obstacle_pos(i,0),
+                                      (btScalar) obstacle_pos(i,1),
                                       (btScalar) 0.1));
             }
             obstacle->setCollisionShape(collision_shape.get());
@@ -132,8 +155,8 @@ bool Obstacle::UpdateObstacles(shared_ptr<ConfigSpace> &C)
         //        updatedWorld.setIdentity();
         //        updatedWorld.setOrigin(btVector3(x, y, z));
         //        obstacle->setWorldTransform(updatedWorld);
-        new_position = this_obstacle->position_; // currently just sets to same
-        if(new_position != this_obstacle->position_) {
+        new_position = this_obstacle->origin_; // currently just sets to same
+        if(new_position != this_obstacle->origin_) {
             this_obstacle->UpdatePosition(new_position);
             moved = true;
         }
@@ -490,12 +513,12 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &C,
         if(!C->space_has_time_ && !C->space_has_theta_) {
             // Euclidean space without time
             search_range = C->robot_radius_ + C->saturation_delta_ + O->radius_;
-            Tree->KDFindWithinRange(node_list,search_range,O->position_);
+            Tree->KDFindWithinRange(node_list,search_range,O->origin_);
         } else if(!C->space_has_time_ && C->space_has_theta_) {
             // Dubin's robot without time [x,y,theta]
             search_range = C->robot_radius_ + O->radius_ + PI; // + S->saturation_delta_
             Eigen::Vector3d obs_center_dubins;
-            obs_center_dubins << O->position_(0), O->position_(1), PI;
+            obs_center_dubins << O->origin_(0), O->origin_(1), PI;
             Tree->KDFindWithinRange(node_list,search_range,obs_center_dubins);
         } else {
             cout << "Error: This type of obstacle not coded for this space"
@@ -525,7 +548,7 @@ shared_ptr<JList> FindPointsInConflictWithObstacle(shared_ptr<ConfigSpace> &C,
             temp = temp + temp1;
             temp = temp/2.0;
 
-            temp1 = O->position_;
+            temp1 = O->origin_;
 
             query_pose << temp1 + temp;
 
@@ -706,7 +729,7 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
 
         // Calculate distance squared from center of the obstacle to the edge
         // projected into the first two dimensions
-        double dist_sqrd = DistanceSqrdPointToSegment(O->position_,
+        double dist_sqrd = DistanceSqrdPointToSegment(O->origin_,
                                                       start_point.head(2),
                                                       end_point.head(2));
 
@@ -722,14 +745,15 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
     else if( O->kind_ == 2) return false;
     else if(O->kind_ == 3 || O->kind_ == 5) {
         // Need to check vs all edges in the polygon
-        if(O->polygon_.rows() < 2) return false;
+        if(O->shape_.GetPolygon().rows() < 2) return false;
 
         // Start with the last point vs the first point
-        Eigen::Vector2d A = O->polygon_.row(O->polygon_.rows()-1);
+        Eigen::Vector2d A = O->shape_.GetPolygon().row(
+                            O->shape_.GetPolygon().rows()-1);
         Eigen::Vector2d B;
         double seg_dist_sqrd;
-        for(int i = 0; i < O->polygon_.rows(); i++) {
-            B = O->polygon_.row(i);
+        for(int i = 0; i < O->shape_.GetPolygon().rows(); i++) {
+            B = O->shape_.GetPolygon().row(i);
             seg_dist_sqrd = SegmentDistSqrd(start_point,end_point,A,B);
 //            cout << "dist between edge and polygon edge: " << sqrt(seg_dist_sqrd) << endl;
             if(seg_dist_sqrd < pow(radius,2)) {
@@ -774,16 +798,16 @@ bool ExplicitEdgeCheck2D(shared_ptr<Obstacle> &O,
             y_1 = early_point(1);   // robot start y
             t_1 = early_point(2);   // robot start time
 
-            x_2 = O->path_.row(i_start)(0) + O->position_(0); // obs start x
-            y_2 = O->path_.row(i_start)(1) + O->position_(1); // obs start y
+            x_2 = O->path_.row(i_start)(0) + O->origin_(0); // obs start x
+            y_2 = O->path_.row(i_start)(1) + O->origin_(1); // obs start y
             t_2 = O->path_.row(i_start)(2);                 // obs start time
 
             // Calculate intermediate quantities (parametric slopes)
             m_x1 = (late_point(0) - x_1)/(late_point(2)-t_1);
             m_y1 = (late_point(1) - y_1)/(late_point(2)-t_1);
-            m_x2 = (O->path_.row(i_end)(0) + O->position_(0) - x_2)
+            m_x2 = (O->path_.row(i_end)(0) + O->origin_(0) - x_2)
                     / (O->path_.row(i_end)(2)-t_2);
-            m_y2 = (O->path_.row(i_end)(1) + O->position_(1) - y_2)
+            m_y2 = (O->path_.row(i_end)(1) + O->origin_(1) - y_2)
                     / (O->path_.row(i_end)(2)-t_2);
 
             // Solve for time of closest pass of centers
@@ -867,13 +891,13 @@ bool QuickCheck2D(shared_ptr<ConfigSpace> &C,
 {
     if(!O->obstacle_used_ || O->life_span_ <= 0) return false;
     if((1 <= O->kind_ && O->kind_ <= 5)
-            && C->distanceFunction(O->position_,point) > O->radius_)
+            && EuclideanDistance2D(O->origin_.head(2),point.head(2)) > O->radius_)
         return false;
 
     if(O->kind_ == 1) return true;
     else if(O->kind_ == 2 || O->kind_ == 4) return false;
     else if(O->kind_ == 3) {
-        if(PointInPolygon(point,O->polygon_)) return true;
+        if(PointInPolygon(point,O->shape_.GetPolygon())) return true;
     } else if(O->kind_ == 5) return false;
     else if(O->kind_ == 6 || O->kind_ == 7) {
         // First transform position_ and polygon to appropriate position_
@@ -885,16 +909,17 @@ bool QuickCheck2D(shared_ptr<ConfigSpace> &C,
         Eigen::Vector2d offset = FindTransformObjToTimeOfPoint(O,point);
 
         // Do a quick check based on lower bound of distance to obstacle
-        if(C->distanceFunction(O->position_ + offset,point) > O->radius_)
+        if(C->distanceFunction(O->origin_ + offset,point) > O->radius_)
             return false;
 
         // Transform polygon and do a normal check vs it
-        Eigen::ArrayXd polygon;
-        polygon = O->original_polygon_.col(0);
-        O->polygon_.col(0) = polygon + offset(0);
-        polygon = O->original_polygon_.col(1);
-        O->polygon_.col(1) = polygon + offset(1);
-        if(PointInPolygon(point,O->polygon_)) return true;
+        /// FIX WHEN DOING CSPACE_HAS_TIME
+//        Eigen::ArrayXd polygon;
+//        polygon = O->original_polygon_.col(0);
+//        O->polygon_.col(0) = polygon + offset(0);
+//        polygon = O->original_polygon_.col(1);
+//        O->polygon_.col(1) = polygon + offset(1);
+//        if(PointInPolygon(point,O->polygon_)) return true;
     }
     return false;
 }
@@ -932,7 +957,7 @@ bool ExplicitPointCheck2D(shared_ptr<ConfigSpace> &C,
         // might be closer to point than minDist based on the ball
         // around the obstacle
 
-        O->position_(2) = point(2);
+        O->origin_(2) = point(2);
 //        cout << "Point:\n" << point << endl;
 //        if(point(0) > 3
 //           && point(0) < 10
@@ -946,7 +971,7 @@ bool ExplicitPointCheck2D(shared_ptr<ConfigSpace> &C,
 //        }
 
         // Calculate distance from robot boundary to obstacle center
-        this_distance = C->distanceFunction(O->position_,point) - radius;
+        this_distance = C->distanceFunction(O->origin_,point) - radius;
         if(this_distance - O->radius_ > min_distance) return false;
     }
 
@@ -957,9 +982,10 @@ bool ExplicitPointCheck2D(shared_ptr<ConfigSpace> &C,
     } else if(O->kind_ == 2) return false;
     else if(O->kind_ == 3) {
 //        cout << "PointInPolygon" << endl;
-        if(PointInPolygon(point.head(2),O->polygon_)) return true;
+        if(PointInPolygon(point.head(2),O->shape_.GetPolygon())) return true;
 //        cout << "the above should be true but it's false" << endl;
-        this_distance = sqrt(DistToPolygonSqrd(point,O->polygon_)) - radius;
+        this_distance = sqrt(DistToPolygonSqrd(point,O->shape_.GetPolygon()))
+                        - radius;
         if(this_distance < 0.0) return true;
     } else if(O->kind_ == 5) return false;
     else if(O->kind_ == 6 || O->kind_ == 7) {
@@ -972,20 +998,22 @@ bool ExplicitPointCheck2D(shared_ptr<ConfigSpace> &C,
         // the obstacle
 
         // Calculate distance from robot boundary to obstacle center
-        Eigen::VectorXd now_pos = O->position_;
+        Eigen::VectorXd now_pos = O->origin_;
         now_pos(0) = now_pos(0) + offset(0);
         now_pos(1) = now_pos(1) + offset(1);
         double this_distance = C->distanceFunction(now_pos, point) - radius;
         if(this_distance - O->radius_ > min_distance) return false;
 
         // Transform polygon and then do the rest of a normal check
-        Eigen::ArrayXd polygon = O->original_polygon_.col(0);
-        O->polygon_.col(0) = polygon + offset(0);
-        polygon = O->original_polygon_.col(1);
-        O->polygon_.col(1) = polygon + offset(1);
+        ///FIX WHEN DOING TIME CSPACE_HAS_TIME
+//        Eigen::ArrayXd polygon = O->original_polygon_.col(0);
+//        O->polygon_.col(0) = polygon + offset(0);
+//        polygon = O->original_polygon_.col(1);
+//        O->polygon_.col(1) = polygon + offset(1);
 
-        if(PointInPolygon(point,O->polygon_)) return true;
-        this_distance = sqrt(DistToPolygonSqrd(point,O->polygon_)) - radius;
+//        if(PointInPolygon(point,O->polygon_)) return true;
+        this_distance = sqrt(DistToPolygonSqrd(point,O->shape_.GetPolygon()))
+                        - radius;
         if(this_distance < 0.0) return true;
     }
 

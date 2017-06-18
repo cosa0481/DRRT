@@ -19,12 +19,12 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 {
     chrono::steady_clock::time_point t1,t2,i1,i2;
     double delta;
+    ofstream time_file;
     if(collect_timing_data) {
         string file_name = "/Users/corinsandford/ARPG/DRRT/build/itertimes";
         stringstream file_stream;
         file_stream << file_name << this_thread::get_id() << ".txt";
         file_name = file_stream.str();
-        ofstream time_file;
         time_file.open(file_name);
     }
 
@@ -199,7 +199,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 
                 points.clear();
 
-                Q->cspace->drivable_region_.region_ = sampling_area;
+                Q->cspace->drivable_region_.SetPolygon(sampling_area);
             }
             new_node = RandNodeOrFromStack(Q->cspace);
             if(new_node->kd_in_tree_) continue;
@@ -222,7 +222,9 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                    initial_distance);
                 }
             }
+
             if(ExplicitNodeCheck(Q,new_node)) continue;
+
             // Calculate new node angle if importance sampling this iteration
             if(!rand) {
                 // Find the closest line on the any-angle path to the new node

@@ -203,3 +203,8 @@ bool PointInPolygon(Eigen::VectorXd this_point, Eigen::MatrixX2d polygon)
     if(num_crossings % 2 == 1) return true;
     return false;
 }
+
+double EuclideanDistance2D(Eigen::Vector2d a, Eigen::Vector2d b)
+{
+    return sqrt( pow(a(0) - b(0), 2) + pow(a(1) - b(1), 2) );
+}

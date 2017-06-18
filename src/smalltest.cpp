@@ -213,7 +213,7 @@ int main( int argc, char* argv[] )
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
-    int num_threads = 10;            // number of main loop threads to spawn (3)
+    int num_threads = 5;            // number of main loop threads to spawn (3)
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);

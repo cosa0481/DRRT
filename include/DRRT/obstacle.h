@@ -1,7 +1,7 @@
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 
-#include <DRRT/distancefunctions.h>
+#include <DRRT/region.h>
 #include <bullet/btBulletCollisionCommon.h>
 #include <bullet/BulletCollision/CollisionShapes/btConvexHullShape.h>
 
@@ -37,7 +37,9 @@ public:
 
     std::shared_ptr<ConfigSpace> cspace;
 
-    Eigen::VectorXd position_;   // initial position of obstacle
+    Eigen::VectorXd origin_;    // origin of initial position of obstacle
+
+    //Eigen::VectorXd position_;   // initial position of obstacle
 
     // Bullet data
     std::shared_ptr<btCollisionObject> collision_object_;
@@ -50,8 +52,8 @@ public:
     // Data for axis aligned D-dimensional hyperrectangle obstacle (kind=2)
     Eigen::Vector2d span_;
 
-    // Data for polygon (kind=3,6)
-    Eigen::MatrixX2d polygon_;
+    // Polygon representing obstacle
+    Region shape_;
 
     // Direction is used for directional polygon (kind=4)
     char direction_;
@@ -77,18 +79,18 @@ public:
     Obstacle(int kind) : kind_(kind) {}
 
     // Ball
-    Obstacle(int kind, Eigen::VectorXd position, double radius)
+    Obstacle(int kind, Eigen::VectorXd origin, double radius)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
-          obstacle_used_after_sense_(false), position_(position),
+          obstacle_used_after_sense_(false), origin_(origin),
           radius_(radius)
     {}
 
     // Hyperrectangle
-    Obstacle(int kind, Eigen::VectorXd position, Eigen::VectorXd span)
+    Obstacle(int kind, Eigen::VectorXd origin, Eigen::VectorXd span)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
-          obstacle_used_after_sense_(false), position_(position),
+          obstacle_used_after_sense_(false), origin_(origin),
           span_(span)
     {
         double sum = 0;
@@ -99,10 +101,11 @@ public:
     }
 
     // Polygon
-    Obstacle(int kind, Eigen::MatrixX2d polygon, bool ConfigSpace_has_theta)
+    Obstacle(int kind, Eigen::MatrixX2d polygon, bool ConfigSpace_has_theta,
+             Eigen::VectorXd origin)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
-          obstacle_used_after_sense_(false), polygon_(polygon)
+          obstacle_used_after_sense_(false), origin_(origin)
     {
         // Initialize collision object (unsure if this should be here)
         collision_object_ = std::make_shared<btCollisionObject>();
@@ -111,17 +114,20 @@ public:
         if(ConfigSpace_has_theta) {
             pos = Eigen::Vector3d();
             pos(2) = 0.0;
+            ///
         } else {
             pos = Eigen::Vector2d();
         }
-        pos(0) = (polygon.col(0).maxCoeff() + polygon.col(0).minCoeff())/2.0;
-        pos(1) = (polygon.col(1).maxCoeff() + polygon.col(1).minCoeff())/2.0;
-        position_ = pos;
+//        pos(0) = (polygon.col(0).maxCoeff() + polygon.col(0).minCoeff())/2.0;
+//        pos(1) = (polygon.col(1).maxCoeff() + polygon.col(1).minCoeff())/2.0;
+//        position_ = pos;
+
+        shape_ = Region(polygon);
 
         double dist, max = 0;
         for(int i = 0; i < polygon.rows(); i++) {
-            dist = sqrt(pow(polygon.row(i)(0) - position_(0),2)
-                        + pow(polygon.row(i)(1) - position_(1),2));
+            dist = sqrt(pow(polygon.row(i)(0) - origin_(0),2)
+                        + pow(polygon.row(i)(1) - origin_(1),2));
             if(dist > max) max = dist;
         }
 
@@ -131,21 +137,26 @@ public:
     }
 
     // Polygon with safe direction
-    Obstacle(int kind, Eigen::Matrix2Xd polygon, char direction)
+    Obstacle(int kind, Eigen::Matrix2Xd polygon, char direction,
+             Eigen::VectorXd origin)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
-          obstacle_used_after_sense_(false), polygon_(polygon),
+          obstacle_used_after_sense_(false),
+          origin_(origin),
           direction_(direction)
+
     {
-        Eigen::Vector2d pos;
-        pos(0) = (polygon.col(0).maxCoeff() + polygon.col(0).minCoeff())/2.0;
-        pos(1) = (polygon.col(1).maxCoeff() + polygon.col(1).minCoeff())/2.0;
-        position_ = pos;
+//        Eigen::Vector2d pos;
+//        pos(0) = (polygon.col(0).maxCoeff() + polygon.col(0).minCoeff())/2.0;
+//        pos(1) = (polygon.col(1).maxCoeff() + polygon.col(1).minCoeff())/2.0;
+//        position_ = pos;
+
+        shape_ = Region(polygon);
 
         double dist, max = 0;
         for(int i = 0; i < polygon.rows(); i++) {
-            dist = sqrt(pow(polygon.row(i)(0) - position_(0),2)
-                        + pow(polygon.row(i)(1) - position_(1),2));
+            dist = sqrt(pow(polygon.row(i)(0) - origin_(0),2)
+                        + pow(polygon.row(i)(1) - origin_(1),2));
             if(dist > max) max = dist;
         }
 
@@ -165,7 +176,10 @@ public:
 
     // Update obstacle position
     void UpdatePosition(Eigen::VectorXd new_position)
-    { this->position_ = new_position; }
+    { this->origin_ = new_position; }
+
+    // Returns obstacle polygon in global coordinates
+    Eigen::MatrixX2d GetPosition();
 
     // Moves obstacles around or remove them
     static bool UpdateObstacles(std::shared_ptr<ConfigSpace>& C);

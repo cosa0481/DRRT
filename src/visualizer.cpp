@@ -60,20 +60,22 @@ void visualizer(shared_ptr<KDTree> Tree,
     List obstacles;
     shared_ptr<Obstacle> this_obstacle;
     SceneGraph::GLLineStrip* polygon;
+    Eigen::MatrixX2d obstacle_pos;
     {
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
         obstacles = *Q->cspace->obstacles_;
         int num_obstacles = obstacles.length_;
         for(int i = 0; i < num_obstacles; i++) {
             obstacles.ListPop(this_obstacle);
+            obstacle_pos = this_obstacle->GetPosition();
             polygon = new SceneGraph::GLLineStrip();
-            for( int j = 0; j < this_obstacle->polygon_.rows(); j++) {
-                polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(j)(1),
-                                                  this_obstacle->polygon_.row(j)(0),
+            for( int j = 0; j < obstacle_pos.rows(); j++) {
+                polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(j)(1),
+                                                  obstacle_pos.row(j)(0),
                                                   0.0));
             }
-            polygon->SetPoint(Eigen::Vector3d(this_obstacle->polygon_.row(0)(1),
-                                              this_obstacle->polygon_.row(0)(0),
+            polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(0)(1),
+                                              obstacle_pos.row(0)(0),
                                               0.0));
             // Show obstacles in black
             polygon->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0,0,0,1)));

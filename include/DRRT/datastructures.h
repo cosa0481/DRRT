@@ -12,26 +12,6 @@
 // For holding triangles
 typedef Eigen::Matrix<double,Eigen::Dynamic,6> MatrixX6d;
 
-class Region{
-public:
-    Eigen::MatrixX2d region_;
-    Region(){
-        region_ = Eigen::MatrixX2d();
-    }
-    Eigen::MatrixX2d GetGlobalPose(Eigen::ArrayXd origin) {
-        Eigen::ArrayXd segment;
-        Eigen::MatrixX2d global_region;
-        for(int i = 0; i < region_.rows(); i++) {
-            segment = region_.row(i);
-            global_region.row(i) = origin + segment;
-        }
-        return global_region;
-    }
-
-    Region(Eigen::MatrixX2d r)
-        : region_(r) {}
-};
-
 class ConfigSpace : public std::enable_shared_from_this<ConfigSpace> {
 public:
     std::mutex cspace_mutex_;         // mutex for accessing obstacle List

@@ -81,4 +81,7 @@ double SegmentDistSqrd(Eigen::VectorXd PA, Eigen::VectorXd PB,
 // Polygon does not have to be convex but should be simple
 bool PointInPolygon(Eigen::VectorXd this_point, Eigen::MatrixX2d polygon);
 
+// 2D Euclidean distance function
+double EuclideanDistance2D(Eigen::Vector2d a, Eigen::Vector2d b);
+
 #endif // DRRT_DISTANCE_FUNCTIONS_H
