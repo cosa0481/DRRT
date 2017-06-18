@@ -77,8 +77,8 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     Eigen::Vector3d this_point;
     shared_ptr<KDTreeNode> new_node;
     double x_width, y_width, angle;
-    x_width = Q->cspace->num_dimensions_*Q->cspace->width_(0);
-    y_width = Q->cspace->num_dimensions_*Q->cspace->width_(1);
+    x_width = Q->cspace->width_(0);
+    y_width = Q->cspace->width_(1);
     for( int i = 0; i < x_width; i++ ) {
         for( int j = 0; j < y_width; j++ ) {
             if( i == 0 && j == 0 ) {
@@ -119,6 +119,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     shared_ptr<KDTreeNode> goal = make_shared<KDTreeNode>();
     double x_start = Q->cspace->goal_(0);
     double y_start = Q->cspace->goal_(1);
+
     tree->GetNodeAt(Eigen::Vector3d(x_start,y_start,
                                     -PI+x_start/sqrt(x_start*x_start
                                                      +y_start*y_start)),

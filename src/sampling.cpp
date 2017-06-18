@@ -87,7 +87,7 @@ Eigen::VectorXd RandPointDefault(shared_ptr<ConfigSpace> C)
     point(0) = points(floor(randvar),0);
     point(1) = points(floor(randvar),1);
     point(2) = C->lower_bounds_(2)
-              + RandDouble(0,C->num_dimensions_) * C->width_(2);
+              + RandDouble(0,1) * C->width_(2);
 
 //    for( int i = 0; i < C->width_.size(); i++ ) {
 //        rand = RandDouble(0,C->num_dimensions_);

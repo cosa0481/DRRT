@@ -9,6 +9,7 @@
 using namespace std;
 
 bool timingml = false; // Use to check on frame rate
+bool collect_timing_data = false;
 
 void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                  shared_ptr<RobotData> Robot,
@@ -18,6 +19,14 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
 {
     chrono::steady_clock::time_point t1,t2,i1,i2;
     double delta;
+    if(collect_timing_data) {
+        string file_name = "/Users/corinsandford/ARPG/DRRT/build/itertimes";
+        stringstream file_stream;
+        file_stream << file_name << this_thread::get_id() << ".txt";
+        file_name = file_stream.str();
+        ofstream time_file;
+        time_file.open(file_name);
+    }
 
     double slice_start = chrono::duration_cast<chrono::nanoseconds>(
                 start_time-start_time).count();
@@ -40,7 +49,6 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
     double p_uniform = 0.9;
     double position_bias = 6;
     double theta_bias = PI/10;
-//    bool use_theta_star = true;
     bool rand = true;
 
     current_distance = Tree->distanceFunction(prev_pose,
@@ -113,16 +121,15 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             if(RandDouble(0,1) > p_uniform) { // Sampling randomly
                 rand = true;
                 // Create a square defined as a polygon CCW
-                double space_size_mult = 5; /// temp hack need to hash out how bounds defined
                 sampling_area.resize(4,Eigen::NoChange_t());
                 sampling_area(0,0) = 0;
                 sampling_area(0,1) = 0;
-                sampling_area(1,0) = Q->cspace->upper_bounds_(0)*space_size_mult;
+                sampling_area(1,0) = Q->cspace->upper_bounds_(0);
                 sampling_area(1,1) = 0;
-                sampling_area(2,0) = Q->cspace->upper_bounds_(0)*space_size_mult;
-                sampling_area(2,1) = Q->cspace->upper_bounds_(1)*space_size_mult;
+                sampling_area(2,0) = Q->cspace->upper_bounds_(0);
+                sampling_area(2,1) = Q->cspace->upper_bounds_(1);
                 sampling_area(3,0) = 0;
-                sampling_area(3,1) = Q->cspace->upper_bounds_(1)*space_size_mult;
+                sampling_area(3,1) = Q->cspace->upper_bounds_(1);
                 Q->cspace->drivable_region_ = Region(sampling_area);
             } else { // Sampling inside Theta* bounds
                 rand = false;
@@ -130,7 +137,7 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
                                      Eigen::NoChange_t());
 
                 // Create line parallel to the line segment and use it's endpoints
-                // Need to go counterclockwise for sampling_area
+                // Need to go counterclockwise for sampling_area because of TriangulatePolygon library
                 vector<Eigen::VectorXd> points;
                 Eigen::VectorXd start_point, end_point, new_start, new_end;
                 double dx, dy, perp_x, perp_y, norm_len;
@@ -272,8 +279,8 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             i2 = chrono::steady_clock::now();
             delta = chrono::duration_cast<chrono::duration<double> >(i2 - i1).count();
             if(timingml) cout << "Duration: " << delta << " s\n" << endl;
-
-//            this_thread::sleep_for(chrono::nanoseconds(1000000000));
+            if(collect_timing_data)
+                time_file << i++ << " " << delta << "\n";
 
             {
                 lock_guard<mutex> lock(Robot->robot_mutex);
@@ -281,4 +288,6 @@ void RrtMainLoop(shared_ptr<Queue> Q, shared_ptr<KDTree> Tree,
             }
         }
     }
+    if(collect_timing_data)
+        time_file.close();
 }
