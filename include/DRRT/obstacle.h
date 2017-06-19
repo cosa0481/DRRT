@@ -65,6 +65,9 @@ public:
     // Stuff for time obstacles (kind=6,7)
     double velocity_;       // speed obstacle moves with
     Eigen::MatrixXd path_;  // offset path robot follows (path_(1,:)=0,0)
+    Eigen::VectorXd path_times_; // times (s) after which obstacle
+                                 // moves along path
+    int current_path_point_;
 
     Eigen::MatrixX2d original_polygon_;
 
@@ -102,13 +105,17 @@ public:
 
     // Polygon
     Obstacle(int kind, Eigen::MatrixX2d polygon, bool ConfigSpace_has_theta,
-             Eigen::VectorXd origin)
+             Eigen::VectorXd origin, Eigen::MatrixXd path,
+             Eigen::VectorXd path_times)
         : kind_(kind), start_time_(0.0), life_span_(INF),
           obstacle_used_(false), sensible_obstacle_(false),
-          obstacle_used_after_sense_(false), origin_(origin)
+          obstacle_used_after_sense_(false), origin_(origin),
+          path_(path), path_times_(path_times)
     {
         // Initialize collision object (unsure if this should be here)
         collision_object_ = std::make_shared<btCollisionObject>();
+
+        this->current_path_point_ = 0;
 
         Eigen::VectorXd pos;
         if(ConfigSpace_has_theta) {
@@ -180,6 +187,9 @@ public:
 
     // Returns obstacle polygon in global coordinates
     Eigen::MatrixX2d GetPosition();
+
+    // Moves object to next origin from obstacle->path_
+    bool NextOrigin();
 
     // Moves obstacles around or remove them
     static bool UpdateObstacles(std::shared_ptr<ConfigSpace>& C);

@@ -58,8 +58,6 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     start->rrt_parent_used_ = true;
     tree->KDInsert(start);
 
-    /// NEED TO BE ABLE TO APPLY THIS DYNAMICALLY
-    // Here I'm just adding the obstacles manually since I know how many exist
     shared_ptr<ListNode> osnode;
     {
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
@@ -104,7 +102,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
             new_node = make_shared<KDTreeNode>(this_point);
             // Use this KDTreeNode variable to hold the cost
             new_node->rrt_LMC_
-                = tree->distanceFunction(new_node->position_.head(2),
+                = EuclideanDistance2D(new_node->position_.head(2),
                                          start->position_.head(2));
             tree->KDInsert(new_node);      // this calls AddVizNode
             tree->RemoveVizNode(new_node); // not visualizing
@@ -139,6 +137,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
     end_node->rrt_LMC_ = INF;
     while(open_set->index_of_last_ > 0) {
         open_set->PopHeap(node);
+//        cout << "Node: " << node->rrt_LMC_ << "\n" << node->position_ << endl;
 
         if(node == start) {
 //            cout << "Found Any-Angle Path" << endl;
@@ -151,6 +150,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
 
         // Find eight neighbors around this node
         tree->KDFindWithinRange(node_list,2,node->position_);
+//        cout << "8 neighbors: " << node_list->length_ << endl;
         min_neighbor = make_shared<KDTreeNode>();
         min_neighbor->rrt_LMC_ = INF;
 
@@ -158,6 +158,14 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         this_item = node_list->front_;
         for(int i = 0; i < node_list->length_; i++) {
             near_node = this_item->node_;
+//            cout << "Neighbor: " << near_node->rrt_LMC_ << "\n" << near_node->position_ << endl;
+//            if(node->position_(0) == 11 && node->position_(1) == 5) {
+//                cout << "11,5: " << node->rrt_LMC_ << endl;
+//                if(near_node->position_(0) == 10 && near_node->position_(1) == 5)
+//                    cout << "10,5: " << near_node->rrt_LMC_ << endl;
+//                if(near_node->position_(0) == 11 && near_node->position_(1) == 4)
+//                    cout << "11,4: " << near_node->rrt_LMC_ << endl;
+//            }
             // If the neighbor is not in the closed set
             if(!closed_set->JListContains(near_node)) {
 //                if(!open_set->marked(near_node)) {
@@ -181,6 +189,7 @@ vector<Eigen::VectorXd> ThetaStar(shared_ptr<Queue> Q)
         }
 
         tree->EmptyRangeList(node_list); // clean up
+//        cout << "----------" << endl;
     }
     cout << "I'm here :(" << endl;
     exit(-1);
@@ -197,20 +206,31 @@ bool UpdateVertex(shared_ptr<Queue> Q,
                   shared_ptr<KDTreeNode> &neighbor,
                   shared_ptr<KDTreeNode> &min_neighbor)
 {
+//    cout << "\tUpdateVertex" << endl;
     shared_ptr<Edge> this_edge;
     if(node->rrt_parent_used_) {
         shared_ptr<KDTreeNode> current_node = node;
         while(current_node->rrt_parent_used_) {
             current_node = current_node->rrt_parent_edge_->start_node_;
+//            cout << "| ";
             this_edge = Edge::NewEdge(Q->cspace,Tree,
                                       current_node,
                                       neighbor);
             if(!LineCheck(Q->cspace,Tree,this_edge->start_node_,
                           this_edge->end_node_)
                     && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
-                min_neighbor = neighbor;
-                min_neighbor->rrt_parent_edge_ = this_edge;
-                return true;
+//                if((EuclideanDistance2D(current_node->position_.head(2),
+//                                             neighbor->position_.head(2)) <
+//                        EuclideanDistance2D(current_node->position_.head(2),
+//                                            node->position_.head(2))
+//                        + EuclideanDistance2D(node->position_.head(2),
+//                                              neighbor->position_.head(2)))) {
+                    min_neighbor = neighbor;
+                    min_neighbor->rrt_parent_edge_ = this_edge;
+//                    cout << "Made\n" << current_node->position_
+//                         << "\nparent of\n" << neighbor->position_ << endl;
+                    return true;
+//                }
             }
         }
     }
@@ -219,6 +239,8 @@ bool UpdateVertex(shared_ptr<Queue> Q,
             && neighbor->rrt_LMC_ < min_neighbor->rrt_LMC_) {
         min_neighbor = neighbor;
         min_neighbor->rrt_parent_edge_ = this_edge;
+//        cout << "Made\n" << node->position_
+//             << "\nparent of\n" << neighbor->position_ << endl;
         return true;
     }
     return false;

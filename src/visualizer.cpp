@@ -55,32 +55,35 @@ void visualizer(shared_ptr<KDTree> Tree,
     // Add view to base container as child
     pangolin::DisplayBase().AddDisplay(view3d);
 
-    // ASSUMING STATIC OBSTACLES FOR NOW
     // For the obstacles
     List obstacles;
+    vector<Eigen::Vector2d> origins;
     shared_ptr<Obstacle> this_obstacle;
+    shared_ptr<Obstacle> prev_obstacle;
     SceneGraph::GLLineStrip* polygon;
+    vector<SceneGraph::GLLineStrip*> polygons;
     Eigen::MatrixX2d obstacle_pos;
+
     {
         lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
         obstacles = *Q->cspace->obstacles_;
-        int num_obstacles = obstacles.length_;
-        for(int i = 0; i < num_obstacles; i++) {
-            obstacles.ListPop(this_obstacle);
-            obstacle_pos = this_obstacle->GetPosition();
-            polygon = new SceneGraph::GLLineStrip();
-            for( int j = 0; j < obstacle_pos.rows(); j++) {
-                polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(j)(1),
-                                                  obstacle_pos.row(j)(0),
-                                                  0.0));
-            }
-            polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(0)(1),
-                                              obstacle_pos.row(0)(0),
+    }
+    int num_obstacles = obstacles.length_;
+    for(int i = 0; i < num_obstacles; i++) {
+        obstacles.ListPop(this_obstacle);
+        obstacle_pos = this_obstacle->GetPosition();
+        polygon = new SceneGraph::GLLineStrip();
+        for( int j = 0; j < obstacle_pos.rows(); j++) {
+            polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(j)(1),
+                                              obstacle_pos.row(j)(0),
                                               0.0));
-            // Show obstacles in black
-            polygon->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0,0,0,1)));
-            glGraph.AddChild(polygon);
         }
+        polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(0)(1),
+                                          obstacle_pos.row(0)(0),
+                                          0.0));
+        // Show obstacles in black
+        polygon->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0,0,0,1)));
+        glGraph.AddChild(polygon);
     }
 
     // For the K-D Tree nodes
@@ -111,10 +114,43 @@ void visualizer(shared_ptr<KDTree> Tree,
     // Default hook for exiting: Esc
     // Default hook for fullscreen: tab
     bool path_drawn = false;
+    bool moved = false;
+    bool move_switch = false;
     while( !pangolin::ShouldQuit() ) {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glColor4f(1.0f,1.0f,1.0f,1.0f);
+
+        // Draw obstacles
+        {
+            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+            obstacles = *Q->cspace->obstacles_;
+            moved = Q->cspace->obstacles_moved_;
+        }
+        if(move_switch && !moved) move_switch = false;
+        num_obstacles = obstacles.length_;
+        if(moved /*&& !move_switch*/) {
+
+            for(int i = 0; i < num_obstacles; i++) {
+                obstacles.ListPop(this_obstacle);
+                obstacle_pos = this_obstacle->GetPosition();
+                polygon = new SceneGraph::GLLineStrip();
+                for( int j = 0; j < obstacle_pos.rows(); j++) {
+                    polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(j)(1),
+                                                      obstacle_pos.row(j)(0),
+                                                      0.0));
+                }
+                polygon->SetPoint(Eigen::Vector3d(obstacle_pos.row(0)(1),
+                                                  obstacle_pos.row(0)(0),
+                                                  0.0));
+                // Show obstacles in black
+                polygon->SetColor(SceneGraph::GLColor(Eigen::Vector4d(0,0,0,1)));
+                glGraph.AddChild(polygon);
+            }
+            move_switch = true;
+            path_drawn = false;
+        }
+
 
         // Draw any-angle best path
         if(!path_drawn) {

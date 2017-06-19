@@ -17,6 +17,7 @@ public:
     std::mutex cspace_mutex_;         // mutex for accessing obstacle List
     int num_dimensions_;              // dimensions
     std::shared_ptr<List> obstacles_; // a list of obstacles
+    bool obstacles_moved_;
     double obs_delta_; // the granularity of obstacle checks on edges
     Eigen::VectorXd lower_bounds_; // 1xD vector containing the lower bounds
     Eigen::VectorXd upper_bounds_; // 1xD vector containing the upper bounds
@@ -65,6 +66,7 @@ public:
     int iterations_until_sample_; // a count down to sample a particular point
     double wait_time_;            // time to wait in seconds
     u_int64_t start_time_ns_;     // time this started
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
     double time_elapsed_; // elapsed time since start
 
     std::shared_ptr<Obstacle> obstacle_to_remove_; // an obstacle to remove

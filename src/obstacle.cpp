@@ -9,6 +9,18 @@ bool timingobs = false;
 Eigen::MatrixX2d Obstacle::GetPosition()
 { return this->shape_.GetGlobalPose(this->origin_.head(2)); }
 
+bool Obstacle::NextOrigin()
+{
+    double now = GetTimeNs(this->cspace->start_time_);
+    now = now /1000000000; // should be now in seconds
+    if(this->current_path_point_ < this->path_times_.size()
+            && this->path_times_(this->current_path_point_) < now) {
+        this->origin_ = this->path_.row(this->current_path_point_++);
+        return true;
+    }
+    return false;
+}
+
 // Reads 2D polygon obstacles from file
 void Obstacle::ReadObstaclesFromFile(string obstacle_file,
                                      shared_ptr<ConfigSpace>& C)
@@ -30,19 +42,46 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
             // Read through obstacle delimiter line "----"
             getline(read_stream, line);
             line = "";
-            // Get origin of polygon
-            getline(read_stream, line);
-            line_stream = stringstream(line);
-            getline(line_stream, substring, ',');
+
             /// NEED TO GENERALIZE SIZE
             // This causes a problem in the distanceFunction if it's 2d
             // instead of 3d. Problem occurs in QuickCheck2D
+            // Get origin of polygon
             Eigen::Vector3d origin;
+            getline(read_stream, line);
+            line_stream = stringstream(line);
+            getline(line_stream, substring, ',');
             origin(0) = stod(substring);
             getline(line_stream, substring);
             origin(1) = stod(substring);
             origin(2) = 0.0;
             line = "";
+
+            // Get number of moves
+            getline(read_stream, line);
+            int num_moves = stoi(line);
+            Eigen::MatrixXd path;
+            Eigen::VectorXd path_times;
+            path_times.resize(num_moves);
+            for(int j = 0; j < num_moves; j++) {
+                getline(read_stream, line);
+                path_times(j) = stod(line);
+            }
+            path.resize(num_moves,C->num_dimensions_);
+            Eigen::Vector3d new_origin;
+            for(int j = 0; j < num_moves; j++) {
+                getline(read_stream, line);
+                line_stream = stringstream(line);
+                getline(line_stream, substring, ',');
+                new_origin(0) = stod(substring);
+                getline(line_stream, substring);
+                new_origin(1) = stod(substring);
+                new_origin(2) = 0.0;
+                path.row(j)(0) = new_origin(0);
+                path.row(j)(1) = new_origin(1);
+                path.row(j)(2) = new_origin(2);
+            }
+
 //            cout << "polygon " << i+1 << " origin:\n" << origin << endl;
             // Get number of points in this polygon
             getline(read_stream, line);
@@ -51,15 +90,15 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
 //            cout << "number of vertices: " << num_points << endl;
             Eigen::MatrixX2d polygon;
             if(num_points > 0) polygon.resize(num_points,2);
-            for(int i = 0; i < num_points; i++) {
+            for(int j = 0; j < num_points; j++) {
                 getline(read_stream,line);
                 line_stream = stringstream(line);
                 getline(line_stream, substring, ',');
-                polygon.row(i)(0) = stod(substring);
+                polygon.row(j)(0) = stod(substring);
 //                cout << "x: " << polygon.row(i)(0) << endl;
                 substring = "";
                 getline(line_stream, substring);
-                polygon.row(i)(1) = stod(substring);
+                polygon.row(j)(1) = stod(substring);
 //                cout << "y: " << polygon.row(i)(1) << endl;
                 substring = "";
                 line = "";
@@ -69,7 +108,8 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
 
             shared_ptr<Obstacle> new_obstacle
                     = make_shared<Obstacle>(3, polygon,
-                                            C->space_has_theta_, origin);
+                                            C->space_has_theta_, origin,
+                                            path, path_times);
             new_obstacle->cspace = C;
 
             // Add to Bullet
@@ -79,14 +119,14 @@ void Obstacle::ReadObstaclesFromFile(string obstacle_file,
             shared_ptr<btConvexHullShape> collision_shape
                     = make_shared<btConvexHullShape>();
             Eigen::MatrixX2d obstacle_pos = new_obstacle->GetPosition();
-            for(int i = 0; i < obstacle_pos.rows(); i++) {
+            for(int j = 0; j < obstacle_pos.rows(); j++) {
                 collision_shape->addPoint(
-                            btVector3((btScalar) obstacle_pos(i,0),
-                                      (btScalar) obstacle_pos(i,1),
+                            btVector3((btScalar) obstacle_pos(j,0),
+                                      (btScalar) obstacle_pos(j,1),
                                       (btScalar) -0.1));
                 collision_shape->addPoint(
-                            btVector3((btScalar) obstacle_pos(i,0),
-                                      (btScalar) obstacle_pos(i,1),
+                            btVector3((btScalar) obstacle_pos(j,0),
+                                      (btScalar) obstacle_pos(j,1),
                                       (btScalar) 0.1));
             }
             obstacle->setCollisionShape(collision_shape.get());
@@ -148,18 +188,7 @@ bool Obstacle::UpdateObstacles(shared_ptr<ConfigSpace> &C)
     bool moved = false;
     for(int i = 0; i < C->obstacles_->length_; i++) {
         this_obstacle = obstacle_list_node->obstacle_;
-        /// GET NEW OBSTACLE POSITION
-        // somehow need to get the transformed object position
-        // for each collision object in C->bt_collision_world_:
-        //        btTransform updatedWorld;
-        //        updatedWorld.setIdentity();
-        //        updatedWorld.setOrigin(btVector3(x, y, z));
-        //        obstacle->setWorldTransform(updatedWorld);
-        new_position = this_obstacle->origin_; // currently just sets to same
-        if(new_position != this_obstacle->origin_) {
-            this_obstacle->UpdatePosition(new_position);
-            moved = true;
-        }
+        moved = this_obstacle->NextOrigin();
         obstacle_list_node = obstacle_list_node->child_;
     }
     return moved;
@@ -417,53 +446,57 @@ void CheckObstacles(shared_ptr<Queue> Q,
 
         // Update dynamic obstacle positions
         moved = Obstacle::UpdateObstacles(Q->cspace);
-
-        {
-            lock_guard<mutex> lock(Tree->tree_mutex_);
-            hyper_ball_rad = min(Q->cspace->saturation_delta_,
-                             ball_constant*(
-                             pow(log(1+Tree->tree_size_)/(Tree->tree_size_),
-                                 1/Q->cspace->num_dimensions_)));
-        }
-        added = false;
-        removed = false;
         {
             lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
-            obstacle_node = Q->cspace->obstacles_->front_;
-            time_elapsed = Q->cspace->time_elapsed_;
-            while(obstacle_node != obstacle_node->child_) {
-                obstacle = obstacle_node->obstacle_;
+            Q->cspace->obstacles_moved_ = moved;
+        }
 
-                // Remove obstacles whose lifetime is up
-                if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
-                        && (obstacle->start_time_ + obstacle->life_span_
-                            <= time_elapsed)) {
-                    // Time reached to remove obstacle
-                    RemoveObstacle(Tree,Q,obstacle,Tree->root,hyper_ball_rad,
-                                   time_elapsed,Q->cspace->move_goal_);
-                    removed = true;
-                }
+//        {
+//            lock_guard<mutex> lock(Tree->tree_mutex_);
+//            hyper_ball_rad = min(Q->cspace->saturation_delta_,
+//                             ball_constant*(
+//                             pow(log(1+Tree->tree_size_)/(Tree->tree_size_),
+//                                 1/Q->cspace->num_dimensions_)));
+//        }
+//        added = false;
+//        removed = false;
+//        {
+//            lock_guard<mutex> lock(Q->cspace->cspace_mutex_);
+//            obstacle_node = Q->cspace->obstacles_->front_;
+//            time_elapsed = Q->cspace->time_elapsed_;
+//            while(obstacle_node != obstacle_node->child_) {
+//                obstacle = obstacle_node->obstacle_;
 
-                // Add obstacles whose lifetime has begun
-                if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
-                        && obstacle->start_time_ <= time_elapsed
-                        && time_elapsed <= obstacle->start_time_
-                                         + obstacle->life_span_) {
-                    // Time reached to add obstacle
-                    obstacle->obstacle_used_ = true;
-                    AddObstacle(Tree,Q,obstacle,Tree->root);
-                    {
-                        lock_guard<mutex> lock(Robot->robot_mutex);
-                        if(Robot->robot_edge_used
-                                && Robot->robot_edge->ExplicitEdgeCheck(obstacle)) {
-                            Robot->current_move_invalid = true;
-                        }
-                    }
-                    added = true;
-                }
-                obstacle_node = obstacle_node->child_;
-            }
-        } // unlock cspace mutex
+//                // Remove obstacles whose lifetime is up
+//                if(!obstacle->sensible_obstacle_ && obstacle->obstacle_used_
+//                        && (obstacle->start_time_ + obstacle->life_span_
+//                            <= time_elapsed)) {
+//                    // Time reached to remove obstacle
+//                    RemoveObstacle(Tree,Q,obstacle,Tree->root,hyper_ball_rad,
+//                                   time_elapsed,Q->cspace->move_goal_);
+//                    removed = true;
+//                }
+
+//                // Add obstacles whose lifetime has begun
+//                if(!obstacle->sensible_obstacle_ && !obstacle->obstacle_used_
+//                        && obstacle->start_time_ <= time_elapsed
+//                        && time_elapsed <= obstacle->start_time_
+//                                         + obstacle->life_span_) {
+//                    // Time reached to add obstacle
+//                    obstacle->obstacle_used_ = true;
+//                    AddObstacle(Tree,Q,obstacle,Tree->root);
+//                    {
+//                        lock_guard<mutex> lock(Robot->robot_mutex);
+//                        if(Robot->robot_edge_used
+//                                && Robot->robot_edge->ExplicitEdgeCheck(obstacle)) {
+//                            Robot->current_move_invalid = true;
+//                        }
+//                    }
+//                    added = true;
+//                }
+//                obstacle_node = obstacle_node->child_;
+//            }
+//        } // unlock cspace mutex
 
         {
             lock_guard<mutex> lock(Q->queuetex);
@@ -485,16 +518,20 @@ void CheckObstacles(shared_ptr<Queue> Q,
                                             Q->cspace->robot_radius_,
                                             Tree->root,hyper_ball_rad);
                     }
-                    if(removed || added || moved) {
-                        Robot->best_any_angle_path = ThetaStar(Q);;
-                        Robot->thetas = PathToThetas(Robot->best_any_angle_path);
-                    }
                 } // unlock tree mutex
             } // unlock cspace_mutex_
         } // unlock queuetex
 
+        if(removed || added || moved) {
+            cout << "running ThetaStar(Q)" << endl;
+            Robot->best_any_angle_path = ThetaStar(Q);
+            cout << "finished ThetaStar" << endl;
+            Robot->thetas = PathToThetas(Robot->best_any_angle_path);
+        }
+
         {
             lock_guard<mutex> lock(Robot->robot_mutex);
+
             reached_goal = Robot->goal_reached;
         }
     }

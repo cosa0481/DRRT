@@ -109,14 +109,18 @@ shared_ptr<RobotData> Rrtx(Problem p, shared_ptr<thread> &vis)
         exit(0);
     }
 
-    // Any-Angle Path
+    // Initial Any-Angle Path
     robot->best_any_angle_path = ThetaStar(Q);
     robot->thetas = PathToThetas(robot->best_any_angle_path);
+
+//    char key = ' ';
+//    while (key != 'q') {cin >> key;}
 
     /// End Initialization
 
     start_time = chrono::high_resolution_clock::now();
     Q->cspace->time_elapsed_ = 0.0;
+    Q->cspace->start_time_ = start_time;
     Q->cspace->start_time_ns_
             = chrono::duration_cast<chrono::nanoseconds>(start_time
                                                          -start_time).count();
@@ -213,7 +217,7 @@ int main( int argc, char* argv[] )
     double change_thresh = 1.0;     // node change detection
     double goal_thresh = 0.5;       // goal detection
     bool move_robot = true;         // move robot after plan_time/slice_time
-    int num_threads = 5;            // number of main loop threads to spawn (3)
+    int num_threads = 5;            // number of main loop threads to spawn
 
     /// Read in Obstacles
     Obstacle::ReadObstaclesFromFile(obstacle_file, cspace);
