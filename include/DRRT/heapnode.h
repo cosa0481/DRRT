@@ -14,7 +14,6 @@ public:
     HeapNode(double val) : is_empty_(false), index_(-1), in_heap_(false), value_(val) {}
     HeapNode() : is_empty_(true), index_(-1), in_heap_(false), value_(-1) {}
 
-    virtual void GetData() {}
     void SetEmpty(bool empty) { is_empty_ = empty; }
     bool IsEmpty() { return is_empty_; }
     void SetIndex(int idx) { index_ = idx; }

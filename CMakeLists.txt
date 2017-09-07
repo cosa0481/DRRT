@@ -52,7 +52,6 @@ set( HDRS
                 include/DRRT/region2d.h
 
                 include/DRRT/list.h
-                include/DRRT/listnode.h
                 include/DRRT/obstacle_listnode.h
                 include/DRRT/edge_listnode.h
                 include/DRRT/kd_listnode.h

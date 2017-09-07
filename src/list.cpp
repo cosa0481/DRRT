@@ -1,18 +1,30 @@
 #include <DRRT/list.h>
 
-int List::GetLength()
+template <class T>
+int List<T>::GetLength()
 {
     return length_;
 }
 
-void List::Push(std::shared_ptr<ListNode> &new_node)
+template <class T>
+void List<T>::Push(std::shared_ptr<T> &new_node)
 {
-    new_node->child_ = front_;
-    front_ = new_node;
-    length_ += 1;
+    if(!new_node->InList()) {
+        new_node->parent_ = front_->parent_;
+        new_node->child_ = front_;
+
+        if(length_ == 0) back_ = new_node;
+        else front_->parent_ = new_node;
+
+        front_ = new_node;
+        length_ += 1;
+
+        new_node->SetInList(true);
+    }
 }
 
-void List::Top(std::shared_ptr<ListNode> &top_node)
+template <class T>
+void List<T>::Top(std::shared_ptr<T> &top_node)
 {
     if(front_ != front_->child_) {
         top_node = front_;
@@ -23,55 +35,153 @@ void List::Top(std::shared_ptr<ListNode> &top_node)
     }
 }
 
-void List::Pop(std::shared_ptr<ListNode> &top_node)
+template <class T>
+void List<T>::Pop(std::shared_ptr<T> &top_node)
 {
     if(front_ != front_->child_) {
-        top_node = front_;
-        top_node->SetEmpty(false);
-        front_ = front_->child_;
+        std::shared_ptr<T> old_top = front_;
+        if(length_ > 1) {
+            front_->child_->parent_ = front_->parent_;
+            front_ = front_->child_;
+        } else if(length_ == 1) {
+            back_ = bound_;
+            front_ = bound_;
+        }
         length_ -= 1;
+        old_top->child_ = old_top;
+        old_top->parent_ = old_top;
+        top_node = old_top;
+        top_node->SetInList(false);
+        top_node->SetEmpty(false);
     } else {
         // List is empty, leave top_node as is
         top_node->SetEmpty(true);
     }
 }
 
-void List::Empty()
+template <class T>
+void List<T>::Remove(std::shared_ptr<T> &node)
 {
-    std::shared_ptr<ListNode> temp = std::make_shared<ListNode>();
+    if(length_ != 0 && !node->IsEmpty() && node->InList()) {
+        if(front_ == node) front_ = node->child_;
+        if(back_ == node) back_ = node->parent_;
+
+        std::shared_ptr<T> next_node = node->child_;
+        std::shared_ptr<T> prev_node = node->parent_;
+
+        if(length_ > 1 && prev_node != prev_node->child_) prev_node->child_ = next_node;
+        if(length_ > 1 && next_node != next_node->child_) next_node->parent_ = prev_node;
+
+        length_ -= 1;
+
+        if(length_ == 0) {
+            back_ = bound_;
+            front_ = bound_;
+        }
+
+        node->child_ = node;
+        node->parent_ = node;
+        node->SetInList(false);
+    } else { if(DEBUG) std::cout << "Node not in List." << std::endl; }
+}
+
+template <class T>
+void List<T>::Empty()
+{
+    std::shared_ptr<T> temp = std::make_shared<T>();
     List::Pop(temp);
     while(temp != temp->child_) List::Pop(temp);
 }
 
+//template <class T>
+//void List<T>::Print()
+//{
+//    if(length_ == 0) std::cout << "Empty List." << std::endl;
+//    else {
+//        std::shared_ptr<T> ptr = front_;
+//        std::shared_ptr<Obstacle> obs;
+//        int i = 0;
+//        while(ptr != ptr->child_ && i < 10) {
+//            ptr->GetData(obs);
+//            std::cout << "ListNode[" << i << "]: "
+//                      << obs->GetKind() << std::endl;
+//            i += 1;
+//            ptr = ptr->child_;
+//        }
+//    }
+//}
+
 
 /*#include <DRRT/obstacle_listnode.h>
 
+using namespace std;
+typedef std::shared_ptr<ObstacleListNode> ObstacleListNode_ptr;
+
 int main()
 {
-    std::shared_ptr<Obstacle> obs = std::make_shared<Obstacle>(1);
-    std::shared_ptr<ListNode> obs_node = std::make_shared<ObstacleListNode>(obs);
-    List list = List(obs_node);
+    shared_ptr<Obstacle> obs0 = make_shared<Obstacle>(0);
+    shared_ptr<Obstacle> obs1 = make_shared<Obstacle>(1);
+    shared_ptr<Obstacle> obs2 = make_shared<Obstacle>(2);
+    shared_ptr<Obstacle> obs3 = make_shared<Obstacle>(3);
 
-    std::shared_ptr<ListNode> obs_node_0 = std::make_shared<ObstacleListNode>(obs);
+    ObstacleListNode_ptr obs_node_0 = make_shared<ObstacleListNode>(obs0);
+    ObstacleListNode_ptr obs_node_1 = make_shared<ObstacleListNode>(obs1);
+    ObstacleListNode_ptr obs_node_2 = make_shared<ObstacleListNode>(obs2);
+    ObstacleListNode_ptr obs_node_3 = make_shared<ObstacleListNode>(obs3);
 
-    list.Push(obs_node_0);
+    List<ObstacleListNode> list = List<ObstacleListNode>();
 
-    std::cout << "length: " << list.GetLength() << std::endl;
+    cout << "Print:" << endl;
+    list.Print();
 
-    std::shared_ptr<ListNode> obs_node_1 = std::make_shared<ObstacleListNode>(obs);
-
+    cout << "Push #1, #2, #3" << endl;
     list.Push(obs_node_1);
+    list.Push(obs_node_2);
+    list.Push(obs_node_3);
 
-    std::cout << "length: " << list.GetLength() << std::endl;
+    cout << "Print:" << endl;
+    list.Print();
 
-    std::shared_ptr<ListNode> obs_node_2 = std::make_shared<ListNode>();
+    cout << "length: " << list.GetLength() << endl;
 
-    std::cout << "obs_node_2: " << obs_node_2->IsEmpty() << std::endl;
+    ObstacleListNode_ptr popped_node = make_shared<ObstacleListNode>();
+    cout << "popped_node empty: " << popped_node->IsEmpty() << endl;
+    cout << "Pop" << endl;
+    list.Pop(popped_node);
+    cout << "popped_node empty: " << popped_node->IsEmpty() << endl;
 
-    list.Pop(obs_node_2);
+    cout << "Print:" << endl;
+    list.Print();
+    cout << "length: " << list.GetLength() << endl;
 
-    std::cout << "obs_node_2: " << obs_node_2->IsEmpty() << std::endl;
+    cout << "Remove #1" << endl;
+    list.Remove(obs_node_1);
+    cout << "Print:" << endl;
+    list.Print();
+    cout << "Push #3" << endl;
+    list.Push(obs_node_3);
+    cout << "Print:" << endl;
+    list.Print();
+    cout << "Remove #1" << endl;
+    list.Remove(obs_node_1);
 
+    cout << "Print:" << endl;
+    list.Print();
+    cout << "length: " << list.GetLength() << endl;
+
+    cout << "Remove #2" << endl;
+    list.Remove(obs_node_2);
+
+    cout << "Print:" << endl;
+    list.Print();
+    cout << "length: " << list.GetLength() << endl;
+
+    cout << "Remove #3" << endl;
+    list.Remove(obs_node_3);
+
+    cout << "Print:" << endl;
+    list.Print();
+    cout << "length: " << list.GetLength() << endl;
 
     return 0;
 }*/

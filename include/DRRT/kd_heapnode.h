@@ -12,6 +12,8 @@ public:
     KdHeapNode(std::shared_ptr<Kdnode> &n) : HeapNode(n->GetLmc()), data_(n)
     { SetEmpty(false); }
     KdHeapNode() : HeapNode() {}
+
+    void GetData(std::shared_ptr<Kdnode> &node) { node = data_; }
 };
 
 #endif // KD_HEAPNODE_H
