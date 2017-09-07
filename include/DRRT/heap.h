@@ -12,19 +12,10 @@ typedef std::shared_ptr<HeapNode> Hnode_ptr;
 // Dummy node at position 0, so top of heap is at index 1
 class Heap
 {
+    bool flag_;                          // Type of heap Max(1) or Min(0)
     std::vector<Hnode_ptr> heap_;
     int index_of_last_;
     int parent_of_last_;
-
-public:
-    Heap() : index_of_last_(0), parent_of_last_(-1)
-    { heap_.push_back(std::make_shared<HeapNode>()); }
-
-    int GetHeapSize() { return heap_.size() - 1; }
-    bool IsEmpty() { return GetHeapSize() == 0; }
-    void GetHeap(std::vector<Hnode_ptr> &heap) { heap = heap_; }
-    int GetIndexOfLast() { return index_of_last_; }
-    int GetParentOfLast() { return parent_of_last_; }
 
     // Min Heap Operations
     void AddMin(Hnode_ptr &node);
@@ -45,6 +36,27 @@ public:
     void BubbleUpMax(int idx);
     void BubbleDownMax(int idx);
     bool CheckMax();
+
+public:
+    Heap(bool type) : flag_(type), index_of_last_(0), parent_of_last_(-1)
+    { heap_.push_back(std::make_shared<HeapNode>()); }
+
+    std::string GetType() { return (flag_ ? "Max" : "Min"); }
+    int GetHeapSize() { return heap_.size() - 1; }
+    bool IsEmpty() { return GetHeapSize() == 0; }
+    void GetHeap(std::vector<Hnode_ptr> &heap) { heap = heap_; }
+    int GetIndexOfLast() { return index_of_last_; }
+    int GetParentOfLast() { return parent_of_last_; }
+
+    // Accessor Operations
+    void Add(Hnode_ptr &node) { return (flag_ ? AddMax(node) : AddMin(node)); }
+    void Remove(Hnode_ptr &node) { return (flag_ ? RemoveMax(node) : RemoveMin(node)); }
+    void Update(Hnode_ptr &node) { return (flag_ ? UpdateMax(node) : UpdateMin(node)); }
+    void Top(Hnode_ptr &node) { return (flag_ ? TopMax(node) : TopMin(node)); }
+    void Pop(Hnode_ptr &node) { return (flag_ ? PopMax(node) : PopMin(node)); }
+    void BubbleUp(int idx) { return (flag_ ? BubbleUpMax(idx) : BubbleUpMin(idx)); }
+    void BubbleDown(int idx) { return (flag_ ? BubbleDownMax(idx) : BubbleDownMin(idx)); }
+    void Check() { (flag_ ? CheckMax() : CheckMin()); }
 
     void Clean(std::vector<Hnode_ptr> &heap);
 };

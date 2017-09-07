@@ -1,7 +1,16 @@
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
 
+#include <DRRT/libraries.h>
+
 #include <DRRT/list.h>
+#include <DRRT/kd_listnode.h>
+#include <DRRT/obstacle_listnode.h>
+#include <DRRT/edge_listnode.h>
+
+#include <DRRT/heap.h>
+#include <DRRT/kd_heapnode.h>
+
 #include <DRRT/kdnode.h>
 #include <DRRT/obstacle.h>
 #include <DRRT/edge.h>
@@ -17,10 +26,28 @@ typedef shared_ptr<List> List_ptr;
 typedef shared_ptr<Edge> Edge_ptr;
 //typedef shared_ptr<Queue> Queue_ptr;
 
+typedef struct Queue {
+    shared_ptr<ConfigSpace> cspace;
+    shared_ptr<Heap> priority_queue;
+    double change_thresh;
+} Queue;
+
+typedef struct RobotData {
+
+} RobotData;
+
+typedef struct RrtNodeNeighborIterator {
+
+} RrtNodeNeighborIterator;
+
 class ConfigSpace : public std::enable_shared_from_this<ConfigSpace> {
 public:
     mutex cspace_mutex_;        // Mutex for accessing cspace variables
     int num_dimensions_;        // Number of dimensions in cspace
     List_ptr obstacles_;
     double obstacle_delta_;
-}
+
+    ConfigSpace() {}
+};
+
+#endif //DATA_STRUCTURES_H

@@ -316,9 +316,9 @@ bool Heap::CheckMax()
 
 int main()
 {
-    Heap heap = Heap();
+    Heap heap = Heap(0);  // 0 for Min heap
     std::shared_ptr<Kdnode> kd_node1 = std::make_shared<Kdnode>(10);
-    std::shared_ptr<Kdnode> kd_node2 = std::make_shared<Kdnode>(-20);
+    std::shared_ptr<Kdnode> kd_node2 = std::make_shared<Kdnode>(-10);
     std::shared_ptr<Kdnode> kd_node3 = std::make_shared<Kdnode>(30);
     std::shared_ptr<Kdnode> kd_node4 = std::make_shared<Kdnode>(40);
     std::shared_ptr<Kdnode> kd_node5 = std::make_shared<Kdnode>(50);
@@ -331,50 +331,112 @@ int main()
     std::cout << "node1->GetValue(): " << node1->GetValue() << std::endl;
 
     std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
-    heap.CheckMin();
+    heap.Check();
 
-    heap.AddMin(node1);
-    heap.AddMin(node2);
+    heap.Add(node1);
+    heap.Add(node2);
 
     std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
     std::cout << "size: " << heap.GetHeapSize() << std::endl;
 
-    heap.CheckMin();
+    heap.Check();
 
     std::shared_ptr<HeapNode> popped_node;
-    heap.TopMin(popped_node);
+    heap.Top(popped_node);
     std::cout << "popped_node in heap: " << popped_node->InHeap() << std::endl;
-    heap.PopMin(popped_node);
+    heap.Pop(popped_node);
     std::cout << "min node: " << popped_node->GetValue() << std::endl;
     std::cout << "popped_node in heap: " << popped_node->InHeap() << std::endl;
     std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
     std::cout << "size: " << heap.GetHeapSize() << std::endl;
 
-    heap.CheckMin();
+    heap.Check();
 
     std::shared_ptr<HeapNode> node3 = std::make_shared<KdHeapNode>(kd_node3);
-    heap.AddMin(node3);
+    heap.Add(node3);
 
     std::shared_ptr<HeapNode> removed_node = node1;
     std::shared_ptr<HeapNode> node4 = std::make_shared<KdHeapNode>(kd_node4);
     std::shared_ptr<HeapNode> node5 = std::make_shared<KdHeapNode>(kd_node5);
 
-    heap.AddMin(node1);
-    heap.AddMin(node4);
-    heap.AddMin(node5);
+    heap.Add(node1);
+    heap.Add(node4);
+    heap.Add(node5);
 
     std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
     std::cout << "size: " << heap.GetHeapSize() << std::endl;
 
-    heap.CheckMin();
+    heap.Check();
 
     std::cout << "removed_node in heap: " << removed_node->InHeap() << std::endl;
-    heap.RemoveMin(removed_node);
+    heap.Remove(removed_node);
     std::cout << "removed_node in heap: " << removed_node->InHeap() << std::endl;
     std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
     std::cout << "size: " << heap.GetHeapSize() << std::endl;
 
-    heap.CheckMin();
+    heap.Check();
+
+    //--------------------------------------------------------------------
+
+//    Heap heap = Heap(1);  // 1 for Max heap
+//    std::shared_ptr<Kdnode> kd_node1 = std::make_shared<Kdnode>(-10);
+//    std::shared_ptr<Kdnode> kd_node2 = std::make_shared<Kdnode>(10);
+//    std::shared_ptr<Kdnode> kd_node3 = std::make_shared<Kdnode>(30);
+//    std::shared_ptr<Kdnode> kd_node4 = std::make_shared<Kdnode>(40);
+//    std::shared_ptr<Kdnode> kd_node5 = std::make_shared<Kdnode>(50);
+
+//    std::cout << "kd_node1->GetLmc(): " << kd_node1->GetLmc() << std::endl;
+
+//    std::shared_ptr<HeapNode> node1 = std::make_shared<KdHeapNode>(kd_node1);
+//    std::shared_ptr<HeapNode> node2 = std::make_shared<KdHeapNode>(kd_node2);
+
+//    std::cout << "node1->GetValue(): " << node1->GetValue() << std::endl;
+
+//    std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
+//    heap.Check();
+
+//    heap.Add(node1);
+//    heap.Add(node2);
+
+//    std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
+//    std::cout << "size: " << heap.GetHeapSize() << std::endl;
+
+//    heap.Check();
+
+//    std::shared_ptr<HeapNode> popped_node;
+//    heap.Top(popped_node);
+//    std::cout << "popped_node in heap: " << popped_node->InHeap() << std::endl;
+//    heap.Pop(popped_node);
+//    std::cout << "max node: " << popped_node->GetValue() << std::endl;
+//    std::cout << "popped_node in heap: " << popped_node->InHeap() << std::endl;
+//    std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
+//    std::cout << "size: " << heap.GetHeapSize() << std::endl;
+
+//    heap.Check();
+
+//    std::shared_ptr<HeapNode> node3 = std::make_shared<KdHeapNode>(kd_node3);
+//    heap.Add(node3);
+
+//    std::shared_ptr<HeapNode> removed_node = node1;
+//    std::shared_ptr<HeapNode> node4 = std::make_shared<KdHeapNode>(kd_node4);
+//    std::shared_ptr<HeapNode> node5 = std::make_shared<KdHeapNode>(kd_node5);
+
+//    heap.Add(node1);
+//    heap.Add(node4);
+//    heap.Add(node5);
+
+//    std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
+//    std::cout << "size: " << heap.GetHeapSize() << std::endl;
+
+//    heap.Check();
+
+//    std::cout << "removed_node in heap: " << removed_node->InHeap() << std::endl;
+//    heap.Remove(removed_node);
+//    std::cout << "removed_node in heap: " << removed_node->InHeap() << std::endl;
+//    std::cout << "heap is empty: " << heap.IsEmpty() << std::endl;
+//    std::cout << "size: " << heap.GetHeapSize() << std::endl;
+
+//    heap.Check();
 
     return 0;
 }*/
