@@ -7,3 +7,6 @@ triangulatepolygon*
 *.jl
 *.png
 *.autosave
+figures/
+*/old_src/
+*/*/old_include/
