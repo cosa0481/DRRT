@@ -14,19 +14,19 @@ find_package( SceneGraph    REQUIRED )
 find_package( Bullet        REQUIRED )
 
 set( _INCLUDE_DIRS
-		${CMAKE_BINARY_DIR}
-		${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
                 ${EIGEN3_INCLUDE_DIRS}
                 ${Pangolin_INCLUDE_DIRS}
                 ${SceneGraph_INCLUDE_DIRS}
                 ${BULLET_INCLUDE_DIR}
-		)
+        )
 
 set( _LIBRARIES
                 ${Pangolin_LIBRARIES}
                 ${SceneGraph_LIBRARIES}
                 ${BULLET_LIBRARIES}
-		)
+        )
 
 # Expose these for third parties
 set( DRRT_INCLUDE_DIRS  ${_INCLUDE_DIRS}    CACHE INTERNAL "" FORCE )
@@ -42,25 +42,42 @@ set( HDRS
                 include/DRRT/tripolyinterface.h
                 include/DRRT/triangulate.h
 
-                include/DRRT/drrt.h
-                include/DRRT/kdtree.h
-                include/DRRT/heap.h
-                include/DRRT/ghostpoint.h
-                include/DRRT/list.h
-                include/DRRT/jlist.h
-                include/DRRT/kdtreenode.h
-                include/DRRT/datastructures.h
-                include/DRRT/edge.h
-                include/DRRT/dubinsedge.h
-                include/DRRT/distancefunctions.h
-                include/DRRT/visualizer.h
+                include/DRRT/libraries.h
+                include/DRRT/data_structures.h
+
+                include/DRRT/kdnode.h
                 include/DRRT/obstacle.h
-                include/DRRT/thetastar.h
-                include/DRRT/mainloop.h
-                include/DRRT/moverobot.h
-                include/DRRT/sampling.h
-                include/DRRT/region.h
-		)
+                include/DRRT/edge.h
+
+                include/DRRT/list.h
+                include/DRRT/listnode.h
+                include/DRRT/obstacle_listnode.h
+                include/DRRT/edge_listnode.h
+                include/DRRT/kd_listnode.h
+
+                include/DRRT/heap.h
+                include/DRRT/heapnode.h
+                include/DRRT/kd_heapnode.h
+
+                # include/DRRT/drrt.h
+                # include/DRRT/kdtree.h
+                # include/DRRT/heap.h
+                # include/DRRT/ghostpoint.h
+                # include/DRRT/list.h
+                # include/DRRT/jlist.h
+                # include/DRRT/kdtreenode.h
+                # include/DRRT/datastructures.h
+                # include/DRRT/edge.h
+                # include/DRRT/dubinsedge.h
+                # include/DRRT/distancefunctions.h
+                # include/DRRT/visualizer.h
+                # include/DRRT/obstacle.h
+                # include/DRRT/thetastar.h
+                # include/DRRT/mainloop.h
+                # include/DRRT/moverobot.h
+                # include/DRRT/sampling.h
+                # include/DRRT/region.h
+        )
 
 set( SRCS
                 # tripoly lib .c files
@@ -69,22 +86,32 @@ set( SRCS
                 src/monotone.c
                 src/misc.c
 
-		src/drrt.cpp
                 src/kdtree.cpp
-                src/heap.cpp
-                src/ghostpoint.cpp
-                src/list.cpp
-                src/jlist.cpp
-                src/dubinsedge.cpp
-                src/distancefunctions.cpp
-                src/visualizer.cpp
+
+                src/kdnode.cpp
                 src/obstacle.cpp
-                src/thetastar.cpp
-                src/mainloop.cpp
-                src/moverobot.cpp
-                src/sampling.cpp
-                src/region.cpp
-		)
+                src/edge.cpp
+
+                src/list.cpp
+                src/heap.cpp
+
+
+                # src/drrt.cpp
+                # src/kdtree.cpp
+                # src/heap.cpp
+                # src/ghostpoint.cpp
+                # src/list.cpp
+                # src/jlist.cpp
+                # src/dubinsedge.cpp
+                # src/distancefunctions.cpp
+                # src/visualizer.cpp
+                # src/obstacle.cpp
+                # src/thetastar.cpp
+                # src/mainloop.cpp
+                # src/moverobot.cpp
+                # src/sampling.cpp
+                # src/region.cpp
+        )
 
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
@@ -93,8 +120,16 @@ string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
 add_library( ${LIBRARY_NAME} ${SRCS} ${HDRS} )
 target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 
-add_executable( smalltest src/smalltest.cpp ${HDRS} )
-target_link_libraries( smalltest ${LIBRARY_NAME} )
+# add_executable( smalltest src/smalltest.cpp ${HDRS} )
+# target_link_libraries( smalltest ${LIBRARY_NAME} )
+
+# List class test
+# add_executable( list_test src/list.cpp ${HDRS} )
+# target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
+
+# Heap class test
+# add_executable( heap_test src/heap.cpp ${HDRS} )
+# target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 
 # VV Needed for release???
 #install_package(
