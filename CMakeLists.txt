@@ -49,6 +49,8 @@ set( HDRS
                 include/DRRT/obstacle.h
                 include/DRRT/edge.h
 
+                include/DRRT/region2d.h
+
                 include/DRRT/list.h
                 include/DRRT/listnode.h
                 include/DRRT/obstacle_listnode.h
@@ -58,6 +60,7 @@ set( HDRS
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
                 include/DRRT/kd_heapnode.h
+
 
                 # include/DRRT/drrt.h
                 # include/DRRT/kdtree.h
@@ -94,6 +97,7 @@ set( SRCS
 
                 src/list.cpp
                 src/heap.cpp
+                src/region2d.cpp
 
 
                 # src/drrt.cpp

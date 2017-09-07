@@ -28,11 +28,11 @@ typedef shared_ptr<Edge> Edge_ptr;
 
 typedef struct Queue {
     shared_ptr<ConfigSpace> cspace;
-    shared_ptr<Heap> priority_queue;
     double change_thresh;
 } Queue;
 
 typedef struct RobotData {
+    bool goal_reached;          // True if robot has reached goal region
 
 } RobotData;
 
@@ -44,8 +44,8 @@ class ConfigSpace : public std::enable_shared_from_this<ConfigSpace> {
 public:
     mutex cspace_mutex_;        // Mutex for accessing cspace variables
     int num_dimensions_;        // Number of dimensions in cspace
-    List_ptr obstacles_;
-    double obstacle_delta_;
+    List_ptr obstacles_;        // List of obstacles in cspace
+    double obstacle_thresh_;    // Amount by which an obstacle must move to detect a change
 
     ConfigSpace() {}
 };
