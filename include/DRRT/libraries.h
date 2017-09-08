@@ -22,8 +22,10 @@
 
 #define PI 3.1415926536     // Rounded value for pi
 #define INF 1000000000000   // 1e12
-#define MAXPATHNODES 1000
+#define MAXPATHNODES 1000   // Maximum number of RRT nodes
+#define MAXOBSPOINTS 10     // Maximum number of obstacle vertices
+#define NUM_DIM 3           // 0:x 1:y 2:theta
 
-#define DEBUG true
+#define DEBUG true          // Debugging print statements
 
 #endif // LIBRARIES_H

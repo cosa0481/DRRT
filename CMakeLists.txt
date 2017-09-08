@@ -49,6 +49,7 @@ set( HDRS
                 include/DRRT/obstacle.h
                 include/DRRT/edge.h
 
+                include/DRRT/region.h
                 include/DRRT/region2d.h
 
                 include/DRRT/list.h

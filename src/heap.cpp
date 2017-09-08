@@ -323,7 +323,7 @@ int main()
     std::shared_ptr<Kdnode> kd_node4 = std::make_shared<Kdnode>(40);
     std::shared_ptr<Kdnode> kd_node5 = std::make_shared<Kdnode>(50);
 
-    std::cout << "kd_node1->GetLmc(): " << kd_node1->GetLmc() << std::endl;
+    std::cout << "kd_node1->GetCost(): " << kd_node1->GetCost() << std::endl;
 
     std::shared_ptr<HeapNode> node1 = std::make_shared<KdHeapNode>(kd_node1);
     std::shared_ptr<HeapNode> node2 = std::make_shared<KdHeapNode>(kd_node2);
@@ -385,7 +385,7 @@ int main()
 //    std::shared_ptr<Kdnode> kd_node4 = std::make_shared<Kdnode>(40);
 //    std::shared_ptr<Kdnode> kd_node5 = std::make_shared<Kdnode>(50);
 
-//    std::cout << "kd_node1->GetLmc(): " << kd_node1->GetLmc() << std::endl;
+//    std::cout << "kd_node1->GetCost(): " << kd_node1->GetCost() << std::endl;
 
 //    std::shared_ptr<HeapNode> node1 = std::make_shared<KdHeapNode>(kd_node1);
 //    std::shared_ptr<HeapNode> node2 = std::make_shared<KdHeapNode>(kd_node2);

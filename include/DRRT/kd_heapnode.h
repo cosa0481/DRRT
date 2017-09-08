@@ -7,13 +7,13 @@
 class KdHeapNode : public HeapNode
 {
 public:
-    std::shared_ptr<Kdnode> data_;
+    Kdnode_ptr data_;
 
-    KdHeapNode(std::shared_ptr<Kdnode> &n) : HeapNode(n->GetLmc()), data_(n)
+    KdHeapNode(Kdnode_ptr &n) : HeapNode(n->GetCost()), data_(n)
     { SetEmpty(false); }
     KdHeapNode() : HeapNode() {}
 
-    void GetData(std::shared_ptr<Kdnode> &node) { node = data_; }
+    void GetData(Kdnode_ptr &node) { node = data_; }
 };
 
 #endif // KD_HEAPNODE_H
