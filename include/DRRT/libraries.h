@@ -20,9 +20,13 @@
 #include <fstream>
 #include <thread>
 
+#include <DRRT/distance_functions.h>
+double DistanceFunction(Eigen::VectorXd a, Eigen::VectorXd b)
+{ return DubinsDistance(a,b); }
+
 #define PI 3.1415926536     // Rounded value for pi
 #define INF 1000000000000   // 1e12
-#define MAXPATHNODES 1000   // Maximum number of RRT nodes
+#define MAXPATHNODES 100    // Maximum number of RRT nodes
 #define MAXOBSPOINTS 10     // Maximum number of obstacle vertices
 #define NUM_DIM 3           // 0:x 1:y 2:theta
 

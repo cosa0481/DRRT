@@ -118,6 +118,9 @@ public:
     void SetSuccessorInParent(EdgeListNode_ptr sip) { successor_list_item_in_parent_ = sip; }
     void SetInitialOutNeighbors(EdgeList_ptr outs) { initial_out_neighbors_ = outs; }
     void SetInitialInNeighbors(EdgeList_ptr ins) { initial_in_neighbors_ = ins; }
+
+    Eigen::VectorXd Saturate(Eigen::VectorXd closest_point, double delta, double dist)
+    { return SaturateDubins(closest_point, delta, dist); }
 };
 
 typedef std::shared_ptr<Kdnode> Kdnode_ptr;

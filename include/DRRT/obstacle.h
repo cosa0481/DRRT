@@ -61,8 +61,10 @@ public:
     Eigen::VectorXd GetOrigin() { return origin_; }
     Region GetShape() { return shape_; }
     double GetRadius() { return radius_; }
-    std::shared_ptr<btCollisionObject> GetCollisionObject() { return collision_object_; }
-    std::shared_ptr<btConvexHullShape> GetCollisionShape() { return collision_shape_; }
+    std::shared_ptr<btCollisionObject> GetCollisionObject()
+    { return collision_object_; }
+    std::shared_ptr<btConvexHullShape> GetCollisionShape()
+    { return collision_shape_; }
     double GetVelocity() { return velocity_; }
     Eigen::MatrixXd GetPath() { return path_; }
     Eigen::VectorXd GetPathTimes() { return path_times_; }
@@ -76,12 +78,16 @@ public:
     void SetIsUsedAfterSense(bool used) { is_used_after_sense_ = used; }
     void SetOrigin(Eigen::VectorXd origin) { origin_ = origin; }
     void SetShape(Region shape) { shape_ = shape; }
-    void SetCollisionObject(std::shared_ptr<btCollisionObject> object) { collision_object_ = object; }
-    void SetCollisionShape(std::shared_ptr<btConvexHullShape> shape) { collision_shape_ = shape; }
+    void SetCollisionObject(std::shared_ptr<btCollisionObject> object)
+    { collision_object_ = object; }
+    void SetCollisionShape(std::shared_ptr<btConvexHullShape> shape)
+    { collision_shape_ = shape; }
     void SetVelocity(double vel) { velocity_ = vel; }
     void SetPath(Eigen::MatrixXd path) { path_ = path; }
     void SetPathTimes(Eigen::VectorXd times) { path_times_ = times; }
     void SetCurrentPathIdx(int idx) { current_path_idx_ = idx; }
+
+    // Obstacle functions
 };
 
 typedef std::shared_ptr<Obstacle> Obstacle_ptr;

@@ -44,10 +44,13 @@ set( HDRS
 
                 include/DRRT/libraries.h
                 include/DRRT/data_structures.h
+                include/DRRT/distance_functions.h
 
                 include/DRRT/kdnode.h
                 include/DRRT/obstacle.h
+
                 include/DRRT/edge.h
+                include/DRRT/dubinsedge.h
 
                 include/DRRT/region.h
                 include/DRRT/region2d.h
@@ -93,7 +96,7 @@ set( SRCS
 
                 src/kdnode.cpp
                 src/obstacle.cpp
-                src/edge.cpp
+                src/dubinsedge.cpp
 
                 src/list.cpp
                 src/heap.cpp
