@@ -24,8 +24,11 @@
 double DistanceFunction(Eigen::VectorXd a, Eigen::VectorXd b)
 { return DubinsDistance(a,b); }
 
+typedef std::lock_guard<std::mutex> lockguard;
+
 #define PI 3.1415926536     // Rounded value for pi
 #define INF 1000000000000   // 1e12
+#define NSPS 1000000000     // nanoseconds per second
 #define MAXPATHNODES 100    // Maximum number of RRT nodes
 #define MAXOBSPOINTS 10     // Maximum number of obstacle vertices
 #define NUM_DIM 3           // 0:x 1:y 2:theta

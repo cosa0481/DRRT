@@ -46,8 +46,12 @@ set( HDRS
                 include/DRRT/data_structures.h
                 include/DRRT/distance_functions.h
 
+                include/DRRT/kdtree.h
                 include/DRRT/kdnode.h
+                include/DRRT/neighbor_iterator.h
+
                 include/DRRT/obstacle.h
+                include/DRRT/collision_detection.h
 
                 include/DRRT/edge.h
                 include/DRRT/dubinsedge.h
@@ -58,7 +62,7 @@ set( HDRS
                 include/DRRT/list.h
                 include/DRRT/obstacle_listnode.h
                 include/DRRT/edge_listnode.h
-                include/DRRT/kd_listnode.h
+                include/DRRT/kdnode_listnode.h
 
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
@@ -93,10 +97,13 @@ set( SRCS
                 src/misc.c
 
                 src/kdtree.cpp
-
                 src/kdnode.cpp
-                src/obstacle.cpp
+                src/neighbor_iterator.cpp
+
                 src/dubinsedge.cpp
+
+                src/obstacle.cpp
+                src/collision_detection.cpp
 
                 src/list.cpp
                 src/heap.cpp

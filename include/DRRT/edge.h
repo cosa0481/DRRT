@@ -24,6 +24,7 @@ public:
     Edge() : dist_(INF) { trajectory_ = Eigen::MatrixXd::Zero(MAXPATHNODES, NUM_DIM); }
 
     static std::shared_ptr<Edge> NewEdge(std::shared_ptr<Kdnode> start, std::shared_ptr<Kdnode> end);
+    static std::shared_ptr<Edge> NewEdge();
 
     std::string GetType() { return type_; }
     std::shared_ptr<Kdnode> GetStart() { return start_; }

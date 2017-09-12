@@ -6,12 +6,15 @@
 #include <bullet/btBulletCollisionCommon.h>
 #include <bullet/BulletCollision/CollisionShapes/btConvexHullShape.h>
 
-class Obstacle
+class ConfigSpace;
+class KdTree;
+
+class Obstacle : public std::enable_shared_from_this<Obstacle>
 {
     int kind_;
 
-    double start_time_;
-    double lifetime_;
+    double start_time_;  // Time (secs) after cspace->start_time_ when obstacle exists
+    double lifetime_;  // Time (secs) for which obstacle exists
 
     bool is_used_;
     bool is_sensible_;
@@ -26,19 +29,23 @@ class Obstacle
     std::shared_ptr<btConvexHullShape> collision_shape_;
 
     double velocity_;
-    Eigen::MatrixXd path_;
-    Eigen::VectorXd path_times_;
-    int current_path_idx_;
+    Eigen::MatrixXd path_;  // Locations of the origin of obstacle in path
+    Eigen::VectorXd path_times_;  // Times when obstacle moves along path in seconds
+    int current_path_idx_;  // Current index of path and path times
 
 public:
+    std::shared_ptr<ConfigSpace> cspace;  // pointer to cspace where obstacle lives
+
     Obstacle(int kind) : kind_(kind) {}
     Obstacle(int kind, Eigen::VectorXd origin, Eigen::MatrixX2d shape,
-             Eigen::MatrixXd path, Eigen::VectorXd path_times)
+             Eigen::MatrixXd path, Eigen::VectorXd path_times,
+             std::shared_ptr<ConfigSpace> configspace)
         : kind_(kind), is_used_(false), is_sensible_(false),
           is_used_after_sense_(false),
           origin_(origin), shape_(Region(shape)),
           collision_object_(std::make_shared<btCollisionObject>()),
-          path_(path), path_times_(path_times), current_path_idx_(0)
+          path_(path), path_times_(path_times), current_path_idx_(0),
+          cspace(configspace)
     {
         original_shape_global_ = shape_.GetGlobalPose2D(origin);
         double dist, max = 0;
@@ -51,6 +58,9 @@ public:
     }
     Obstacle() : kind_(-1) {}
 
+    std::shared_ptr<Obstacle> GetSharedPointer() { return shared_from_this(); }
+
+    // Getters & Setters
     int GetKind() { return kind_; }
     double GetStartTime() { return start_time_; }
     double GetLifeTime() { return lifetime_; }
@@ -88,6 +98,18 @@ public:
     void SetCurrentPathIdx(int idx) { current_path_idx_ = idx; }
 
     // Obstacle functions
+    static void UpdateObstacles();
+    static bool MoveObstacles(std::shared_ptr<ConfigSpace> &cspace);
+
+    void UpdatePosition(Eigen::VectorXd new_pos)
+    { origin_ = new_pos; }
+
+    bool MoveObstacle();
+    void AddObstacle(std::shared_ptr<KdTree> tree);
+    void RemoveObstacle(std::shared_ptr<KdTree> tree);
+
+    void AddToCSpace();
+    static void ReadObstaclesFromFile(std::string obs_file);
 };
 
 typedef std::shared_ptr<Obstacle> Obstacle_ptr;

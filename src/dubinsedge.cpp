@@ -8,6 +8,12 @@ Edge_ptr Edge::NewEdge(Kdnode_ptr start, Kdnode_ptr end)
     return new_edge;
 }
 
+Edge_ptr Edge::NewEdge()
+{
+    Edge_ptr new_edge = std::make_shared<DubinsEdge>(); // new_edge->dist_ == INF
+    return new_edge;
+}
+
 bool DubinsEdge::ValidMove()
 {
     return true;

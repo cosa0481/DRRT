@@ -3,7 +3,7 @@
 
 #include <DRRT/libraries.h>
 
-// Template class must have child_ and data_ member variables
+// Template class must have GetChild() and data_ member variables
 // Lists always end with an empty node of type T with child equal to self
 template <class T>
 class List
@@ -16,8 +16,8 @@ class List
 public:
     List() {
         std::shared_ptr<T> end = std::make_shared<T>();
-        end->child_ = end;
-        end->parent_ = end;
+        end->SetChild(end);
+        end->SetParent(end);
         front_ = end;
         back_ = end;
         bound_ = end;
@@ -26,8 +26,8 @@ public:
 
     List(std::shared_ptr<T> front_node) {
         std::shared_ptr<T> end = std::make_shared<T>();
-        end->child_ = end;
-        end->parent_ = end;
+        end->SetChild(end);
+        end->SetParent(end);
         front_ = end;
         back_ = end;
         bound_ = end;

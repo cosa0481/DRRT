@@ -10,15 +10,19 @@ class EdgeListNode
     bool is_empty_;
     bool in_list_;
 
-public:
     std::shared_ptr<EdgeListNode> child_;
     std::shared_ptr<EdgeListNode> parent_;
     Edge_ptr data_;
 
+public:
     EdgeListNode(Edge_ptr &e) : data_(e) { SetEmpty(false); }
     EdgeListNode() : is_empty_(true) {}
 
     void GetData(Edge_ptr &edge) { edge = data_; }
+    std::shared_ptr<EdgeListNode> GetChild() { return child_; }
+    std::shared_ptr<EdgeListNode> GetParent() { return parent_; }
+    void SetChild(std::shared_ptr<EdgeListNode> new_child) { child_ = new_child; }
+    void SetParent(std::shared_ptr<EdgeListNode> new_parent) { parent_ = new_parent; }
     void SetEmpty(bool empty) { is_empty_ = empty; }
     bool IsEmpty() { return is_empty_; }
     void SetInList(bool inlist) { in_list_ = inlist; }

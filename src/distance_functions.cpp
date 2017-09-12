@@ -1,5 +1,11 @@
 #include <DRRT/distance_functions.h>
 
+double GetTimeNs(std::chrono::time_point<std::chrono::high_resolution_clock> start)
+{
+    return std::chrono::duraction_cast<chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now() - start).count();
+}
+
 double DubinsDistance(Eigen::Vector3d a, Eigen::Vector3d b)
 {
     Eigen::Array2d temp = a.head(2) - b.head(2);

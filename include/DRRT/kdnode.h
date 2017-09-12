@@ -18,7 +18,7 @@ class Kdnode
     Eigen::VectorXd position_;
 
     bool rrt_parent_exist_;
-    std::shared_ptr<Kdnode> rrt_parent_;
+    std::shared_ptr<Edge> rrt_parent_edge_;
 
     EdgeList_ptr out_neighbors_;
     EdgeList_ptr in_neighbors_;
@@ -32,14 +32,14 @@ class Kdnode
 public:
     int split_;
     std::shared_ptr<Kdnode> parent_;
-    std::shared_ptr<Kdnode> lchild_;
-    std::shared_ptr<Kdnode> rchild_;
+    std::shared_ptr<Kdnode> lchild_();
+    std::shared_ptr<Kdnode> rchild_();
 
     // Cost constructor
     Kdnode(double cost)
         : in_tree_(false), is_movegoal_(false), cost_(cost),
           rrt_parent_exist_(false),
-          rrt_parent_(std::make_shared<Kdnode>()),
+          rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
           in_neighbors_(std::make_shared<EdgeList>()),
           successor_list_(std::make_shared<EdgeList>()),
@@ -52,7 +52,7 @@ public:
     Kdnode(Eigen::VectorXd pos)
         : in_tree_(false), is_movegoal_(false), cost_(INF), position_(pos),
           rrt_parent_exist_(false),
-          rrt_parent_(std::make_shared<Kdnode>()),
+          rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
           in_neighbors_(std::make_shared<EdgeList>()),
           successor_list_(std::make_shared<EdgeList>()),
@@ -65,7 +65,7 @@ public:
     Kdnode(double cost, Eigen::VectorXd pos)
         : in_tree_(false), is_movegoal_(false), cost_(cost), position_(pos),
           rrt_parent_exist_(false),
-          rrt_parent_(std::make_shared<Kdnode>()),
+          rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
           in_neighbors_(std::make_shared<EdgeList>()),
           successor_list_(std::make_shared<EdgeList>()),
@@ -78,7 +78,7 @@ public:
     Kdnode()
         : in_tree_(false), is_movegoal_(false), cost_(INF),
           rrt_parent_exist_(false),
-          rrt_parent_(std::make_shared<Kdnode>()),
+          rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
           in_neighbors_(std::make_shared<EdgeList>()),
           successor_list_(std::make_shared<EdgeList>()),
@@ -95,7 +95,7 @@ public:
     double GetCost() { return cost_; }
     Eigen::VectorXd GetPosition() { return position_; }
     bool RrtParentExist() { return rrt_parent_exist_; }
-    std::shared_ptr<Kdnode> GetRrtParent() { return rrt_parent_; }
+    void GetRrtParentEdge(std::shared_ptr<Edge> &edge) { edge = rrt_parent_edge_; }
     EdgeList_ptr GetOutNeighbors() { return out_neighbors_; }
     EdgeList_ptr GetInNeighbors() { return in_neighbors_; }
     EdgeList_ptr GetSuccessorList() { return successor_list_; }
@@ -111,7 +111,7 @@ public:
     void SetCost(double new_cost) { cost_ = new_cost; }
     void SetPosition(Eigen::VectorXd pos) { position_ = pos; }
     void SetRrtParentExist(bool exist) { rrt_parent_exist_ = exist; }
-    void SetRrtParent(std::shared_ptr<Kdnode> parent) { rrt_parent_ = parent; }
+    void SetRrtParentEdge(std::shared_ptr<Edge> parentedge) { rrt_parent_edge_ = parentedge; }
     void SetOutNeighbors(EdgeList_ptr outs) { out_neighbors_ = outs; }
     void SetInNeighbors(EdgeList_ptr ins) { in_neighbors_ = ins; }
     void SetSuccessorList(EdgeList_ptr slist) { successor_list_ = slist; }
