@@ -15,7 +15,7 @@ KdnodeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr ob
 }
 
 // Detect collision with obs in bullet world for straight line from start to end
-bool DetectCollision(Obstacle_ptr &obs, Eigen::VectorXd start, Eigen::VectorXd end)
+bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd end)
 {
     btCollisionObject* segment = new btCollisionObject();
 
@@ -177,6 +177,7 @@ bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
             obs_listnode = obs_listnode->GetChild();
         }
     }
+    return false;
 }
 
 bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
@@ -203,25 +204,60 @@ bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
 
 bool EdgeCheck(Obstacle_ptr obstacle, Edge_ptr edge)
 {
-
+    Eigen::MatrixX2d trajectory = edge->GetTrajectory();
+    for(int i = 1; i < trajectory.rows(); i++) {
+        if(DetectCollision(obstacle,
+                           trajectory.row(i-1),
+                           trajectory.row(i)))
+            return true;
+    }
+    return false;
 }
 
 bool EdgeCheck(std::shared_ptr<ConfigSpace> cspace, Edge_ptr edge)
 {
+    if(cspace->in_warmup_time_) return false;
 
-}
-
-bool EdgeCheck2D(std::shared_ptr<ConfigSpace> cspace, Edge_ptr edge)
-{
-
+    ObstacleListNode_ptr obs_listnode;
+    Obstacle_ptr obstacle;
+    int length;
+    {
+        lockguard lock(cspace->cspace_mutex_);
+        obs_listnode = cspace->obstacles_->GetFront();
+        length = cspace->obstacles_->GetLength();
+        for(int i = 0; i < length; i++) {
+            obs_listnode->GetData(obstacle);
+            if(EdgeCheck(obstacle, edge)) return true;
+            obs_listnode = obs_listnode->GetChild();
+        }
+    }
+    return false;
 }
 
 bool QuickCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
 {
-
+    ObstacleListNode_ptr obs_listnode;
+    Obstacle_ptr obstacle;
+    int length;
+    {
+        lockguard lock(cspace->cspace_mutex_);
+        obs_listnode = cspace->obstacles_->GetFront();
+        length = cspace->obstacles_->GetLength();
+        for(int i = 0; i < length; i++) {
+            obs_listnode->GetData(obstacle);
+            if(QuickCheck2D(cspace, point, obstacle)) return true;
+            obs_listnode = obs_listnode->GetChild();
+        }
+    }
+    return false;
 }
 
-bool QuickCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point)
+bool QuickCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
+                  Obstacle_ptr obs)
 {
-
+    if(!obs->IsUsed() || obs->GetLifeTime() <= 0) return false;
+    if(EuclideanDistance2D(point.head(2), obs->GetOrigin().head(2))
+            > obs->GetRadius()) return false;
+    if(PointInPolygon(point, obs->GetShape())) return true;
+    return false;
 }
