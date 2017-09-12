@@ -14,6 +14,50 @@ KdnodeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr ob
     return node_list;
 }
 
+bool PointInPolygon(Eigen::VectorXd point, Region polygon)
+{
+    Eigen::Vector2d pos = point.head(2);
+
+    // MacMartic Crossings Test
+    Eigen::MatrixXd shape = polygon.GetRegion();
+    shape.resize(polygon.GetRegion().rows(), polygon.GetRegion().cols());
+    if(shape.rows() < 2) return false;
+
+    int num_crossings = 0;
+    Eigen::VectorXd start = shape.row(shape.rows() - 1);
+    start.resize(shape.cols());
+    Eigen::VectorXd end;
+    end.resize(shape.cols());
+    double x;
+    for(int i = 0; i < shape.rows(); i++) {
+        end = shape.row(i);
+
+        // Check if edge crosses the y-value of the point
+        if(((start(1) > pos(1)) && end(1) < pos(1))
+                || ((start(1) < pos(1)) && (end(1) > pos(1)))) {
+            // Check if ray from pos to (INF,0) crosses
+            if((start(0) > pos(0)) && (end(0) > pos(0))) {
+                // Both x coordinates are right of the point
+                num_crossings++;
+            } else if((start(0) < pos(0)) && (end(0) < pos(0))) {
+                // Both x coordinates are left of the point
+            } else {
+                // Expensive calulation
+                double t = 2*std::max(start(0), end(0));
+                x = (-((start(0)*end(1) - start(1)*end(0))*(pos(0) - t))
+                     + ((start(0) - end(0))*(pos(0)*pos(1) - pos(1)*t)))
+                        / ((start(1) - end(1))*(pos(0) - t));
+                if(x > pos(0)) num_crossings++;
+            }
+        }
+        start = end;
+    }
+
+    // Check crossings (odd -> inside polygon)
+    if(num_crossings % 2 == 1) return true;
+    return false;
+}
+
 // Detect collision with obs in bullet world for straight line from start to end
 bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd end)
 {
