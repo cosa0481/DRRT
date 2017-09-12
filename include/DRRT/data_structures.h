@@ -9,7 +9,7 @@
 #include <DRRT/edge_listnode.h>
 
 #include <DRRT/heap.h>
-#include <DRRT/kd_heapnode.h>
+#include <DRRT/kdnode_heapnode.h>
 
 #include <DRRT/neighbor_iterator.h>
 #include <DRRT/collision_detection.h>

@@ -312,7 +312,7 @@ bool Heap::CheckMax()
 }
 
 
-/*#include <DRRT/kd_heapnode.h>
+/*#include <DRRT/kdnode_heapnode.h>
 
 int main()
 {

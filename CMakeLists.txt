@@ -66,7 +66,7 @@ set( HDRS
 
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
-                include/DRRT/kd_heapnode.h
+                include/DRRT/kdnode_heapnode.h
 
 
                 # include/DRRT/drrt.h
