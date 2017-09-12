@@ -154,7 +154,7 @@ void Obstacle::AddToCSpace()
     cspace->obstacles_->Push(obstacle_listnode);
 }
 
-// TODO: Generalize to NUM_DIM != 3
+// For reading polygons from a file
 void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<ConfigSpace> cspace)
 {
     ifstream read_stream;
@@ -176,8 +176,7 @@ void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<Confi
             getline(read_stream, line);
             line = "";
 
-            Eigen::VectorXd origin;
-            origin.resize(NUM_DIM);
+            Eigen::Vector3d origin;
             getline(read_stream, line);
             line_stream = stringstream(line);
             getline(line_stream, substring, ',');
@@ -200,9 +199,7 @@ void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<Confi
                 path_times(j) = stod(line);
                 line = "";
             }
-            Eigen::VectorXd new_origin;
-            new_origin.resize(NUM_DIM);
-            // TODO: Generalize to NUM_DIM != 3
+            Eigen::Vector3d new_origin;
             for(int k = 0; k < num_moves; k++) {
                 getline(read_stream, line);
                 line_stream = stringstream(line);
@@ -223,13 +220,13 @@ void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<Confi
             line = "";
             Eigen::MatrixXd polygon;
             if(num_points > 0) polygon.resize(num_points, 2);
-            for(int p; p < num_points; p++) {
+            for(int p = 0; p < num_points; p++) {
                 getline(read_stream, line);
                 line_stream = stringstream(line);
                 getline(line_stream, substring, ',');
-                polygon.row(j)(0) = stod(substring);
+                polygon.row(p)(0) = stod(substring);
                 getline(line_stream, substring);
-                polygon.row(j)(1) = stod(substring);
+                polygon.row(p)(1) = stod(substring);
                 substring = "";
                 line = "";
             }
@@ -239,15 +236,15 @@ void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<Confi
             // Add new obstacle to Bullet for collision detection
             std::shared_ptr<btCollisionObject> coll_obj = std::make_shared<btCollisionObject>();
             std::shared_ptr<btConvexHullShape> coll_shape = std::make_shared<btConvexHullShape>();
-            Eigen::MatrixX2d shape = new_obstacle->GetShape();
-            for(int q; q < shape.rows(); q++) {
+            Eigen::MatrixX2d shape = new_obstacle->GetShape().GetRegion();
+            for(int q = 0; q < shape.rows(); q++) {
                 coll_shape->addPoint(
-                            btVector3((btScalar) shape(j,0),
-                                      (btScalar) shape(j,1),
+                            btVector3((btScalar) shape(q,0),
+                                      (btScalar) shape(q,1),
                                       (btScalar) -0.1));
                 coll_shape->addPoint(
-                            btVector3((btScalar) shape(j,0),
-                                      (btScalar) shape(j,1),
+                            btVector3((btScalar) shape(q,0),
+                                      (btScalar) shape(q,1),
                                       (btScalar) 0.1));
             }
             coll_obj->setCollisionShape(coll_shape.get());

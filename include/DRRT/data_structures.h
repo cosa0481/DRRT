@@ -19,18 +19,18 @@ using namespace std;
 // Triangle container
 typedef Eigen::Matrix<double, Eigen::Dynamic, 6> MatrixX6d;
 
-//typedef shared_ptr<Queue> Queue_ptr;
-
 typedef struct Queue {
     shared_ptr<ConfigSpace> cspace;
     double change_thresh;
 } Queue;
 
+// Information about the robot
 typedef struct RobotData {
     bool goal_reached;          // True if robot has reached goal region
 
 } RobotData;
 
+// Configuration space of the planning problem
 class ConfigSpace {
 public:
     mutex cspace_mutex_;  // Mutex for accessing cspace variables
