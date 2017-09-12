@@ -40,8 +40,10 @@ public:
 
     // System time for start of the program
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
+    bool in_warmup_time_;
 
     double robot_radius_;
+    double collision_distance_;
 
     Kdnode_ptr goal_;  // Planner goal node
     Kdnode_ptr start_;  // Planner start node

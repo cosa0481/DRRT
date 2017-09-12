@@ -154,17 +154,51 @@ bool LineCheck(Kdnode_ptr node1, Kdnode_ptr node2, std::shared_ptr<ConfigSpace> 
 
 bool NodeCheck(std::shared_ptr<ConfigSpace> cspace, Kdnode_ptr node)
 {
-
+    return PointCheck(cspace, node->GetPosition());
 }
 
 bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
 {
+    if(cspace->in_warmup_time_) return false;
+    if(QuickCheck(cspace, point)) return true;
 
+    // Point is not inside any obstacles but still may be in collision
+    // b/c of the cspace->robot_radius_
+    ObstacleListNode_ptr obs_listnode;
+    Obstacle_ptr obstacle;
+    int length;
+    {
+        lockguard lock(cspace->cspace_mutex_);
+        obs_listnode = cspace->obstacles_->GetFront();
+        length = cspace->obstacles_->GetLength();
+        for(int i = 0; i < length; i++) {
+            obs_listnode->GetData(obstacle);
+            if(PointCheck2D(cspace, point, obstacle)) return true;
+            obs_listnode = obs_listnode->GetChild();
+        }
+    }
 }
 
-bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point)
+bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
+                  Obstacle_ptr obs)
 {
+    double robot_radius = cspace->robot_radius_;
+    double min_dist = cspace->collision_distance_;
+    double this_dist = INF;
 
+    if(!obs->IsUsed() || obs->GetLifeTime() <= 0) return false;
+
+    // Calculate distance from robot boundary to obstacle center
+    this_dist = DistanceFunction(obs->GetOrigin(), point);
+    if(this_dist - obs->GetRadius() > min_dist) return false;
+
+    if(PointInPolygon(point.head(2), obs->GetShape())) return true;
+
+    this_dist = sqrt(DistToPolygonSqrd(point, obs->GetShape()))
+            - robot_radius;
+    if(this_dist < 0.0) return true;
+
+    return false;
 }
 
 bool EdgeCheck(Obstacle_ptr obstacle, Edge_ptr edge)
