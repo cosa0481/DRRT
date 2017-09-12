@@ -109,7 +109,8 @@ public:
     void RemoveObstacle(std::shared_ptr<KdTree> tree);
 
     void AddToCSpace();
-    static void ReadObstaclesFromFile(std::string obs_file);
+    static void ReadObstaclesFromFile(std::string obs_file,
+                                      std::shared_ptr<ConfigSpace> cspace);
 };
 
 typedef std::shared_ptr<Obstacle> Obstacle_ptr;

@@ -47,6 +47,12 @@ public:
     Kdnode_ptr start_;  // Planner start node
     Kdnode_ptr move_goal_;  // current goal node for moving robot
 
+    // Bullet Collision Detection
+    btCollisionConfiguration* bt_collision_configuration_;
+    btCollisionDispatcher* bt_dispatcher_;
+    btBroadphaseInterface* bt_broadphase_;
+    btCollisionWorld* bt_collision_world_;
+
     ConfigSpace() {}
 };
 

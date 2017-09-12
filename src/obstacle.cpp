@@ -154,7 +154,109 @@ void Obstacle::AddToCSpace()
     cspace->obstacles_->Push(obstacle_listnode);
 }
 
-void Obstacle::ReadObstaclesFromFile(std::string obs_file)
+// TODO: Generalize to NUM_DIM != 3
+void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<ConfigSpace> cspace)
 {
+    ifstream read_stream;
+    string line, substring;
+    stringstream line_stream;
+    int num_polygons = 0;
+    int num_points;
+    int num_moves;
+    read_stream.open(obs_file);
+    if(read_stream.is_open()) {
+        std::cout << "Obstacle File: " << obs_file << std::endl;
+        // Get number of obstacles in file
+        getline(read_stream, line);
+        num_polygons = stoi(line);
+        if(DEBUG) std::cout << "Number of polygons: " << num_polygons << std::endl;
+        line = "";
+        for(int i = 0; i < num_polygons; i++) {
+            // Read through first delimiter line
+            getline(read_stream, line);
+            line = "";
 
+            Eigen::VectorXd origin;
+            origin.resize(NUM_DIM);
+            getline(read_stream, line);
+            line_stream = stringstream(line);
+            getline(line_stream, substring, ',');
+            origin(0) = stod(substring);
+            getline(line_stream, substring);
+            origin(1) = stod(substring);
+            origin(2) = 0.0;
+            substring = "";
+            line = "";
+
+            // Get number of moves
+            getline(read_stream, line);
+            num_moves = stoi(line);
+            Eigen::MatrixXd path;
+            Eigen::VectorXd path_times;
+            path.resize(num_moves, NUM_DIM);
+            path_times.resize(num_moves);
+            for(int j = 0; j < num_moves; j++) {
+                getline(read_stream, line);
+                path_times(j) = stod(line);
+                line = "";
+            }
+            Eigen::VectorXd new_origin;
+            new_origin.resize(NUM_DIM);
+            // TODO: Generalize to NUM_DIM != 3
+            for(int k = 0; k < num_moves; k++) {
+                getline(read_stream, line);
+                line_stream = stringstream(line);
+                getline(line_stream, substring, ',');
+                new_origin(0) = stod(substring);
+                getline(line_stream, substring);
+                new_origin(1) = stod(substring);
+                substring = "";
+                new_origin(2) = 0.0;
+                path.row(k)(0) = new_origin(0);
+                path.row(k)(1) = new_origin(1);
+                path.row(k)(2) = new_origin(2);
+            }
+
+            // Get number of points in obstacle polygon
+            getline(read_stream, line);
+            num_points = stoi(line);
+            line = "";
+            Eigen::MatrixXd polygon;
+            if(num_points > 0) polygon.resize(num_points, 2);
+            for(int p; p < num_points; p++) {
+                getline(read_stream, line);
+                line_stream = stringstream(line);
+                getline(line_stream, substring, ',');
+                polygon.row(j)(0) = stod(substring);
+                getline(line_stream, substring);
+                polygon.row(j)(1) = stod(substring);
+                substring = "";
+                line = "";
+            }
+
+            Obstacle_ptr new_obstacle = std::make_shared<Obstacle>(3, origin, polygon, path, path_times, cspace);
+
+            // Add new obstacle to Bullet for collision detection
+            std::shared_ptr<btCollisionObject> coll_obj = std::make_shared<btCollisionObject>();
+            std::shared_ptr<btConvexHullShape> coll_shape = std::make_shared<btConvexHullShape>();
+            Eigen::MatrixX2d shape = new_obstacle->GetShape();
+            for(int q; q < shape.rows(); q++) {
+                coll_shape->addPoint(
+                            btVector3((btScalar) shape(j,0),
+                                      (btScalar) shape(j,1),
+                                      (btScalar) -0.1));
+                coll_shape->addPoint(
+                            btVector3((btScalar) shape(j,0),
+                                      (btScalar) shape(j,1),
+                                      (btScalar) 0.1));
+            }
+            coll_obj->setCollisionShape(coll_shape.get());
+            cspace->bt_collision_world_->addCollisionObject(coll_obj.get());
+            new_obstacle->SetCollisionObject(coll_obj);
+            new_obstacle->SetCollisionShape(coll_shape);
+            new_obstacle->AddToCSpace();
+        }
+    } else { if(DEBUG) std::cout << "Error opening obstacle file: " << obs_file << std::endl; }
+    read_stream.close();
+    std::cout << "Read in " << num_polygons << " obstacles" << std::endl;
 }
