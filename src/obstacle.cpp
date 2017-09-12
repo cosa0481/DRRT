@@ -76,6 +76,7 @@ void Obstacle::AddObstacle(KdTree_ptr tree)
 
                 // TODO: Add node to the priority queue for rewiring
                 std::cout << "TODO" << std::endl;
+                exit(-1);
             }
         }
     }
@@ -137,9 +138,11 @@ void Obstacle::RemoveObstacle(KdTree_ptr tree)
             list_item = next_item;
         }
         if(neighbors_were_blocked) {
+            // NOTE: Below also checked LMC != tree_cost
            if(node->GetCost() < cspace->move_goal_->GetCost())
                // TODO: Add node to the priority queue for rewiring
                std::cout << "TODO" << std::endl;
+           exit(-1);
         }
     }
     node_list->Empty();

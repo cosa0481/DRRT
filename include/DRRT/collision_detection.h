@@ -8,9 +8,11 @@
 
 class ConfigSpace;
 
+// These collision detection functions are for Dubin's Space
+
 KdnodeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr obs);
-bool DetectCollision(Obstacle_ptr &obs, Edge_ptr edge);
-bool LineCheck(Kdnode_ptr node1, Kdnode_ptr node2);
+bool DetectCollision(Obstacle_ptr &obs, Eigen::VectorXd start, Eigen::VectorXd end);
+bool LineCheck(Kdnode_ptr node1, Kdnode_ptr node2, std::shared_ptr<ConfigSpace> cspace);
 bool NodeCheck(std::shared_ptr<ConfigSpace> cspace, Kdnode_ptr node);
 bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point);
 bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point);
