@@ -3,14 +3,16 @@
 
 #include <DRRT/libraries.h>
 #include <DRRT/kdnode_listnode.h>
+#include <DRRT/ghost_point.h>
 
-class KdTree {
+class KdTree : public std::enable_shared_from_this<KdTree>
+{
 public:
     std::mutex tree_mutex_;
 
     int dimensions_;
     int size_;
-    Kdnode_ptr root;
+    Kdnode_ptr root_;
     std::vector<Kdnode_ptr> nodes_;
 
     int num_wraps_;
@@ -26,6 +28,8 @@ public:
     KdTree() : dimensions_(0), size_(0), nodes_(std::vector<Kdnode_ptr>()),
         num_wraps_(0), wraps_(Eigen::VectorXi(NUM_DIM)), wrap_points_(Eigen::VectorXd(NUM_DIM))
     {}
+
+    std::shared_ptr<KdTree> GetSharedPointer() { return shared_from_this(); }
 
     void Print(Kdnode_ptr node, int indent=0, char type=' ');
     void GetNodeAt(Kdnode_ptr &node, Eigen::VectorXd pos);

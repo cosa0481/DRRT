@@ -45,6 +45,7 @@ set( HDRS
                 include/DRRT/distance_functions.h
 
                 include/DRRT/kdtree.h
+                include/DRRT/ghost_point.h
                 include/DRRT/kdnode.h
                 include/DRRT/neighbor_iterator.h
 
@@ -96,6 +97,7 @@ set( SRCS
                 src/misc.c
 
                 src/kdtree.cpp
+                src/ghost_point.cpp
                 src/kdnode.cpp
                 src/neighbor_iterator.cpp
 
