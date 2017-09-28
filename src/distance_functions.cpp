@@ -1,8 +1,10 @@
 #include <DRRT/distance_functions.h>
+#include <DRRT/libraries.h>
+#include <DRRT/region.h>
 
 double GetTimeNs(std::chrono::time_point<std::chrono::high_resolution_clock> start)
 {
-    return std::chrono::duraction_cast<chrono::nanoseconds>(
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::high_resolution_clock::now() - start).count();
 }
 
@@ -16,11 +18,13 @@ double DubinsDistance(Eigen::Vector3d a, Eigen::Vector3d b)
                       2));
 }
 
-Eigen::Vector3d SaturateDubins(Eigen::Vector3d closest_point, double delta, double dist)
+Eigen::Vector3d SaturateDubins(Eigen::Vector3d position,
+                               Eigen::Vector3d closest_point,
+                               double delta, double dist)
 {
     Eigen::Vector3d saturated_point;
     saturated_point.head(2) = closest_point.head(2)
-            + (position_.head(2) - closest_point.head(2))*delta/dist;
+            + (position.head(2) - closest_point.head(2))*delta/dist;
     while(saturated_point(2) < 0.0) saturated_point(2) += 2.0*PI;
     while(saturated_point(2) > 2.0*3.1415926536) saturated_point(2) -= 2.0*3.1415926536;
     return saturated_point;

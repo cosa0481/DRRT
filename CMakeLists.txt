@@ -1,6 +1,6 @@
-project( DRRT )
-
 cmake_minimum_required( VERSION 2.8 )
+project( DRRT )
+set( VERSION 0.0.1 )
 
 set( CMAKE_BUILD_TYPE Default )
 
@@ -31,8 +31,6 @@ set( _LIBRARIES
 # Expose these for third parties
 set( DRRT_INCLUDE_DIRS  ${_INCLUDE_DIRS}    CACHE INTERNAL "" FORCE )
 set( DRRT_LIBRARIES     ${_LIBRARIES}       CACHE INTERNAL "" FORCE )
-
-include_directories( ${DRRT_INCLUDE_DIRS} )
 
 # Required for bullet to compile everything with double precision instead of float
 add_definitions(-DBT_USE_DOUBLE_PRECISION)
@@ -68,6 +66,7 @@ set( HDRS
                 include/DRRT/heapnode.h
                 include/DRRT/kdnode_heapnode.h
 
+                include/DRRT/drrt.h
 
                 # include/DRRT/drrt.h
                 # include/DRRT/kdtree.h
@@ -109,6 +108,7 @@ set( SRCS
                 src/heap.cpp
                 src/region2d.cpp
 
+                src/distance_functions.cpp
 
                 # src/drrt.cpp
                 # src/kdtree.cpp
@@ -127,12 +127,23 @@ set( SRCS
                 # src/region.cpp
         )
 
+option(BUILD_EXAMPLES "Build Examples" ON)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+include_directories( ${DRRT_INCLUDE_DIRS} )
+
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
 
 # VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )???
 add_library( ${LIBRARY_NAME} ${SRCS} ${HDRS} )
-target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
+target_link_libraries( ${LIBRARY_NAME} ${_LIBRARIES} )
+
+# VV Didn't do anything
+#install(TARGETS ${LIBRARY_NAME} DESTINATION lib)
+#install(FILES include/DRRT/drrt.h DESTINATION include)
 
 # add_executable( smalltest src/smalltest.cpp ${HDRS} )
 # target_link_libraries( smalltest ${LIBRARY_NAME} )
@@ -149,11 +160,11 @@ target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
 #install_package(
 #    PKG_NAME ${PROJECT_NAME}
 #    LIB_NAME ${LIBRARY_NAME}
-#    VERSION 0.1
-#    DESCRIPTION "RRTx library."
-#    INSTALL_INCLUDE_DIR true
-#    INSTALL_GENERATED_HEADERS ${GENERATED_HEADERS}
+#    VERSION ${VERSION}
+#        DESCRIPTION "RRTx library"
+##        INSTALL_INCLUDE_DIR true
+##        INSTALL_GENERATED_HEADERS ${GENERATED_HEADERS}
 #    DESTINATION ${CMAKE_INSTALL_PREFIX}
-#    INCLUDE_DIRS ${DRRT_INCLUDE_DIRS}
-#    LINK_LIBS ${DRRT_LIBRARIES}
-#    )
+#    INCLUDE_DIRS ${_INCLUDE_DIRS}
+#    LINK_LIBS ${_LIBRARIES}
+#)

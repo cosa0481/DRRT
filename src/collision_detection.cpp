@@ -71,9 +71,9 @@ bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd en
     // Create box around segment with width: 2*robot_radius
     // and height: length + 2*robot_radius
     btCylinderShape* segment_shape = new btCylinderShape(
-                btVector3((btScalar) obs->cspace->robot_radius_ + length/2,
+                btVector3((btScalar) obs->cspace->robot->radius + length/2,
                           (btScalar) 0.1,
-                          (btScalar) obs->cspace->robot_radius_ + length/2));
+                          (btScalar) obs->cspace->robot->radius + length/2));
 
     // Set the collision shape of the segment collision object
     segment->setCollisionShape(segment_shape);
@@ -207,7 +207,7 @@ bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
     if(QuickCheck(cspace, point)) return true;
 
     // Point is not inside any obstacles but still may be in collision
-    // b/c of the cspace->robot_radius_
+    // b/c of the cspace->robot->radius_
     ObstacleListNode_ptr obs_listnode;
     Obstacle_ptr obstacle;
     int length;
@@ -227,8 +227,8 @@ bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
 bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
                   Obstacle_ptr obs)
 {
-    double robot_radius = cspace->robot_radius_;
-    double min_dist = cspace->collision_distance_;
+    double robot_radius = cspace->robot->radius;
+    double min_dist = cspace->collision_thresh_;
     double this_dist = INF;
 
     if(!obs->IsUsed() || obs->GetLifeTime() <= 0) return false;

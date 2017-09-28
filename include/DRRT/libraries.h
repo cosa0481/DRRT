@@ -21,10 +21,13 @@
 #include <thread>
 
 #include <DRRT/distance_functions.h>
-double DistanceFunction(Eigen::VectorXd a, Eigen::VectorXd b)
+inline double DistanceFunction(Eigen::VectorXd a, Eigen::VectorXd b)
 { return DubinsDistance(a,b); }
 
 typedef std::lock_guard<std::mutex> lockguard;
+
+// Triangles container
+typedef Eigen::Matrix<double, Eigen::Dynamic, 6> MatrixX6d;
 
 #define PI 3.1415926536     // Rounded value for pi
 #define INF 1000000000000   // 1e12

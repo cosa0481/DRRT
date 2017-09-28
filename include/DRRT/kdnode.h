@@ -9,6 +9,8 @@ class Kdnode
     bool in_tree_;
     bool is_movegoal_;
 
+    int kd_split_;
+
     bool parent_exist_;
     bool lchild_exist_;
     bool rchild_exist_;
@@ -32,8 +34,8 @@ class Kdnode
 public:
     int split_;
     std::shared_ptr<Kdnode> parent_;
-    std::shared_ptr<Kdnode> lchild_();
-    std::shared_ptr<Kdnode> rchild_();
+    std::shared_ptr<Kdnode> lchild_;
+    std::shared_ptr<Kdnode> rchild_;
 
     // Cost constructor
     Kdnode(double cost)
@@ -89,6 +91,7 @@ public:
 
     bool InTree() { return in_tree_; }
     bool IsGoal() { return is_movegoal_; }
+    int GetKdSplit() { return kd_split_; }
     bool ParentExist() { return parent_exist_; }
     bool LChildExist() { return lchild_exist_; }
     bool RChildExist() { return rchild_exist_; }
@@ -105,6 +108,7 @@ public:
 
     void SetInTree(bool intree) { in_tree_ = intree; }
     void SetIsGoal(bool isgoal) { is_movegoal_ = isgoal; }
+    void SetKdSplit(int split) { kd_split_ = split; }
     void SetParentExist(bool exist) { parent_exist_ = exist; }
     void SetLChildExist(bool exist) { lchild_exist_ = exist; }
     void SetRChildExist(bool exist) { rchild_exist_ = exist; }
@@ -119,8 +123,10 @@ public:
     void SetInitialOutNeighbors(EdgeList_ptr outs) { initial_out_neighbors_ = outs; }
     void SetInitialInNeighbors(EdgeList_ptr ins) { initial_in_neighbors_ = ins; }
 
-    Eigen::VectorXd Saturate(Eigen::VectorXd closest_point, double delta, double dist)
-    { return SaturateDubins(closest_point, delta, dist); }
+    inline Eigen::VectorXd Saturate(Eigen::VectorXd position,
+                             Eigen::VectorXd closest_point,
+                             double delta, double dist)
+    { return SaturateDubins(position, closest_point, delta, dist); }
 };
 
 typedef std::shared_ptr<Kdnode> Kdnode_ptr;

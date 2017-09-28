@@ -98,7 +98,7 @@ public:
     void SetCurrentPathIdx(int idx) { current_path_idx_ = idx; }
 
     // Obstacle functions
-    static void UpdateObstacles();
+    static void UpdateObstacles(std::shared_ptr<ConfigSpace> cspace);
     static bool MoveObstacles(std::shared_ptr<ConfigSpace> &cspace);
 
     void UpdatePosition(Eigen::VectorXd new_pos)

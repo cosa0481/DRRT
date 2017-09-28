@@ -2,9 +2,31 @@
 #include <DRRT/obstacle_listnode.h>
 #include <DRRT/collision_detection.h>
 
-void Obstacle::UpdateObstacles()
+void Obstacle::UpdateObstacles(CSpace_ptr cspace)
 {
+    bool goal_reached = false;
+    bool moved;
 
+    while(!goal_reached)
+    {
+        moved = Obstacle::MoveObstacles(cspace);
+        {
+            lockguard lock(cspace->cspace_mutex_);
+            cspace->obstacle_update_ = moved;
+        }
+
+        if(moved) {
+            // TODO: ThetaStar
+            std::cout << "TODO" << std::endl;
+//            cspace->robot->theta_star_path = ThetaStar();
+//            cspace->robot->thetas = PathToThetas(cspace->robot->theta_star_path);
+        }
+
+        {
+            lockguard lock(cspace->robot->robot_mutex_);
+            goal_reached = cspace->robot->goal_reached;
+        }
+    }
 }
 
 bool Obstacle::MoveObstacles(std::shared_ptr<ConfigSpace> &cspace)

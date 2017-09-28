@@ -1,3 +1,4 @@
+examples/
 debug*
 triangulatepolygon*
 *.fig

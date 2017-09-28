@@ -27,7 +27,7 @@ public:
         num_wraps_(0), wraps_(Eigen::VectorXi(NUM_DIM)), wrap_points_(Eigen::VectorXd(NUM_DIM))
     {}
 
-    void Print(Kdnode_ptr start_node, int indent=0, char type=' ');
+    void Print(Kdnode_ptr node, int indent=0, char type=' ');
     void GetNodeAt(Kdnode_ptr &node, Eigen::VectorXd pos);
     bool KdInsert(Kdnode_ptr &node);
 
