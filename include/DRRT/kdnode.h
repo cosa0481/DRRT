@@ -6,6 +6,7 @@
 
 class Kdnode
 {
+    bool in_range_list_;
     bool in_tree_;
     bool is_movegoal_;
 
@@ -39,7 +40,8 @@ public:
 
     // Cost constructor
     Kdnode(double cost)
-        : in_tree_(false), is_movegoal_(false), cost_(cost),
+        : in_range_list_(false),
+          in_tree_(false), is_movegoal_(false), cost_(cost),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -52,7 +54,8 @@ public:
 
     // Position constructor
     Kdnode(Eigen::VectorXd pos)
-        : in_tree_(false), is_movegoal_(false), cost_(INF), position_(pos),
+        : in_range_list_(false),
+          in_tree_(false), is_movegoal_(false), cost_(INF), position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -65,7 +68,8 @@ public:
 
     // Cost and position constructor
     Kdnode(double cost, Eigen::VectorXd pos)
-        : in_tree_(false), is_movegoal_(false), cost_(cost), position_(pos),
+        : in_range_list_(false),
+          in_tree_(false), is_movegoal_(false), cost_(cost), position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -78,7 +82,8 @@ public:
 
     // Default constructor
     Kdnode()
-        : in_tree_(false), is_movegoal_(false), cost_(INF),
+        : in_range_list_(false),
+          in_tree_(false), is_movegoal_(false), cost_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -89,6 +94,7 @@ public:
           initial_in_neighbors_(std::make_shared<EdgeList>())
     { position_.setZero(NUM_DIM); }
 
+    bool InRangeList() { return in_range_list_; }
     bool InTree() { return in_tree_; }
     bool IsGoal() { return is_movegoal_; }
     int GetKdSplit() { return kd_split_; }
@@ -106,6 +112,7 @@ public:
     EdgeList_ptr GetInitialOutNeighbors() { return initial_out_neighbors_; }
     EdgeList_ptr GetInitialInNeighbors() { return initial_in_neighbors_; }
 
+    void SetInRangeList(bool inlist) { in_range_list_ = inlist; }
     void SetInTree(bool intree) { in_tree_ = intree; }
     void SetIsGoal(bool isgoal) { is_movegoal_ = isgoal; }
     void SetKdSplit(int split) { kd_split_ = split; }

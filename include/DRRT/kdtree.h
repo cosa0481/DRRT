@@ -3,6 +3,7 @@
 
 #include <DRRT/libraries.h>
 #include <DRRT/kdnode_listnode.h>
+#include <DRRT/range_listnode.h>
 #include <DRRT/ghost_point.h>
 
 class KdTree : public std::enable_shared_from_this<KdTree>
@@ -48,10 +49,15 @@ public:
                                          Eigen::VectorXd query, Kdnode_ptr &suggested,
                                          double suggested_dist);
 
+    void AddToRangeList(RangeList_ptr list, Kdnode_ptr &node, double value);
+    double PopFromRangeList(RangeList_ptr list, Kdnode_ptr &node);
+    void EmptyRangeList(RangeList_ptr list);
+
     // Following 3 functions return a pointer to a KdnodeList containing the Kdnodes within range
-    KdnodeList_ptr FindWithinRange(double range, Eigen::VectorXd query);
-    KdnodeList_ptr FindWithinRangeInSubtree(Kdnode_ptr sub_root, double range, Eigen::VectorXd query);
-    KdnodeList_ptr FindMoreWithinRange(double, Eigen::VectorXd query);
+    RangeList_ptr FindWithinRange(double range, Eigen::VectorXd query);
+    RangeList_ptr FindWithinRangeInSubtree(Kdnode_ptr sub_root, double range,
+                                           Eigen::VectorXd query, RangeList_ptr range_list);
+    RangeList_ptr FindMoreWithinRange(double range, Eigen::VectorXd query, RangeList_ptr range_list);
 };
 
 typedef std::shared_ptr<KdTree> KdTree_ptr;

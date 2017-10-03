@@ -61,13 +61,11 @@ bool Obstacle::MoveObstacle()
 // TODO: Understand this function
 void Obstacle::AddObstacle(KdTree_ptr tree)
 {
-    KdnodeList_ptr node_list = FindPointsInConflictWithObstacle(tree, GetSharedPointer());
+    RangeList_ptr range_list = FindPointsInConflictWithObstacle(tree, GetSharedPointer());
 
-    KdnodeListNode_ptr node_listnode;
     Kdnode_ptr node;
-    while(node_list->GetLength() > 0) {
-        node_list->Pop(node_listnode);
-        node_listnode->GetData(node);
+    while(range_list->GetLength() > 0) {
+        tree->PopFromRangeList(range_list, node);
 
         RrtNodeNeighborIterator_ptr out_neighbors = std::make_shared<RrtNodeNeighborIterator>(node);
         EdgeListNode_ptr list_item = NextOutNeighbor(out_neighbors);
@@ -102,7 +100,7 @@ void Obstacle::AddObstacle(KdTree_ptr tree)
             }
         }
     }
-    node_list->Empty();
+    tree->EmptyRangeList(range_list);
     is_used_ = true;
 }
 
@@ -110,13 +108,11 @@ void Obstacle::AddObstacle(KdTree_ptr tree)
 void Obstacle::RemoveObstacle(KdTree_ptr tree)
 {
     // Find nodes in conflict with this obstacle and add them to the priority queue for rewiring
-    KdnodeList_ptr node_list = FindPointsInConflictWithObstacle(tree, GetSharedPointer());
+    RangeList_ptr range_list = FindPointsInConflictWithObstacle(tree, GetSharedPointer());
 
-    KdnodeListNode_ptr node_listnode;
     Kdnode_ptr node;
-    while(node_list->GetLength() > 0) {
-        node_list->Pop(node_listnode);
-        node_listnode->GetData(node);
+    while(range_list->GetLength() > 0) {
+        tree->PopFromRangeList(range_list, node);
 
         // Check this node's out neighbors for blocks by the obstacle
         RrtNodeNeighborIterator_ptr out_neighbors = std::make_shared<RrtNodeNeighborIterator>(node);
@@ -167,7 +163,7 @@ void Obstacle::RemoveObstacle(KdTree_ptr tree)
            exit(-1);
         }
     }
-    node_list->Empty();
+    tree->EmptyRangeList(range_list);
     is_used_ = false;
 }
 
@@ -256,7 +252,8 @@ void Obstacle::ReadObstaclesFromFile(std::string obs_file, std::shared_ptr<Confi
                 line = "";
             }
 
-            Obstacle_ptr new_obstacle = std::make_shared<Obstacle>(3, origin, polygon, path, path_times, cspace);
+            Obstacle_ptr new_obstacle
+                    = std::make_shared<Obstacle>(3, origin, polygon, path, path_times, cspace);
 
             // Add new obstacle to Bullet for collision detection
             std::shared_ptr<btCollisionObject> coll_obj = std::make_shared<btCollisionObject>();

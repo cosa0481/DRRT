@@ -3,14 +3,13 @@
 
 #include <DRRT/obstacle.h>
 #include <DRRT/edge.h>
-#include <DRRT/kdnode_listnode.h>
 #include <DRRT/kdtree.h>
 
 class ConfigSpace;
 
 // These collision detection functions are for Dubin's Space
 
-KdnodeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr obs);
+RangeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr obs);
 bool PointInPolygon(Eigen::VectorXd point, Region polygon);
 bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd end);
 bool LineCheck(Kdnode_ptr node1, Kdnode_ptr node2, std::shared_ptr<ConfigSpace> cspace);

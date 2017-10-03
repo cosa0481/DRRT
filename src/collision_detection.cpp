@@ -1,17 +1,17 @@
 #include <DRRT/collision_detection.h>
 #include <DRRT/data_structures.h>
 
-KdnodeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr obs)
+RangeList_ptr FindPointsInConflictWithObstacle(KdTree_ptr tree, Obstacle_ptr obs)
 {
-    KdnodeList_ptr node_list;
+    RangeList_ptr range_list;
     if(NUM_DIM == 3) {
         Eigen::Vector3d obs_center(obs->GetOrigin()(0), obs->GetOrigin()(1), PI);
-        node_list = tree->FindWithinRange(obs->GetRadius(), obs_center);
+        range_list = tree->FindWithinRange(obs->GetRadius(), obs_center);
     } else {
         std::cout << "Error: FindPointsInConflictWithObstacle not implemented." << std::endl;
-        node_list = std::make_shared<KdnodeList>();
+        range_list = std::make_shared<RangeList>();
     }
-    return node_list;
+    return range_list;
 }
 
 bool PointInPolygon(Eigen::VectorXd point, Region polygon)

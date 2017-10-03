@@ -62,6 +62,7 @@ set( HDRS
                 include/DRRT/obstacle_listnode.h
                 include/DRRT/edge_listnode.h
                 include/DRRT/kdnode_listnode.h
+                include/DRRT/range_listnode.h
 
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
