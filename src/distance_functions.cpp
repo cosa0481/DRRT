@@ -18,6 +18,32 @@ double DubinsDistance(Eigen::Vector3d a, Eigen::Vector3d b)
                       2));
 }
 
+double RightTurnDist(Eigen::Vector2d a, Eigen::Vector2d b,
+                     Eigen::Vector2d circle_center, double r)
+{
+    double theta = std::atan2(a(1) - circle_center(1),
+                              a(0) - circle_center(0))
+                 - std::atan2(b(1) - circle_center(1),
+                              b(0) - circle_center(0));
+
+    while(theta < 0) theta += 2*PI;
+
+    return theta*r;
+}
+
+double LeftTurnDist(Eigen::Vector2d a, Eigen::Vector2d b,
+                    Eigen::Vector2d circle_center, double r)
+{
+    double theta = std::atan2(b(1) - circle_center(1),
+                              b(0) - circle_center(0))
+                 - std::atan2(a(1) - circle_center(1),
+                              a(0) - circle_center(0));
+
+    while(theta < 0) theta += 2*PI;
+
+    return theta*r;
+}
+
 Eigen::Vector3d SaturateDubins(Eigen::Vector3d position,
                                Eigen::Vector3d closest_point,
                                double delta, double dist)

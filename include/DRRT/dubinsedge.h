@@ -3,6 +3,8 @@
 
 #include <DRRT/edge.h>
 
+class ConfigSpace;
+
 class DubinsEdge : public Edge
 {
 public:
@@ -13,9 +15,8 @@ public:
 
     bool ValidMove();
     Eigen::VectorXd PoseAtDistAlongEdge(double dist_along_edge);
-    void CalculateTrajectory();
+    void CalculateTrajectory(std::shared_ptr<ConfigSpace> cspace);
     void CalculateHoverTrajectory();
-    bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle);
 };
 
 #endif // DUBINSEDGE_H

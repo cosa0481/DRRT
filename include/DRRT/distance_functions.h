@@ -11,6 +11,12 @@ double GetTimeNs(std::chrono::time_point<std::chrono::high_resolution_clock> sta
 
 double DubinsDistance(Eigen::Vector3d a, Eigen::Vector3d b);
 
+double RightTurnDist(Eigen::Vector2d a, Eigen::Vector2d b,
+                     Eigen::Vector2d circle_center, double r);
+
+double LeftTurnDist(Eigen::Vector2d a, Eigen::Vector2d b,
+                    Eigen::Vector2d circle_center, double r);
+
 // Set the Saturate function in kdnode.h
 Eigen::Vector3d SaturateDubins(Eigen::Vector3d position,
                                Eigen::Vector3d closest_point,

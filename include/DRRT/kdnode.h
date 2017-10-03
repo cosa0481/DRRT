@@ -17,6 +17,7 @@ class Kdnode
     bool rchild_exist_;
 
     double cost_;
+    double lmc_;
 
     Eigen::VectorXd position_;
 
@@ -41,7 +42,7 @@ public:
     // Cost constructor
     Kdnode(double cost)
         : in_range_list_(false),
-          in_tree_(false), is_movegoal_(false), cost_(cost),
+          in_tree_(false), is_movegoal_(false), cost_(cost), lmc_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -55,7 +56,7 @@ public:
     // Position constructor
     Kdnode(Eigen::VectorXd pos)
         : in_range_list_(false),
-          in_tree_(false), is_movegoal_(false), cost_(INF), position_(pos),
+          in_tree_(false), is_movegoal_(false), cost_(INF), lmc_(INF), position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -69,7 +70,7 @@ public:
     // Cost and position constructor
     Kdnode(double cost, Eigen::VectorXd pos)
         : in_range_list_(false),
-          in_tree_(false), is_movegoal_(false), cost_(cost), position_(pos),
+          in_tree_(false), is_movegoal_(false), cost_(cost), lmc_(INF), position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -83,7 +84,7 @@ public:
     // Default constructor
     Kdnode()
         : in_range_list_(false),
-          in_tree_(false), is_movegoal_(false), cost_(INF),
+          in_tree_(false), is_movegoal_(false), cost_(INF), lmc_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -102,6 +103,7 @@ public:
     bool LChildExist() { return lchild_exist_; }
     bool RChildExist() { return rchild_exist_; }
     double GetCost() { return cost_; }
+    double GetLmc() { return lmc_; }
     Eigen::VectorXd GetPosition() { return position_; }
     bool RrtParentExist() { return rrt_parent_exist_; }
     void GetRrtParentEdge(std::shared_ptr<Edge> &edge) { edge = rrt_parent_edge_; }
@@ -120,6 +122,7 @@ public:
     void SetLChildExist(bool exist) { lchild_exist_ = exist; }
     void SetRChildExist(bool exist) { rchild_exist_ = exist; }
     void SetCost(double new_cost) { cost_ = new_cost; }
+    void SetLmc(double new_lmc) { lmc_ = new_lmc; }
     void SetPosition(Eigen::VectorXd pos) { position_ = pos; }
     void SetRrtParentExist(bool exist) { rrt_parent_exist_ = exist; }
     void SetRrtParentEdge(std::shared_ptr<Edge> parentedge) { rrt_parent_edge_ = parentedge; }

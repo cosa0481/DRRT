@@ -5,6 +5,7 @@
 
 class Kdnode;
 class Obstacle;
+class ConfigSpace;
 
 class Edge
 {
@@ -41,9 +42,8 @@ public:
     // Edge Functions
     virtual bool ValidMove()=0;
     virtual Eigen::VectorXd PoseAtDistAlongEdge(double dist_along_edge)=0;
-    virtual void CalculateTrajectory()=0;
+    virtual void CalculateTrajectory(std::shared_ptr<ConfigSpace> cspace)=0;
     virtual void CalculateHoverTrajectory()=0;
-    virtual bool ExplicitEdgeCheck(std::shared_ptr<Obstacle> obstacle)=0;
 };
 
 typedef std::shared_ptr<Edge> Edge_ptr;
