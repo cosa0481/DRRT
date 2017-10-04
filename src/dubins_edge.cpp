@@ -1,4 +1,4 @@
-#include <DRRT/dubinsedge.h>
+#include <DRRT/dubins_edge.h>
 #include <DRRT/kdnode.h>
 #include <DRRT/data_structures.h>
 

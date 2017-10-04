@@ -105,6 +105,8 @@ public:
     Kdnode_ptr goal_node_;  // Planner start location node
     Kdnode_ptr move_goal_;  // current goal node for moving robot
 
+    KdnodeList_ptr sample_stack_;  // points to sample in future
+
     // Bullet Collision Detection
     btCollisionConfiguration* bt_collision_config_;
     btCollisionDispatcher* bt_dispatcher_;
@@ -146,6 +148,9 @@ public:
         warmup_time_ = warmuptime;
         if(warmup_time_ > 0.0) in_warmup_time_ = true;
         else in_warmup_time_ = false;
+
+        // Initialize sample stack
+        sample_stack_ = std::make_shared<KdnodeList>();
     }
 };
 

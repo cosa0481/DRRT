@@ -43,6 +43,7 @@ set( HDRS
                 include/DRRT/libraries.h
                 include/DRRT/data_structures.h
                 include/DRRT/distance_functions.h
+                include/DRRT/sampling.h
 
                 # k-d tree
                 include/DRRT/kdtree.h
@@ -56,7 +57,7 @@ set( HDRS
 
                 # edges
                 include/DRRT/edge.h
-                include/DRRT/dubinsedge.h
+                include/DRRT/dubins_edge.h
 
                 # regions
                 include/DRRT/region.h
@@ -80,27 +81,37 @@ set( HDRS
         )
 
 set( SRCS
-                # tripoly lib .c files
-                src/construct.c
-                src/tri.c
-                src/monotone.c
-                src/misc.c
+                # global functions
+                src/distance_functions.cpp
+                src/sampling.cpp
 
+                # k-d tree
                 src/kdtree.cpp
                 src/ghost_point.cpp
                 src/kdnode.cpp
                 src/neighbor_iterator.cpp
 
-                src/dubinsedge.cpp
-
+                # obstacles
                 src/obstacle.cpp
                 src/collision_detection.cpp
 
-                src/list.cpp
-                src/heap.cpp
+                # edges
+                src/dubins_edge.cpp
+
+                # regions
                 src/region2d.cpp
 
-                src/distance_functions.cpp
+                # lists
+                src/list.cpp
+
+                # heap
+                src/heap.cpp
+
+                # tripoly lib functions
+                src/construct.c
+                src/tri.c
+                src/monotone.c
+                src/misc.c
         )
 
 option(BUILD_EXAMPLES "Build Examples" ON)
