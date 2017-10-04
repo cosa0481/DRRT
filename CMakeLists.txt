@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 2.8 )
 project( DRRT )
-set( VERSION 0.0.1 )
+set( VERSION 0.0.2 )
 
 set( CMAKE_BUILD_TYPE Default )
 
@@ -36,58 +36,47 @@ set( DRRT_LIBRARIES     ${_LIBRARIES}       CACHE INTERNAL "" FORCE )
 add_definitions(-DBT_USE_DOUBLE_PRECISION)
 
 set( HDRS
-                # tripoly lib headers
-                include/DRRT/tripolyinterface.h
-                include/DRRT/triangulate.h
+                # exported header
+                include/DRRT/drrt.h
 
+                # global headers
                 include/DRRT/libraries.h
                 include/DRRT/data_structures.h
                 include/DRRT/distance_functions.h
 
+                # k-d tree
                 include/DRRT/kdtree.h
                 include/DRRT/ghost_point.h
                 include/DRRT/kdnode.h
                 include/DRRT/neighbor_iterator.h
 
+                # obstacles
                 include/DRRT/obstacle.h
                 include/DRRT/collision_detection.h
 
+                # edges
                 include/DRRT/edge.h
                 include/DRRT/dubinsedge.h
 
+                # regions
                 include/DRRT/region.h
                 include/DRRT/region2d.h
 
+                # lists
                 include/DRRT/list.h
                 include/DRRT/obstacle_listnode.h
                 include/DRRT/edge_listnode.h
                 include/DRRT/kdnode_listnode.h
                 include/DRRT/range_listnode.h
 
+                # heap
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
                 include/DRRT/kdnode_heapnode.h
 
-                include/DRRT/drrt.h
-
-                # include/DRRT/drrt.h
-                # include/DRRT/kdtree.h
-                # include/DRRT/heap.h
-                # include/DRRT/ghostpoint.h
-                # include/DRRT/list.h
-                # include/DRRT/jlist.h
-                # include/DRRT/kdtreenode.h
-                # include/DRRT/datastructures.h
-                # include/DRRT/edge.h
-                # include/DRRT/dubinsedge.h
-                # include/DRRT/distancefunctions.h
-                # include/DRRT/visualizer.h
-                # include/DRRT/obstacle.h
-                # include/DRRT/thetastar.h
-                # include/DRRT/mainloop.h
-                # include/DRRT/moverobot.h
-                # include/DRRT/sampling.h
-                # include/DRRT/region.h
+                # tripoly lib headers
+                include/DRRT/tripolyinterface.h
+                include/DRRT/triangulate.h
         )
 
 set( SRCS
@@ -112,22 +101,6 @@ set( SRCS
                 src/region2d.cpp
 
                 src/distance_functions.cpp
-
-                # src/drrt.cpp
-                # src/kdtree.cpp
-                # src/heap.cpp
-                # src/ghostpoint.cpp
-                # src/list.cpp
-                # src/jlist.cpp
-                # src/dubinsedge.cpp
-                # src/distancefunctions.cpp
-                # src/visualizer.cpp
-                # src/obstacle.cpp
-                # src/thetastar.cpp
-                # src/mainloop.cpp
-                # src/moverobot.cpp
-                # src/sampling.cpp
-                # src/region.cpp
         )
 
 option(BUILD_EXAMPLES "Build Examples" ON)
