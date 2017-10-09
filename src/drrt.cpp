@@ -407,3 +407,19 @@ void RecalculateLmc(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, doub
 {
 
 }
+
+void Rewire(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, double radius)
+{
+
+}
+
+void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root,
+                         double robot_rad, double radius)
+{
+
+}
+
+void PropogateDescendents(CSpace_ptr &cspace, KdTree_ptr &tree)
+{
+
+}
