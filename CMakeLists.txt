@@ -84,6 +84,7 @@ set( SRCS
                 # global functions
                 src/distance_functions.cpp
                 src/sampling.cpp
+                src/drrt.cpp
 
                 # k-d tree
                 src/kdtree.cpp

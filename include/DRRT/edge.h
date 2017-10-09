@@ -6,6 +6,7 @@
 class Kdnode;
 class Obstacle;
 class ConfigSpace;
+class EdgeListNode;
 
 class Edge
 {
@@ -18,6 +19,9 @@ class Edge
     Eigen::MatrixXd trajectory_;
 
 public:
+    std::shared_ptr<EdgeListNode> list_item_in_start;
+    std::shared_ptr<EdgeListNode> list_item_in_end;
+
     Edge(std::shared_ptr<Kdnode> start, std::shared_ptr<Kdnode> end)
         : start_(start), end_(end)
     { trajectory_ = Eigen::MatrixXd::Zero(MAXPATHNODES, NUM_DIM); }

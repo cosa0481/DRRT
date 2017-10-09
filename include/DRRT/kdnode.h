@@ -7,10 +7,10 @@
 class Kdnode
 {
     bool in_range_list_;
+    bool in_priority_queue_;
+    bool in_OS_queue_;
     bool in_tree_;
     bool is_movegoal_;
-
-    int kd_split_;
 
     bool parent_exist_;
     bool lchild_exist_;
@@ -35,13 +35,14 @@ class Kdnode
 
 public:
     int split_;
+    std::shared_ptr<Edge> temp_edge_;
     std::shared_ptr<Kdnode> parent_;
     std::shared_ptr<Kdnode> lchild_;
     std::shared_ptr<Kdnode> rchild_;
 
     // Cost constructor
     Kdnode(double cost)
-        : in_range_list_(false),
+        : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
           in_tree_(false), is_movegoal_(false), cost_(cost), lmc_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
@@ -55,7 +56,7 @@ public:
 
     // Position constructor
     Kdnode(Eigen::VectorXd pos)
-        : in_range_list_(false),
+        : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
           in_tree_(false), is_movegoal_(false), cost_(INF), lmc_(INF), position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
@@ -69,7 +70,7 @@ public:
 
     // Cost and position constructor
     Kdnode(double cost, Eigen::VectorXd pos)
-        : in_range_list_(false),
+        : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
           in_tree_(false), is_movegoal_(false), cost_(cost), lmc_(INF), position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
@@ -83,7 +84,7 @@ public:
 
     // Default constructor
     Kdnode()
-        : in_range_list_(false),
+        : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
           in_tree_(false), is_movegoal_(false), cost_(INF), lmc_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
@@ -96,9 +97,10 @@ public:
     { position_.setZero(NUM_DIM); }
 
     bool InRangeList() { return in_range_list_; }
+    bool InPriorityQueue() { return in_priority_queue_; }
+    bool InOSQueue() { return in_OS_queue_; }
     bool InTree() { return in_tree_; }
     bool IsGoal() { return is_movegoal_; }
-    int GetKdSplit() { return kd_split_; }
     bool ParentExist() { return parent_exist_; }
     bool LChildExist() { return lchild_exist_; }
     bool RChildExist() { return rchild_exist_; }
@@ -115,9 +117,10 @@ public:
     EdgeList_ptr GetInitialInNeighbors() { return initial_in_neighbors_; }
 
     void SetInRangeList(bool inlist) { in_range_list_ = inlist; }
+    void SetInPriorityQueue(bool inqueue) { in_priority_queue_ = inqueue; }
+    void SetInOSQueue(bool inqueue) { in_OS_queue_ = inqueue; }
     void SetInTree(bool intree) { in_tree_ = intree; }
     void SetIsGoal(bool isgoal) { is_movegoal_ = isgoal; }
-    void SetKdSplit(int split) { kd_split_ = split; }
     void SetParentExist(bool exist) { parent_exist_ = exist; }
     void SetLChildExist(bool exist) { lchild_exist_ = exist; }
     void SetRChildExist(bool exist) { rchild_exist_ = exist; }

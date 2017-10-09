@@ -34,7 +34,7 @@ public:
 
     void Print(Kdnode_ptr node, int indent=0, char type=' ');
     void GetNodeAt(Kdnode_ptr &node, Eigen::VectorXd pos);
-    bool KdInsert(Kdnode_ptr &node);
+    bool Insert(Kdnode_ptr &node);
 
     // KdTree functions
 

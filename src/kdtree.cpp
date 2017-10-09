@@ -30,7 +30,7 @@ void KdTree::GetNodeAt(Kdnode_ptr &node, Eigen::VectorXd pos)
     Kdnode_ptr parent = root_;
     node = parent;
     while(true) {
-        if(pos(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit())) {
+        if(pos(parent->split_) < parent->GetPosition()(parent->split_)) {
             // Go left
             if(parent->GetPosition() == pos) {
                 node = parent;
@@ -52,22 +52,23 @@ void KdTree::GetNodeAt(Kdnode_ptr &node, Eigen::VectorXd pos)
     }
 }
 
-bool KdTree::KdInsert(Kdnode_ptr &node)
+bool KdTree::Insert(Kdnode_ptr &node)
 {
+    lockguard lock(tree_mutex_);
     if(node->InTree()) return false;
     node->SetInTree(true);
 
     if(size_ == 0) {
         root_ = node;
-        root_->SetKdSplit(0);
+        root_->split_ = 0;
         size_ = 1;
         return true;
     }
 
     Kdnode_ptr parent = root_;
     while(true) {
-        if(node->GetPosition()(parent->GetKdSplit())
-                < parent->GetPosition()(parent->GetKdSplit())) {
+        if(node->GetPosition()(parent->split_)
+                < parent->GetPosition()(parent->split_)) {
             // Go left
             if(!parent->LChildExist()) {
                 parent->lchild_ = node;
@@ -89,8 +90,8 @@ bool KdTree::KdInsert(Kdnode_ptr &node)
     }
     node->parent_ = parent;
     node->SetParentExist(true);
-    if(parent->GetKdSplit() == NUM_DIM - 1) node->SetKdSplit(0);
-    else node->SetKdSplit(parent->GetKdSplit() + 1);
+    if(parent->split_ == NUM_DIM - 1) node->split_ = 0;
+    else node->split_ = parent->split_ + 1;
 
     size_ += 1;
     return true;
@@ -143,7 +144,7 @@ double KdTree::FindNearestInSubtree(Kdnode_ptr &nearest, Kdnode_ptr sub_root,
     double current_closest_dist = suggested_dist;
 
     while(true) {
-        if(query(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit())) {
+        if(query(parent->split_) < parent->GetPosition()(parent->split_)) {
             // Traverse tree to the left
             if(!parent->LChildExist()) break;
             parent = parent->lchild_;
@@ -166,8 +167,8 @@ double KdTree::FindNearestInSubtree(Kdnode_ptr &nearest, Kdnode_ptr sub_root,
     {
         // Check if there could possibly be any claser nodes on the other
         // side of the parent. If not, then check grandparent, etc...
-        double parent_hyperplane_dist = query(parent->GetKdSplit())
-                - parent->GetPosition()(parent->GetKdSplit());
+        double parent_hyperplane_dist = query(parent->split_)
+                - parent->GetPosition()(parent->split_);
 
         if(parent_hyperplane_dist > current_closest_dist) {
             // There are not any closer nodes on the other side of the parent
@@ -196,7 +197,7 @@ double KdTree::FindNearestInSubtree(Kdnode_ptr &nearest, Kdnode_ptr sub_root,
         }
 
         // Check the other side of the parent
-        if((query(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit()))
+        if((query(parent->split_) < parent->GetPosition()(parent->split_))
                 && parent->RChildExist()) {
             // The query point is on the left side of the parent, so look
             // at the right side of the parent
@@ -210,7 +211,7 @@ double KdTree::FindNearestInSubtree(Kdnode_ptr &nearest, Kdnode_ptr sub_root,
                 current_closest_node = r_node;
                 current_closest_dist = r_dist;
             }
-        } else if((parent->GetPosition()(parent->GetKdSplit()) <= query(parent->GetKdSplit()))
+        } else if((parent->GetPosition()(parent->split_) <= query(parent->split_))
                   && parent->LChildExist()) {
             // The query point is on the right side of the parent, so look
             // at the left side of the parent
@@ -289,7 +290,7 @@ double KdTree::FindNearestInSubtreeWithGuess(Kdnode_ptr &nearest,
     double current_closest_dist = suggested_dist;
 
     while(true) {
-        if(query(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit())) {
+        if(query(parent->split_) < parent->GetPosition()(parent->split_)) {
             // Traverse tree to the left
             if(!parent->LChildExist()) break;
             parent = parent->lchild_;
@@ -313,8 +314,8 @@ double KdTree::FindNearestInSubtreeWithGuess(Kdnode_ptr &nearest,
     {
         // Check if there could possibly be any claser nodes on the
         // other side of the parent. If not, then check grandparents, etc...
-        double parent_hyperplane_dist = query(parent->GetKdSplit())
-                - parent->GetPosition()(parent->GetKdSplit());
+        double parent_hyperplane_dist = query(parent->split_)
+                - parent->GetPosition()(parent->split_);
 
         if(parent_hyperplane_dist > current_closest_dist) {
             // There are no closer nodes on the other side of the parent
@@ -341,7 +342,7 @@ double KdTree::FindNearestInSubtreeWithGuess(Kdnode_ptr &nearest,
         }
 
         // Check the other side of the parent
-        if((query(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit()))
+        if((query(parent->split_) < parent->GetPosition()(parent->split_))
                 && parent->RChildExist()) {
             // query point is on the left side of the parent so look
             // at the right side of the parent
@@ -356,7 +357,7 @@ double KdTree::FindNearestInSubtreeWithGuess(Kdnode_ptr &nearest,
                 current_closest_node = r_node;
                 current_closest_dist = r_dist;
             }
-        } else if((parent->GetPosition()(parent->GetKdSplit()) <= query(parent->GetKdSplit()))
+        } else if((parent->GetPosition()(parent->split_) <= query(parent->split_))
                   && parent->LChildExist()) {
             // query point is on the right side of the parent, so look
             // at the left side of the parent
@@ -453,7 +454,7 @@ RangeList_ptr KdTree::FindWithinRangeInSubtree(Kdnode_ptr sub_root,
     // Walk down tree as if node would be inserted
     Kdnode_ptr parent = root_;
     while(true) {
-        if(query(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit())) {
+        if(query(parent->split_) < parent->GetPosition()(parent->split_)) {
             // Traverse tree to the left
             if(!parent->LChildExist()) break;
             parent = parent->lchild_;
@@ -475,8 +476,8 @@ RangeList_ptr KdTree::FindWithinRangeInSubtree(Kdnode_ptr sub_root,
         // Check if there could be any nodes on the other side of the parent
         // in range; if not check grandparent, etc...
 
-        double parent_hyperplane_dist = query(parent->GetKdSplit())
-                - parent->GetPosition()(parent->GetKdSplit());
+        double parent_hyperplane_dist = query(parent->split_)
+                - parent->GetPosition()(parent->split_);
         if(parent_hyperplane_dist > range) {
             // There are no closer nodes in range on the other side of the
             // parent and the parent itself is too far away
@@ -495,13 +496,13 @@ RangeList_ptr KdTree::FindWithinRangeInSubtree(Kdnode_ptr sub_root,
         }
 
         // Check the other side of the parent
-        if((query(parent->GetKdSplit()) < parent->GetPosition()(parent->GetKdSplit()))
+        if((query(parent->split_) < parent->GetPosition()(parent->split_))
                 && parent->RChildExist()) {
             // query point is on the left side of the parent, so look at the
             // right side of the parent
             range_list = FindWithinRangeInSubtree(parent->rchild_, range,
                                                   query, range_list);
-        } else if((parent->GetPosition()(parent->GetKdSplit()) <= query(parent->GetKdSplit()))
+        } else if((parent->GetPosition()(parent->split_) <= query(parent->split_))
                   && parent->LChildExist()) {
             // query point is on the right side of the parent, so look at the
             // left side of the parent

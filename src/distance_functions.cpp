@@ -1,6 +1,8 @@
 #include <DRRT/distance_functions.h>
 #include <DRRT/libraries.h>
 #include <DRRT/region.h>
+#include <DRRT/kdnode.h>
+#include <DRRT/edge.h>
 
 double GetTimeNs(std::chrono::time_point<std::chrono::high_resolution_clock> start)
 {
@@ -54,6 +56,21 @@ Eigen::Vector3d SaturateDubins(Eigen::Vector3d position,
     while(saturated_point(2) < 0.0) saturated_point(2) += 2.0*PI;
     while(saturated_point(2) > 2.0*3.1415926536) saturated_point(2) -= 2.0*3.1415926536;
     return saturated_point;
+}
+
+double PathLength(std::shared_ptr<Kdnode> node, std::shared_ptr<Kdnode> root)
+{
+    double length = 0.0;
+    Kdnode_ptr current = node;
+    Edge_ptr edge_to_parent;
+    while(node != root) {
+        if(!node->ParentExist()) return INF;
+        current->GetRrtParentEdge(edge_to_parent);
+        length += edge_to_parent->GetDist();
+        current = edge_to_parent->GetEnd();
+    }
+
+    return length;
 }
 
 double DistToPolygonSqrd(Eigen::VectorXd point, Region polygon)

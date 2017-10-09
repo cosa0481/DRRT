@@ -4,6 +4,7 @@
 #include <Eigen/Eigen>
 #include <chrono>
 
+class Kdnode;
 class Region2D;
 typedef Region2D Region;
 
@@ -21,6 +22,8 @@ double LeftTurnDist(Eigen::Vector2d a, Eigen::Vector2d b,
 Eigen::Vector3d SaturateDubins(Eigen::Vector3d position,
                                Eigen::Vector3d closest_point,
                                double delta, double dist);
+
+double PathLength(std::shared_ptr<Kdnode> node, std::shared_ptr<Kdnode> root);
 
 double DistToPolygonSqrd(Eigen::VectorXd point, Region polygon);
 

@@ -24,4 +24,6 @@ public:
     double GetValue() { return value_; }
 };
 
+typedef std::shared_ptr<HeapNode> HeapNode_ptr;
+
 #endif // HEAPNODE_H

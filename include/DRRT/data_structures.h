@@ -4,9 +4,9 @@
 #include <DRRT/libraries.h>
 
 #include <DRRT/list.h>
-#include <DRRT/kdnode_listnode.h>
-#include <DRRT/obstacle_listnode.h>
-#include <DRRT/edge_listnode.h>
+#include <DRRT/kdnode_listnode.h>  // includes kdnode.h
+#include <DRRT/obstacle_listnode.h>  // includes obstacle.h
+#include <DRRT/edge_listnode.h>  // includes edge.h
 
 #include <DRRT/heap.h>
 #include <DRRT/kdnode_heapnode.h>
@@ -90,6 +90,7 @@ public:
     // Tunable parameters
     double goal_sample_prob_;
     double collision_thresh_;
+    double change_thresh_;
     double min_velocity_;
     double max_velocity_;
     double saturation_delta_;
@@ -107,6 +108,9 @@ public:
 
     KdnodeList_ptr sample_stack_;  // points to sample in future
 
+    Heap_ptr priority_queue_;  // priority queue for rewiring k-d tree nodes
+    KdnodeList_ptr obstacle_successors_;  // obstacle successor list
+
     // Bullet Collision Detection
     btCollisionConfiguration* bt_collision_config_;
     btCollisionDispatcher* bt_dispatcher_;
@@ -114,7 +118,7 @@ public:
     btCollisionWorld* bt_collision_world_;
 
     // Robot object
-    RobotData_ptr robot;
+    RobotData_ptr robot_;
 
     ConfigSpace(Eigen::VectorXd start_pos, Eigen::VectorXd end_pos,
                 Eigen::MatrixXd drive_region, double warmuptime)
@@ -151,6 +155,12 @@ public:
 
         // Initialize sample stack
         sample_stack_ = std::make_shared<KdnodeList>();
+
+        // Initialize priority queue
+        priority_queue_ = std::make_shared<Heap>(0);  // 0 -> min heap
+
+        // Initialize obstacle successors list
+        obstacle_successors_ = std::make_shared<KdnodeList>();
     }
 };
 

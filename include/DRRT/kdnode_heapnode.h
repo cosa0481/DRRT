@@ -16,4 +16,6 @@ public:
     void GetData(Kdnode_ptr &node) { node = data_; }
 };
 
+typedef std::shared_ptr<KdHeapNode> KdHeapNode_ptr;
+
 #endif // KD_HEAPNODE_H

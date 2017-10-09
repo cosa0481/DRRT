@@ -23,8 +23,8 @@ void Obstacle::UpdateObstacles(CSpace_ptr cspace)
         }
 
         {
-            lockguard lock(cspace->robot->robot_mutex_);
-            goal_reached = cspace->robot->goal_reached;
+            lockguard lock(cspace->robot_->robot_mutex_);
+            goal_reached = cspace->robot_->goal_reached;
         }
     }
 }
@@ -156,11 +156,12 @@ void Obstacle::RemoveObstacle(KdTree_ptr tree)
             list_item = next_item;
         }
         if(neighbors_were_blocked) {
-            // NOTE: Below also checked LMC != tree_cost
-           if(node->GetCost() < cspace->move_goal_->GetCost())
-               // TODO: Add node to the priority queue for rewiring
-               std::cout << "TODO" << std::endl;
-           exit(-1);
+            double min_node = std::min(node->GetCost(), node->GetLmc());
+            double min_goal = std::min(cspace->move_goal_->GetCost(), cspace->move_goal_->GetLmc());
+            if((node->GetCost() != node->GetLmc()) && (min_node < min_goal))
+                // TODO: Add node to the priority queue for rewiring
+                std::cout << "TODO" << std::endl;
+            exit(-1);
         }
     }
     tree->EmptyRangeList(range_list);

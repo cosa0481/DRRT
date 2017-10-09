@@ -1,6 +1,6 @@
 #include <DRRT/heap.h>
 
-void Heap::Clean(std::vector<Hnode_ptr> &heap)
+void Heap::Clean(std::vector<HeapNode_ptr> &heap)
 {
     for(int i = 0; i <= index_of_last_; i++) {
         heap_[i]->SetInHeap(false);
@@ -16,7 +16,7 @@ void Heap::Clean(std::vector<Hnode_ptr> &heap)
 
 ///////////////// Min Heap /////////////////
 
-void Heap::AddMin(Hnode_ptr &node)
+void Heap::AddMin(HeapNode_ptr &node)
 {
     if(!node->InHeap()) {
         index_of_last_ += 1;
@@ -30,7 +30,7 @@ void Heap::AddMin(Hnode_ptr &node)
     }
 }
 
-void Heap::RemoveMin(Hnode_ptr &node)
+void Heap::RemoveMin(HeapNode_ptr &node)
 {
     if(node->InHeap()) {
         int idx = node->GetIndex();
@@ -47,7 +47,7 @@ void Heap::RemoveMin(Hnode_ptr &node)
     }
 }
 
-void Heap::UpdateMin(Hnode_ptr &node)
+void Heap::UpdateMin(HeapNode_ptr &node)
 {
     if(node->InHeap()) {
         Heap::BubbleUpMin(node->GetIndex());
@@ -57,15 +57,15 @@ void Heap::UpdateMin(Hnode_ptr &node)
     }
 }
 
-void Heap::TopMin(Hnode_ptr &node)
+void Heap::TopMin(HeapNode_ptr &node)
 {
     if(index_of_last_ >= 1) node = heap_[1];
     else { if(DEBUG) std::cout << "TopMin: index_of_last_ < 1." << std::endl; }
 }
 
-void Heap::PopMin(Hnode_ptr &node)
+void Heap::PopMin(HeapNode_ptr &node)
 {
-    Hnode_ptr old_top;
+    HeapNode_ptr old_top;
     if(index_of_last_ > 1) {
         old_top = heap_[1];
         heap_[1] = heap_[index_of_last_];
@@ -87,7 +87,7 @@ void Heap::BubbleUpMin(int idx)
     if(idx != 1) {
         int parent = idx/2;  /****************/
         while(idx > 1 && (heap_[parent]->GetValue() > heap_[idx]->GetValue())) {
-            Hnode_ptr temp = heap_[parent];
+            HeapNode_ptr temp = heap_[parent];
             heap_[parent] = heap_[idx];
             heap_[idx] = temp;
 
@@ -115,7 +115,7 @@ void Heap::BubbleDownMin(int idx)
 
     if(child != -1) {
         while(idx <= parent_of_last_ && (heap_[child]->GetValue() < heap_[idx]->GetValue())) {
-            Hnode_ptr temp = heap_[child];
+            HeapNode_ptr temp = heap_[child];
             heap_[child] = heap_[idx];
             heap_[idx] = temp;
 
@@ -165,7 +165,7 @@ bool Heap::CheckMin()
 
 ///////////////// Max Heap /////////////////
 
-void Heap::AddMax(Hnode_ptr &node)
+void Heap::AddMax(HeapNode_ptr &node)
 {
     if(!node->InHeap()) {
         index_of_last_ += 1;
@@ -179,7 +179,7 @@ void Heap::AddMax(Hnode_ptr &node)
     }
 }
 
-void Heap::RemoveMax(Hnode_ptr &node)
+void Heap::RemoveMax(HeapNode_ptr &node)
 {
     if(node->InHeap()) {
         int idx = node->GetIndex();
@@ -196,7 +196,7 @@ void Heap::RemoveMax(Hnode_ptr &node)
     }
 }
 
-void Heap::UpdateMax(Hnode_ptr &node)
+void Heap::UpdateMax(HeapNode_ptr &node)
 {
     if(node->InHeap()) {
         Heap::BubbleUpMax(node->GetIndex());
@@ -206,15 +206,15 @@ void Heap::UpdateMax(Hnode_ptr &node)
     }
 }
 
-void Heap::TopMax(Hnode_ptr &node)
+void Heap::TopMax(HeapNode_ptr &node)
 {
     if(index_of_last_ >= 1) node = heap_[1];
     else { if(DEBUG) std::cout << "TopMax: index_of_last_ < 1." << std::endl; }
 }
 
-void Heap::PopMax(Hnode_ptr &node)
+void Heap::PopMax(HeapNode_ptr &node)
 {
-    Hnode_ptr old_top;
+    HeapNode_ptr old_top;
     if(index_of_last_ > 1) {
         old_top = heap_[1];
         heap_[1] = heap_[index_of_last_];
@@ -236,7 +236,7 @@ void Heap::BubbleUpMax(int idx)
     if(idx != 1) {
         int parent = idx/2;  /****************/
         while(idx > 1 && (heap_[parent]->GetValue() < heap_[idx]->GetValue())) {
-            Hnode_ptr temp = heap_[parent];
+            HeapNode_ptr temp = heap_[parent];
             heap_[parent] = heap_[idx];
             heap_[idx] = temp;
 
@@ -264,7 +264,7 @@ void Heap::BubbleDownMax(int idx)
 
     if(child != -1) {
         while(idx <= parent_of_last_ && (heap_[child]->GetValue() > heap_[idx]->GetValue())) {
-            Hnode_ptr temp = heap_[child];
+            HeapNode_ptr temp = heap_[child];
             heap_[child] = heap_[idx];
             heap_[idx] = temp;
 

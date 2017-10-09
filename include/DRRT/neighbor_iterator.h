@@ -11,6 +11,7 @@ typedef struct RrtNodeNeighborIterator {
     EdgeListNode_ptr current_item;
     RrtNodeNeighborIterator(Kdnode_ptr &this_node) : node(this_node), list_flag(0) {}
 
+    void ResetIterator() { list_flag = 0; }
 } RrtNodeNeighborIterator;
 typedef std::shared_ptr<RrtNodeNeighborIterator> RrtNodeNeighborIterator_ptr;
 
