@@ -1,6 +1,7 @@
 #include <DRRT/data_structures.h>
 #include <DRRT/obstacle_listnode.h>
 #include <DRRT/collision_detection.h>
+#include <DRRT/drrt.h>
 
 void Obstacle::UpdateObstacles(CSpace_ptr cspace)
 {
@@ -11,7 +12,7 @@ void Obstacle::UpdateObstacles(CSpace_ptr cspace)
     {
         moved = Obstacle::MoveObstacles(cspace);
         {
-            lockguard lock(cspace->cspace_mutex_);
+            lockguard lock(cspace->mutex_);
             cspace->obstacle_update_ = moved;
         }
 
@@ -23,7 +24,7 @@ void Obstacle::UpdateObstacles(CSpace_ptr cspace)
         }
 
         {
-            lockguard lock(cspace->robot_->robot_mutex_);
+            lockguard lock(cspace->robot_->mutex);
             goal_reached = cspace->robot_->goal_reached;
         }
     }
@@ -31,7 +32,7 @@ void Obstacle::UpdateObstacles(CSpace_ptr cspace)
 
 bool Obstacle::MoveObstacles(std::shared_ptr<ConfigSpace> &cspace)
 {
-    lockguard lock(cspace->cspace_mutex_);
+    lockguard lock(cspace->mutex_);
     ObstacleListNode_ptr obstacle_node = cspace->obstacles_->GetFront();
     if(obstacle_node->IsEmpty() || !obstacle_node->InList()) return false;
     Obstacle_ptr obstacle;
@@ -59,13 +60,13 @@ bool Obstacle::MoveObstacle()
 }
 
 // TODO: Understand this function
-void Obstacle::AddObstacle(KdTree_ptr tree)
+void Obstacle::AddObstacle()
 {
-    RangeList_ptr range_list = FindPointsInConflictWithObstacle(tree, GetSharedPointer());
+    RangeList_ptr range_list = FindPointsInConflictWithObstacle(cspace->kdtree_, GetSharedPointer());
 
     Kdnode_ptr node;
     while(range_list->GetLength() > 0) {
-        tree->PopFromRangeList(range_list, node);
+        cspace->kdtree_->PopFromRangeList(range_list, node);
 
         RrtNodeNeighborIterator_ptr out_neighbors = std::make_shared<RrtNodeNeighborIterator>(node);
         EdgeListNode_ptr list_item = NextOutNeighbor(out_neighbors);
@@ -94,25 +95,24 @@ void Obstacle::AddObstacle(KdTree_ptr tree)
                 parent_edge->SetDist(INF);
                 node->SetRrtParentExist(false);
 
-                // TODO: Add node to the priority queue for rewiring
-                std::cout << "TODO" << std::endl;
-                exit(-1);
+                // Add node to the priority queue for rewiring
+                AddToPriorityQueue(cspace, node);
             }
         }
     }
-    tree->EmptyRangeList(range_list);
+    cspace->kdtree_->EmptyRangeList(range_list);
     is_used_ = true;
 }
 
 // TODO: Understand this function
-void Obstacle::RemoveObstacle(KdTree_ptr tree)
+void Obstacle::RemoveObstacle()
 {
     // Find nodes in conflict with this obstacle and add them to the priority queue for rewiring
-    RangeList_ptr range_list = FindPointsInConflictWithObstacle(tree, GetSharedPointer());
+    RangeList_ptr range_list = FindPointsInConflictWithObstacle(cspace->kdtree_, GetSharedPointer());
 
     Kdnode_ptr node;
     while(range_list->GetLength() > 0) {
-        tree->PopFromRangeList(range_list, node);
+        cspace->kdtree_->PopFromRangeList(range_list, node);
 
         // Check this node's out neighbors for blocks by the obstacle
         RrtNodeNeighborIterator_ptr out_neighbors = std::make_shared<RrtNodeNeighborIterator>(node);
@@ -129,7 +129,7 @@ void Obstacle::RemoveObstacle(KdTree_ptr tree)
             // Check if edge in collision with this obstacle
             if(EdgeCheck(GetSharedPointer(), neighbor_edge)) {
                 // If so, check for collision with other obstacles
-                lockguard lock(cspace->cspace_mutex_);
+                lockguard lock(cspace->mutex_);
                 ObstacleListNode_ptr obs_listnode = cspace->obstacles_->GetFront();
                 Obstacle_ptr other_obs;
                 while(obs_listnode != obs_listnode->GetChild()) {
@@ -158,19 +158,19 @@ void Obstacle::RemoveObstacle(KdTree_ptr tree)
         if(neighbors_were_blocked) {
             double min_node = std::min(node->GetCost(), node->GetLmc());
             double min_goal = std::min(cspace->move_goal_->GetCost(), cspace->move_goal_->GetLmc());
-            if((node->GetCost() != node->GetLmc()) && (min_node < min_goal))
-                // TODO: Add node to the priority queue for rewiring
-                std::cout << "TODO" << std::endl;
-            exit(-1);
+            if((node->GetCost() != node->GetLmc()) && (min_node < min_goal)) {
+                // Add node to the priority queue for rewiring
+                AddToPriorityQueue(cspace, node);
+            }
         }
     }
-    tree->EmptyRangeList(range_list);
+    cspace->kdtree_->EmptyRangeList(range_list);
     is_used_ = false;
 }
 
 void Obstacle::AddToCSpace()
 {
-    lockguard lock(cspace->cspace_mutex_);
+    lockguard lock(cspace->mutex_);
     Obstacle_ptr obstacle = GetSharedPointer();
     ObstacleListNode_ptr obstacle_listnode = std::make_shared<ObstacleListNode>(obstacle);
     cspace->obstacles_->Push(obstacle_listnode);

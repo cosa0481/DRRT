@@ -11,33 +11,31 @@ void GetHeapNodeFor(Heap_ptr &heap, Kdnode_ptr node,
     heap->GetHeap(heap_vec);
 
     HeapNode_ptr hnode;
-    KdHeapNode* heap_node;
     Kdnode_ptr kdnode;
     for(int i = 0; i < heap_vec.size(); i++) {
         hnode = heap_vec[i];
-        heap_node = static_cast<KdHeapNode*>(hnode.get());
-        heap_node->GetData(kdnode);
+        hnode->GetData(kdnode);
         if(node == kdnode) heap_node_for_kdnode = hnode;
     }
 }
 
 void AddToPriorityQueue(CSpace_ptr &cspace, Kdnode_ptr &node)
 {
-    lockguard lock(cspace->cspace_mutex_);
+    lockguard lock(cspace->mutex_);
     HeapNode_ptr heapnode = make_shared<HeapNode>();
     if(node->InPriorityQueue()) {
         GetHeapNodeFor(cspace->priority_queue_, node, heapnode);
         cspace->priority_queue_->Update(heapnode);
     } else {
         node->SetInPriorityQueue(true);
-        heapnode = make_shared<KdHeapNode>(node);
+        heapnode = make_shared<HeapNode>(node);
         cspace->priority_queue_->Add(heapnode);
     }
 }
 
 void AddToOSQueue(CSpace_ptr &cspace, Kdnode_ptr &node)
 {
-    lockguard lock(cspace->cspace_mutex_);
+    lockguard lock(cspace->mutex_);
     HeapNode_ptr heapnode = make_shared<HeapNode>();
     if(node->InPriorityQueue()) {
         GetHeapNodeFor(cspace->priority_queue_, node, heapnode);
@@ -62,7 +60,7 @@ void UpdateQueue(CSpace_ptr &cspace, Kdnode_ptr &node,
         cspace->priority_queue_->Update(heapnode);
         cspace->priority_queue_->Remove(heapnode);
     } else {
-        heapnode = make_shared<KdHeapNode>(node);
+        heapnode = make_shared<HeapNode>(node);
     }
     if(node->GetCost() != node->GetLmc())
         node->SetInPriorityQueue(true);
@@ -130,7 +128,7 @@ void MakeParent(Kdnode_ptr &new_parent, Kdnode_ptr &node, Edge_ptr &edge)
     node->SetSuccessorInParent(new_parent->GetSuccessorList()->GetFront());
 }
 
-void FindBestParent(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
+void FindBestParent(CSpace_ptr &cspace, Kdnode_ptr &new_node,
                     RangeList_ptr &near_nodes, Kdnode_ptr &closest_node)
 {
     // Handle no near nodes case
@@ -162,7 +160,7 @@ void FindBestParent(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
         // Check for validity of this edge
         bool edge_is_safe = !EdgeCheck(cspace, near_edge);
         {
-            lockguard lock(tree->tree_mutex_);
+            lockguard lock(cspace->kdtree_->mutex_);
             near_node->temp_edge_ = near_edge;
             if(!edge_is_safe || !near_edge->ValidMove()) {
                 near_node->temp_edge_->SetDist(INF);
@@ -173,7 +171,7 @@ void FindBestParent(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
 
         // Check for potential better parent
         if(new_node->GetLmc() > near_node->GetLmc() + near_edge->GetDist()) {
-            lockguard lock(tree->tree_mutex_);
+            lockguard lock(cspace->kdtree_->mutex_);
             new_node->SetLmc(near_node->GetLmc() + near_edge->GetDist());
             MakeParent(near_node, new_node, near_edge);
         }
@@ -182,11 +180,11 @@ void FindBestParent(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
     }
 }
 
-void FindNewTarget(CSpace_ptr &cspace, KdTree_ptr &tree, double radius)
+void FindNewTarget(CSpace_ptr &cspace, double radius)
 {
     Eigen::VectorXd robot_pose, next_pose;
     {
-        lockguard lock(cspace->robot_->robot_mutex_);
+        lockguard lock(cspace->robot_->mutex);
         robot_pose = cspace->robot_->pose;
         cspace->robot_->current_edge_used = false;
         cspace->robot_->dist_along_current_edge = 0.0;
@@ -208,7 +206,7 @@ void FindNewTarget(CSpace_ptr &cspace, KdTree_ptr &tree, double radius)
     double max_search_rad = max;
     search_ball_rad = min(search_ball_rad, max_search_rad);
 
-    RangeList_ptr range_list = tree->FindWithinRange(search_ball_rad, robot_pose);
+    RangeList_ptr range_list = cspace->kdtree_->FindWithinRange(search_ball_rad, robot_pose);
 
     Kdnode_ptr dummy_robot_node = make_shared<Kdnode>(robot_pose);
     Edge_ptr best_neighbor_edge = Edge::NewEdge(dummy_robot_node, dummy_robot_node);
@@ -248,7 +246,7 @@ void FindNewTarget(CSpace_ptr &cspace, KdTree_ptr &tree, double radius)
 
         // If valid neighbor found, use it
         if(best_dist_to_goal != INF) {
-            lockguard lock(cspace->cspace_mutex_);
+            lockguard lock(cspace->mutex_);
             cspace->robot_->next_move_target = best_neighbor;
             cspace->robot_->dist_next_pose_to_next_move_target = best_dist_to_neighbor;
             cspace->robot_->current_move_invalid = false;
@@ -275,37 +273,37 @@ void FindNewTarget(CSpace_ptr &cspace, KdTree_ptr &tree, double radius)
             double new_dist = DistanceFunction(new_node->GetPosition(), robot_pose);
             new_node->Saturate(new_node->GetPosition(), robot_pose,
                                cspace->saturation_delta_, new_dist);
-            tree->Insert(new_node);
+            cspace->kdtree_->Insert(new_node);
         }
-        range_list = tree->FindMoreWithinRange(search_ball_rad, robot_pose, range_list);
+        range_list = cspace->kdtree_->FindMoreWithinRange(search_ball_rad, robot_pose, range_list);
     }
-    tree->EmptyRangeList(range_list);
+    cspace->kdtree_->EmptyRangeList(range_list);
 }
 
-bool Extend(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
+bool Extend(CSpace_ptr &cspace, Kdnode_ptr &new_node,
             Kdnode_ptr &closest_node, double delta, double hyper_ball_rad)
 {
     // Find all nodes within hyper ball of new_node
     RangeList_ptr near_nodes = std::make_shared<RangeList>();
     {
-        lockguard lock(tree->tree_mutex_);
-        near_nodes = tree->FindWithinRange(hyper_ball_rad, new_node->GetPosition());
+        lockguard lock(cspace->kdtree_->mutex_);
+        near_nodes = cspace->kdtree_->FindWithinRange(hyper_ball_rad, new_node->GetPosition());
     }
 
     // Find and link to best parent
     // (Saves edges from new_node to neighbors in the field temp_edge of neighbors)
-    FindBestParent(cspace, tree, new_node, near_nodes, closest_node);
+    FindBestParent(cspace, new_node, near_nodes, closest_node);
 
     // If no parent was found then ignore this node
     if(!new_node->ParentExist()) {
-        tree->EmptyRangeList(near_nodes);
+        cspace->kdtree_->EmptyRangeList(near_nodes);
         return false;
     }
 
     // Otherwise insert the new node into the k-d tree
     {
-        lockguard lock(tree->tree_mutex_);
-        tree->Insert(new_node);
+        lockguard lock(cspace->kdtree_->mutex_);
+        cspace->kdtree_->Insert(new_node);
     }
 
     // Link the neighbors and rewire neighbors that would do better to use
@@ -320,7 +318,7 @@ bool Extend(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
 
         if(near_node_range != INF) {
             // Add to initial out-neighbor list of new_node
-            lockguard lock(tree->tree_mutex_);
+            lockguard lock(cspace->kdtree_->mutex_);
             MakeInitialOutNeighbor(new_node, near_node->temp_edge_);
 
             // Add to current out-neighbor list of new_node
@@ -335,7 +333,7 @@ bool Extend(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
         bool edge_is_safe = !EdgeCheck(cspace, near_edge);
         if(near_edge->ValidMove() && edge_is_safe) {
             // Add to initial in-neighbor list of new_node
-            lockguard lock(tree->tree_mutex_);
+            lockguard lock(cspace->kdtree_->mutex_);
             MakeInitialInNeighbor(near_node, near_edge);
 
             // Add to current in-neighbor list of new_node
@@ -354,7 +352,7 @@ bool Extend(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
         if(near_node->GetLmc() > new_node->GetLmc() + near_edge->GetDist()
                 && parent_edge->GetEnd() != near_node
                 && new_node->GetLmc() + near_edge->GetDist() < cspace->move_goal_->GetLmc()) {
-            lockguard lock(tree->tree_mutex_);
+            lockguard lock(cspace->kdtree_->mutex_);
 
             // Make new_node the parent of the near_node
             MakeParent(new_node, near_node, near_edge);
@@ -366,22 +364,20 @@ bool Extend(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
             // Insert neighbor into priority queue if cost reduction
             // is great enough
             if((old_lmc - near_node->GetLmc() > cspace->change_thresh_)
-                    && near_node != tree->root_) {
-                // TODO: Add node to the priority queue for rewiring
-                cout << "TODO" << endl;
-                exit(-1);
+                    && near_node != cspace->kdtree_->root_) {
+                AddToPriorityQueue(cspace, near_node);
             }
         }
 
         near_node_item = near_node_item->GetChild();
     }
 
-    tree->EmptyRangeList(near_nodes);
+    cspace->kdtree_->EmptyRangeList(near_nodes);
 
     // Insert new_node into the priority queue for initial rewiring
-    // TODO: Add node to priority queue for rewiring
-    cout << "TODO" << endl;
-    exit(-1);
+    // Add node to priority queue for rewiring
+    AddToPriorityQueue(cspace, new_node);
+    return true;
 }
 
 void CullCurrentOutNeighbors(Kdnode_ptr &node, double radius)
@@ -405,21 +401,212 @@ void CullCurrentOutNeighbors(Kdnode_ptr &node, double radius)
 
 void RecalculateLmc(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, double radius)
 {
+    if(node != root)
+    {
+        bool new_parent_found = false;
+        double neighbor_dist;
+        Kdnode_ptr rrt_parent, neighbor_node;
+        Edge_ptr parent_edge, neighbor_edge, rrt_parent_edge;
+        EdgeListNode_ptr edge_item;
 
+        // Remove outdated nodes from the current out neighbor list
+        CullCurrentOutNeighbors(node, radius);
+
+        // Get an iterator for this node
+        RrtNodeNeighborIterator_ptr node_out_neighbors
+                = make_shared<RrtNodeNeighborIterator>(node);
+
+        // Set the iterator to the first neighbor
+        edge_item = NextOutNeighbor(node_out_neighbors);
+        while(!edge_item->IsEmpty()) {
+            edge_item->GetData(neighbor_edge);
+            neighbor_node = neighbor_edge->GetEnd();
+            neighbor_dist = neighbor_edge->GetDist();
+
+            if(neighbor_node->InOSQueue()) {
+                // neighbor_node is already orphaned or unwired
+                edge_item = NextOutNeighbor(node_out_neighbors);
+                continue;
+            }
+
+            neighbor_node->GetRrtParentEdge(rrt_parent_edge);
+            if((node->GetLmc() > neighbor_node->GetLmc() + neighbor_dist)
+                    && (!neighbor_node->RrtParentExist() || rrt_parent_edge->GetEnd() != node)
+                    && neighbor_edge->ValidMove()) {
+                // Found a better parent
+                node->SetLmc(neighbor_node->GetLmc() + neighbor_dist);
+                rrt_parent = neighbor_node;
+                parent_edge = neighbor_edge;
+                new_parent_found = true;
+            }
+
+            edge_item = NextOutNeighbor(node_out_neighbors);
+        }
+
+        if(new_parent_found) MakeParent(rrt_parent, node, parent_edge);
+    }
 }
 
 void Rewire(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, double radius)
 {
+    // Only explicitly propagate changes if they are large enough
+    double delta_cost = node->GetCost() - node->GetLmc();
+    if(delta_cost > cspace->change_thresh_)
+    {
+        // Remove outdated nodes from the current out neighbor list
+        CullCurrentOutNeighbors(node, radius);
 
+        // Get an iterator for this node's neighbors and iterate through
+        // the in neighbors
+        RrtNodeNeighborIterator_ptr node_in_neighbors
+                = make_shared<RrtNodeNeighborIterator>(node);
+        EdgeListNode_ptr edge_item = NextInNeighbor(node_in_neighbors);
+        Kdnode_ptr neighbor_node;
+        Edge_ptr neighbor_edge, rrt_parent_edge;
+        while(!edge_item->IsEmpty()) {
+            edge_item->GetData(neighbor_edge);
+            neighbor_node = neighbor_edge->GetStart();
+
+            // Ignore this node's parent and also nodes that cannot reach
+            // the node due to dynamics
+            node->GetRrtParentEdge(rrt_parent_edge);
+            if((node->RrtParentExist() && rrt_parent_edge->GetEnd() == neighbor_node)
+                    || !neighbor_edge->ValidMove()) {
+                edge_item = NextInNeighbor(node_in_neighbors);
+                continue;
+            }
+
+            node->GetRrtParentEdge(rrt_parent_edge);
+            if((neighbor_node->GetLmc() > node->GetLmc() + neighbor_edge->GetDist())
+                    && (!neighbor_node->RrtParentExist() || rrt_parent_edge->GetEnd() != node)
+                    && neighbor_edge->ValidMove()) {
+                // neighbor_node should use node as its parent
+                neighbor_node->SetLmc(node->GetLmc() + neighbor_edge->GetDist());
+                MakeParent(node, neighbor_node, neighbor_edge);
+
+                // If the reduction was great enough then propagate to neighbor
+                if(neighbor_node->GetCost() - neighbor_node->GetLmc() > cspace->change_thresh_)
+                    AddToPriorityQueue(cspace, neighbor_node);
+            }
+
+            edge_item = NextInNeighbor(node_in_neighbors);
+        }
+    }
 }
 
-void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root,
-                         double robot_rad, double radius)
+void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root, double radius)
 {
+    lockguard lock(cspace->mutex_);
+    HeapNode_ptr node_heap_item;
+    Kdnode_ptr node;
+    cspace->priority_queue_->Top(node_heap_item);
+    node_heap_item->GetData(node);
+    double min_node_cost = min(node->GetCost(), node->GetLmc());
+    double min_goal_cost = min(goal->GetCost(), goal->GetLmc());
+    bool less_than = (min_node_cost < min_goal_cost) || (min_node_cost == min_goal_cost && node->IsGoal());
+    while(cspace->priority_queue_->GetIndexOfLast() > 0
+          && (less_than || goal->GetLmc() == INF || goal->GetCost() == INF || goal->InPriorityQueue())) {
+        cspace->priority_queue_->Pop(node_heap_item);
+        node_heap_item->GetData(node);
 
+        // Update neighbors of node if it has changed enough
+        if(node->GetCost() - node->GetLmc() > cspace->change_thresh_) {
+            RecalculateLmc(cspace, node, root, radius);
+            Rewire(cspace, node, root, radius);
+        }
+        node->SetCost(node->GetLmc());
+    }
 }
 
-void PropogateDescendents(CSpace_ptr &cspace, KdTree_ptr &tree)
+void PropogateDescendents(CSpace_ptr &cspace)
 {
+    if(cspace->obstacle_successors_->GetLength() > 0)
+    {
+        lockguard lock(cspace->mutex_);
+        KdnodeListNode_ptr os_list_item = cspace->obstacle_successors_->GetBack();
+        Kdnode_ptr node, successor_node;
+        EdgeListNode_ptr successor_list_item;
+        Edge_ptr successor_edge;
+        while(os_list_item != os_list_item->GetParent()) {
+            os_list_item->GetData(node);
 
+            // Add all of this node's sucessors to the OS stack
+            successor_list_item = node->GetSuccessorList()->GetFront();
+            while(successor_list_item != successor_list_item->GetChild()) {
+                successor_list_item->GetData(successor_edge);
+                successor_node = successor_edge->GetEnd();
+                AddToOSQueue(cspace, successor_node);
+                successor_list_item = successor_list_item->GetChild();
+            }
+
+            os_list_item = os_list_item->GetParent();
+        }
+
+        os_list_item = cspace->obstacle_successors_->GetBack();
+        EdgeListNode_ptr out_neighbor_item;
+        Kdnode_ptr neighbor_node;
+        Edge_ptr neighbor_edge;
+        while(os_list_item != os_list_item->GetParent()) {
+            os_list_item->GetData(node);
+
+            RrtNodeNeighborIterator_ptr node_out_neighbors
+                    = make_shared<RrtNodeNeighborIterator>(node);
+
+            // Add all neighbors to the priority queue except those in OS stack
+            out_neighbor_item = NextOutNeighbor(node_out_neighbors);
+            while(!out_neighbor_item->IsEmpty()) {
+                out_neighbor_item->GetData(neighbor_edge);
+                neighbor_node = neighbor_edge->GetEnd();
+
+                if(neighbor_node->InOSQueue()) {
+                    out_neighbor_item = NextOutNeighbor(node_out_neighbors);
+                    continue;
+                }
+
+                neighbor_node->SetCost(INF);
+                AddToPriorityQueue(cspace, neighbor_node);
+
+                out_neighbor_item = NextOutNeighbor(node_out_neighbors);
+            }
+
+            // Add parent to the priority queue unless it is in the OS queue
+            Edge_ptr rrt_parent_edge;
+            Kdnode_ptr parent_node;
+            node->GetRrtParentEdge(rrt_parent_edge);
+            if(node->RrtParentExist() && !rrt_parent_edge->GetEnd()->InOSQueue()) {
+                node->parent_->SetCost(INF);
+                parent_node = rrt_parent_edge->GetEnd();
+                AddToPriorityQueue(cspace, parent_node);
+            }
+
+            os_list_item = os_list_item->GetParent();
+        }
+
+        KdnodeListNode_ptr node_list_item;
+        while(cspace->obstacle_successors_->GetLength() > 0) {
+            cspace->obstacle_successors_->Pop(node_list_item);
+            node_list_item->GetData(node);
+            node->SetInOSQueue(false);
+
+            if(node == cspace->robot_->next_move_target)
+                cspace->robot_->current_move_invalid = true;
+
+            if(node->RrtParentExist()) {
+                // Remove node from it's parent's successor list
+                Edge_ptr rrt_parent_edge;
+                node->GetRrtParentEdge(rrt_parent_edge);
+                EdgeListNode_ptr node_successor_in_parent = node->GetSuccessorInParent();
+                rrt_parent_edge->GetEnd()->GetSuccessorList()->Remove(node_successor_in_parent);
+
+                // node now has no parent
+                rrt_parent_edge = Edge::NewEdge(node, node);
+                rrt_parent_edge->SetDist(INF);
+                node->SetRrtParentEdge(rrt_parent_edge);
+                node->SetRrtParentExist(false);
+            }
+
+            node->SetCost(INF);
+            node->SetLmc(INF);
+        }
+    }
 }

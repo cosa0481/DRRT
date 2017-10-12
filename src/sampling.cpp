@@ -49,7 +49,7 @@ Eigen::VectorXd RandomPoint(CSpace_ptr cspace)
 
     Region drivable_region;
     {
-        lockguard lock(cspace->cspace_mutex_);
+        lockguard lock(cspace->mutex_);
         drivable_region = cspace->drivable_region_;
     }
 

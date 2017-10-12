@@ -54,7 +54,7 @@ void KdTree::GetNodeAt(Kdnode_ptr &node, Eigen::VectorXd pos)
 
 bool KdTree::Insert(Kdnode_ptr &node)
 {
-    lockguard lock(tree_mutex_);
+    lockguard lock(mutex_);
     if(node->InTree()) return false;
     node->SetInTree(true);
 

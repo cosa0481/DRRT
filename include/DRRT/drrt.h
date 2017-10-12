@@ -45,13 +45,13 @@ void MakeInitialInNeighbor(Kdnode_ptr &node, Edge_ptr &edge);
 void MakeParent(Kdnode_ptr &new_parent, Kdnode_ptr &node, Edge_ptr &edge);
 
 // Initially sets LMC of new_node
-void FindBestParent(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
+void FindBestParent(CSpace_ptr &cspace, Kdnode_ptr &new_node,
                     RangeList_ptr &range_list, Kdnode_ptr &closest_node);
 
 // Sets a new move_target in cspace->robot_ within radius
-void FindNewTarget(CSpace_ptr &cspace, KdTree_ptr &tree, double radius);
+void FindNewTarget(CSpace_ptr &cspace, double radius);
 
-bool Extend(CSpace_ptr &cspace, KdTree_ptr &tree, Kdnode_ptr &new_node,
+bool Extend(CSpace_ptr &cspace, Kdnode_ptr &new_node,
             Kdnode_ptr &closest_node, double delta, double hyper_ball_rad);
 
 // Removes members of node's current neighbor list that are > radius
@@ -64,9 +64,8 @@ void RecalculateLmc(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, doub
 void Rewire(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, double radius);
 
 // Propogates cost information through the k-d tree
-void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root,
-                         double robot_rad, double radius);
+void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root, double radius);
 
 // Propogates orphan status to all nodes in the basin of attraction of nodes
 // in the cspace->obstacle_successors_ stack
-void PropogateDescendents(CSpace_ptr &cspace, KdTree_ptr &tree);
+void PropogateDescendents(CSpace_ptr &cspace);

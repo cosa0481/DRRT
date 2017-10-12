@@ -9,7 +9,7 @@
 class KdTree : public std::enable_shared_from_this<KdTree>
 {
 public:
-    std::mutex tree_mutex_;
+    std::mutex mutex_;
 
     int dimensions_;
     int size_;

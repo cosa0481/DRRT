@@ -212,7 +212,7 @@ bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
     Obstacle_ptr obstacle;
     int length;
     {
-        lockguard lock(cspace->cspace_mutex_);
+        lockguard lock(cspace->mutex_);
         obs_listnode = cspace->obstacles_->GetFront();
         length = cspace->obstacles_->GetLength();
         for(int i = 0; i < length; i++) {
@@ -266,7 +266,7 @@ bool EdgeCheck(std::shared_ptr<ConfigSpace> cspace, Edge_ptr edge)
     Obstacle_ptr obstacle;
     int length;
     {
-        lockguard lock(cspace->cspace_mutex_);
+        lockguard lock(cspace->mutex_);
         obs_listnode = cspace->obstacles_->GetFront();
         length = cspace->obstacles_->GetLength();
         for(int i = 0; i < length; i++) {
@@ -284,7 +284,7 @@ bool QuickCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
     Obstacle_ptr obstacle;
     int length;
     {
-        lockguard lock(cspace->cspace_mutex_);
+        lockguard lock(cspace->mutex_);
         obs_listnode = cspace->obstacles_->GetFront();
         length = cspace->obstacles_->GetLength();
         for(int i = 0; i < length; i++) {

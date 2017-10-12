@@ -105,8 +105,8 @@ public:
     { origin_ = new_pos; }
 
     bool MoveObstacle();
-    void AddObstacle(std::shared_ptr<KdTree> tree);
-    void RemoveObstacle(std::shared_ptr<KdTree> tree);
+    void AddObstacle();
+    void RemoveObstacle();
 
     void AddToCSpace();
     static void ReadObstaclesFromFile(std::string obs_file,

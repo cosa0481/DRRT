@@ -9,8 +9,8 @@ set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" )
 
 find_package( Eigen3        REQUIRED )
-find_package( Pangolin      REQUIRED )
-find_package( SceneGraph    REQUIRED )
+#find_package( Pangolin      REQUIRED )
+#find_package( SceneGraph    REQUIRED )
 find_package( Bullet        REQUIRED )
 
 set( _INCLUDE_DIRS
@@ -44,6 +44,8 @@ set( HDRS
                 include/DRRT/data_structures.h
                 include/DRRT/distance_functions.h
                 include/DRRT/sampling.h
+                include/DRRT/movement.h
+                include/DRRT/rrt.h
 
                 # k-d tree
                 include/DRRT/kdtree.h
@@ -73,7 +75,6 @@ set( HDRS
                 # heap
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
-                include/DRRT/kdnode_heapnode.h
 
                 # tripoly lib headers
                 include/DRRT/tripolyinterface.h
@@ -81,10 +82,13 @@ set( HDRS
         )
 
 set( SRCS
+                src/drrt.cpp
+
                 # global functions
                 src/distance_functions.cpp
                 src/sampling.cpp
-                src/drrt.cpp
+                src/movement.cpp
+                src/rrt.cpp
 
                 # k-d tree
                 src/kdtree.cpp

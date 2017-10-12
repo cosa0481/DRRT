@@ -9,7 +9,7 @@
 #include <DRRT/edge_listnode.h>  // includes edge.h
 
 #include <DRRT/heap.h>
-#include <DRRT/kdnode_heapnode.h>
+#include <DRRT/heapnode.h>
 
 #include <DRRT/neighbor_iterator.h>
 #include <DRRT/collision_detection.h>
@@ -21,7 +21,7 @@ typedef struct RobotData {
 
     string name;
 
-    mutex robot_mutex_;  // Mutex for accessing the robot's state
+    mutex mutex;  // Mutex for accessing the robot's state
 
     bool goal_reached;  // True if robot has reached goal region
 
@@ -68,12 +68,12 @@ typedef struct RobotData {
 
 } RobotData;
 
-typedef std::shared_ptr<RobotData> RobotData_ptr;
+typedef std::shared_ptr<RobotData> Robot_ptr;
 
 // Configuration space of the planning problem
 class ConfigSpace {
 public:
-    mutex cspace_mutex_;  // Mutex for accessing cspace variables
+    mutex mutex_;  // Mutex for accessing cspace variables
     int num_dimensions_;  // Number of dimensions in cspace
 
     ObstacleList_ptr obstacles_;  // List of obstacles in cspace
@@ -86,9 +86,11 @@ public:
     bool warmup_time_ended_;
     double warmup_time_;
     double elapsed_time_;
+    double slice_time_;
 
     // Tunable parameters
     double goal_sample_prob_;
+    double goal_thresh_;
     double collision_thresh_;
     double change_thresh_;
     double min_velocity_;
@@ -118,7 +120,10 @@ public:
     btCollisionWorld* bt_collision_world_;
 
     // Robot object
-    RobotData_ptr robot_;
+    Robot_ptr robot_;
+
+    // K-D Tree
+    KdTree_ptr kdtree_;
 
     ConfigSpace(Eigen::VectorXd start_pos, Eigen::VectorXd end_pos,
                 Eigen::MatrixXd drive_region, double warmuptime)
