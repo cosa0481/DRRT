@@ -1,32 +1,26 @@
+#ifndef DRRT_H
+#define DRRT_H
+
 #include <DRRT/data_structures.h>
 #include <DRRT/kdtree.h>
 #include <DRRT/sampling.h>
+#include <DRRT/movement.h>
+#include <DRRT/rrt.h>
 
 
 typedef struct Problem{
 public:
     CSpace_ptr cspace;
-    double planning_time;
-    double slice_time;
-    double saturation_dist;
-    double ball_constant;
-    double obs_change_thresh;
-    double goal_thresh;
     bool drive;
     Eigen::VectorXi wraps;
     Eigen::VectorXd wrap_points;
     int threads;
 
-    Problem(CSpace_ptr cspace_, double planning_time_, double slice_time_,
-            double saturation_dist_, double ball_constant_,
-            double obs_change_thresh_, double goal_thresh_, bool drive_,
+    Problem(CSpace_ptr cspace_, bool drive_,
             Eigen::VectorXi wraps_, Eigen::VectorXd wrap_points_,
             int threads_)
-        : cspace(cspace_), planning_time(planning_time_),
-          slice_time(slice_time_), saturation_dist(saturation_dist_),
-          ball_constant(ball_constant_), obs_change_thresh(obs_change_thresh_),
-          goal_thresh(goal_thresh_), drive(drive_), wraps(wraps_),
-          wrap_points(wrap_points_), threads(threads_)
+        : cspace(cspace_), drive(drive_),
+          wraps(wraps_), wrap_points(wrap_points_), threads(threads_)
     {}
 } Problem;
 
@@ -52,7 +46,7 @@ void FindBestParent(CSpace_ptr &cspace, Kdnode_ptr &new_node,
 void FindNewTarget(CSpace_ptr &cspace, double radius);
 
 bool Extend(CSpace_ptr &cspace, Kdnode_ptr &new_node,
-            Kdnode_ptr &closest_node, double delta, double hyper_ball_rad);
+            Kdnode_ptr &closest_node, double hyper_ball_rad);
 
 // Removes members of node's current neighbor list that are > radius
 void CullCurrentOutNeighbors(Kdnode_ptr &node, double radius);
@@ -69,3 +63,5 @@ void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root, 
 // Propogates orphan status to all nodes in the basin of attraction of nodes
 // in the cspace->obstacle_successors_ stack
 void PropogateDescendents(CSpace_ptr &cspace);
+
+#endif // DRRT_H

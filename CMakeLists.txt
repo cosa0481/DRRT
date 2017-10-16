@@ -119,10 +119,10 @@ set( SRCS
                 src/misc.c
         )
 
-option(BUILD_EXAMPLES "Build Examples" ON)
-if(BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
+#option(BUILD_EXAMPLES "Build Examples" ON)
+#if(BUILD_EXAMPLES)
+#    add_subdirectory(examples)
+#endif()
 
 include_directories( ${DRRT_INCLUDE_DIRS} )
 
@@ -130,7 +130,7 @@ set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
 
 # VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )???
-add_library( ${LIBRARY_NAME} ${SRCS} ${HDRS} )
+add_library( ${LIBRARY_NAME} SHARED ${SRCS} ${HDRS} )
 target_link_libraries( ${LIBRARY_NAME} ${_LIBRARIES} )
 
 # VV Didn't do anything
@@ -160,3 +160,6 @@ target_link_libraries( ${LIBRARY_NAME} ${_LIBRARIES} )
 #    INCLUDE_DIRS ${_INCLUDE_DIRS}
 #    LINK_LIBS ${_LIBRARIES}
 #)
+
+add_executable( dubins src/main.cpp src/rrtx.cpp src/rrtx.h ${HDRS} )
+target_link_libraries( dubins ${LIBRARY_NAME} )

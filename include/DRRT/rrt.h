@@ -1,8 +1,8 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef RRT_H
+#define RRT_H
 
 #include <DRRT/drrt.h>
 
-void Rrt(CSpace_ptr &cspace, double ball_constant);
+void Rrt(CSpace_ptr cspace);
 
-#endif // MAIN_H
+#endif // RRT_H

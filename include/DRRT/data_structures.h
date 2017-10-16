@@ -5,6 +5,7 @@
 
 #include <DRRT/list.h>
 #include <DRRT/kdnode_listnode.h>  // includes kdnode.h
+#include <DRRT/range_listnode.h>
 #include <DRRT/obstacle_listnode.h>  // includes obstacle.h
 #include <DRRT/edge_listnode.h>  // includes edge.h
 
@@ -13,6 +14,7 @@
 
 #include <DRRT/neighbor_iterator.h>
 #include <DRRT/collision_detection.h>
+#include <DRRT/distance_functions.h>
 
 using namespace std;
 
@@ -54,7 +56,7 @@ typedef struct RobotData {
 
     // Constructor
     RobotData(string nombre, Eigen::VectorXd start_pose, Kdnode_ptr movetarget)
-        : name(nombre), pose(start_pose), next_pose(start_pose),
+        : name(nombre), goal_reached(false), pose(start_pose), next_pose(start_pose),
           next_move_target(movetarget), dist_next_pose_to_next_move_target(0.0),
           moving(false), current_move_invalid(false),
           num_move_points(1), current_edge_used(false)
@@ -87,6 +89,7 @@ public:
     double warmup_time_;
     double elapsed_time_;
     double slice_time_;
+    double plan_time_;
 
     // Tunable parameters
     double goal_sample_prob_;
@@ -97,12 +100,14 @@ public:
     double max_velocity_;
     double saturation_delta_;
     double min_turn_radius_;
+    double ball_constant_;
 
     // Planning information
     Eigen::VectorXd start_;  // Planner start location
     Eigen::VectorXd end_;  // Planner end location
 
-    Region drivable_region_;
+    Region initial_region_;  // Must be defined ccw. initial size of physical cspace
+    Region drivable_region_;  // Must be defined counter-clockwise b/c of TriangulatePolygon library
 
     Kdnode_ptr root_node_;  // Planner end location node
     Kdnode_ptr goal_node_;  // Planner start location node
@@ -126,14 +131,15 @@ public:
     KdTree_ptr kdtree_;
 
     ConfigSpace(Eigen::VectorXd start_pos, Eigen::VectorXd end_pos,
-                Eigen::MatrixXd drive_region, double warmuptime)
-        : num_dimensions_(NUM_DIM), start_(start_pos), end_(end_pos)
+                Eigen::MatrixXd drive_region, double plan_time)
+        : num_dimensions_(NUM_DIM), plan_time_(plan_time), start_(start_pos), end_(end_pos)
     {
         start_.resize(NUM_DIM);
         end_.resize(NUM_DIM);
 
         // Drivable region
         drivable_region_ = Region(drive_region);
+        initial_region_ = drivable_region_;
 
         // Bullet
         bt_collision_config_ = new btDefaultCollisionConfiguration();
@@ -152,11 +158,6 @@ public:
         // Obstacle list
         obstacle_update_ = true;
         obstacles_ = std::make_shared<List<ObstacleListNode>>();
-
-        // Warmup time
-        warmup_time_ = warmuptime;
-        if(warmup_time_ > 0.0) in_warmup_time_ = true;
-        else in_warmup_time_ = false;
 
         // Initialize sample stack
         sample_stack_ = std::make_shared<KdnodeList>();

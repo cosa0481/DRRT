@@ -16,8 +16,8 @@ class RangeListNode
     std::shared_ptr<RangeListNode> parent_;
 
 public:
-    RangeListNode(Kdnode_ptr &node, double dist) : data_(node), value_(dist) { SetEmpty(false); }
-    RangeListNode() : is_empty_(true) {}
+    RangeListNode(Kdnode_ptr &node, double dist) : is_empty_(false), in_list_(false), data_(node), value_(dist) {}
+    RangeListNode() : is_empty_(true), in_list_(false) {}
 
     double GetData(Kdnode_ptr &node) { node = data_; return value_; }
     std::shared_ptr<RangeListNode> GetChild() { return child_; }

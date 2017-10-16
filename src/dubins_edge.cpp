@@ -611,14 +611,17 @@ void DubinsEdge::CalculateTrajectory(CSpace_ptr cspace)
 
     SetType(best_traj_type);
 
-    int trajLength = first_path_x.size()
-                   + second_path_x.size()
-                   + third_path_x.size();
-    Eigen::VectorXd traj1(trajLength), traj2(trajLength);
+    int traj_length = first_path_x.size()
+                    + second_path_x.size()
+                    + third_path_x.size();
+    Eigen::VectorXd traj1(traj_length), traj2(traj_length);
     Eigen::MatrixXd traj;
 
     // Dubins model has 3 columns [x, y, theta] set on creation of edge trajectory
-    traj.resize(trajLength, Eigen::NoChange_t());
+    // However trajectory only takes into account theta at nodes and not on
+    // trajectories between them. Theta can be assumed to be the tangent line to
+    // the circle used to create the path
+    traj.resize(traj_length, NUM_DIM);
 
     SetDist(best_dist);
 
@@ -634,11 +637,8 @@ void DubinsEdge::CalculateTrajectory(CSpace_ptr cspace)
     traj2.block(first_path_y.size()+second_path_y.size(),0,
                 third_path_y.size(),1) = third_path_y;
 
-
-    traj.block(0,0, first_path_x.size() + second_path_x.size()
-               + third_path_x.size(),1) = traj1;
-    traj.block(0,1, first_path_x.size() + second_path_x.size()
-               + third_path_x.size(),1) = traj2;
+    traj.block(0,0, traj_length,1) = traj1;
+    traj.block(0,1, traj_length,1) = traj2;
 
     SetTrajectory(traj);
 }

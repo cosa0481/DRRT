@@ -15,8 +15,8 @@ class ObstacleListNode
     Obstacle_ptr data_;
 
 public:
-    ObstacleListNode(Obstacle_ptr &o) : data_(o) { SetEmpty(false); }
-    ObstacleListNode() : is_empty_(true) {}
+    ObstacleListNode(Obstacle_ptr &o) : is_empty_(false), in_list_(false), data_(o) {}
+    ObstacleListNode() : is_empty_(true), in_list_(false) {}
 
     void GetData(Obstacle_ptr &obstacle) { obstacle = data_; }
     std::shared_ptr<ObstacleListNode> GetChild() { return child_; }

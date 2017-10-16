@@ -5,6 +5,7 @@
 
 // Template class must have GetChild() and data_ member variables
 // Lists always end with an empty node of type T with child equal to self
+
 template <class T>
 class List
 {
@@ -14,27 +15,8 @@ class List
     int length_;
 
 public:
-    List() {
-        std::shared_ptr<T> end = std::make_shared<T>();
-        end->SetChild(end);
-        end->SetParent(end);
-        front_ = end;
-        back_ = end;
-        bound_ = end;
-        length_ = 0;
-    }
-
-    List(std::shared_ptr<T> front_node) {
-        std::shared_ptr<T> end = std::make_shared<T>();
-        end->SetChild(end);
-        end->SetParent(end);
-        front_ = end;
-        back_ = end;
-        bound_ = end;
-        length_ = 0;
-        List::Push(front_node);
-    }
-
+    List();
+    List(std::shared_ptr<T> front_node);
 
     int GetLength();
     std::shared_ptr<T> GetFront() { return front_; }

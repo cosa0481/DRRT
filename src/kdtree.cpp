@@ -1,12 +1,12 @@
 #include <DRRT/kdtree.h>
-
+#include "../src/list.cpp"
 
 void KdTree::Print(Kdnode_ptr node, int indent, char type)
 {
     if(indent) std::cout << std::string(indent - 1, ' ') << type;
     std::cout << node->GetPosition()(0) << ","
-              << node->GetPosition()(1) << ": "
-              << node->GetCost();
+              << node->GetPosition()(1) << " ("
+              << node->GetCost() << ")";
 
     if(node->ParentExist()) {
         Edge_ptr parent_edge;
@@ -468,7 +468,7 @@ RangeList_ptr KdTree::FindWithinRangeInSubtree(Kdnode_ptr sub_root,
     }
 
     double new_dist = DistanceFunction(query, parent->GetPosition());
-    if(new_dist < range) AddToRangeList(range_list, parent, new_dist);
+    if(!parent->InRangeList() && (new_dist < range)) AddToRangeList(range_list, parent, new_dist);
 
     // Now walk back up tree
     while(true)

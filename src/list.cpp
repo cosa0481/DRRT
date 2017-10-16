@@ -1,6 +1,29 @@
 #include <DRRT/list.h>
 
 template <class T>
+List<T>::List() {
+    std::shared_ptr<T> end = std::make_shared<T>();
+    end->SetChild(end);
+    end->SetParent(end);
+    front_ = end;
+    back_ = end;
+    bound_ = end;
+    length_ = 0;
+}
+
+template <class T>
+List<T>::List(std::shared_ptr<T> front_node) {
+    std::shared_ptr<T> end = std::make_shared<T>();
+    end->SetChild(end);
+    end->SetParent(end);
+    front_ = end;
+    back_ = end;
+    bound_ = end;
+    length_ = 0;
+    List::Push(front_node);
+}
+
+template <class T>
 int List<T>::GetLength()
 {
     return length_;
@@ -10,11 +33,11 @@ template <class T>
 void List<T>::Push(std::shared_ptr<T> &new_node)
 {
     if(!new_node->InList()) {
-        new_node->parent_ = front_->parent_;
-        new_node->child_ = front_;
+        new_node->SetParent(front_->GetParent());
+        new_node->SetChild(front_);
 
         if(length_ == 0) back_ = new_node;
-        else front_->parent_ = new_node;
+        else front_->SetParent(new_node);
 
         front_ = new_node;
         length_ += 1;
@@ -26,7 +49,7 @@ void List<T>::Push(std::shared_ptr<T> &new_node)
 template <class T>
 void List<T>::Top(std::shared_ptr<T> &top_node)
 {
-    if(front_ != front_->child_) {
+    if(front_ != front_->GetChild()) {
         top_node = front_;
         top_node->SetEmpty(false);
     } else {
@@ -38,18 +61,18 @@ void List<T>::Top(std::shared_ptr<T> &top_node)
 template <class T>
 void List<T>::Pop(std::shared_ptr<T> &top_node)
 {
-    if(front_ != front_->child_) {
+    if(front_ != front_->GetChild()) {
         std::shared_ptr<T> old_top = front_;
         if(length_ > 1) {
-            front_->child_->parent_ = front_->parent_;
-            front_ = front_->child_;
+            front_->GetChild()->SetParent(front_->GetParent());
+            front_ = front_->GetChild();
         } else if(length_ == 1) {
             back_ = bound_;
             front_ = bound_;
         }
         length_ -= 1;
-        old_top->child_ = old_top;
-        old_top->parent_ = old_top;
+        old_top->SetChild(old_top);
+        old_top->SetParent(old_top);
         top_node = old_top;
         top_node->SetInList(false);
         top_node->SetEmpty(false);
@@ -63,14 +86,14 @@ template <class T>
 void List<T>::Remove(std::shared_ptr<T> &node)
 {
     if(length_ != 0 && !node->IsEmpty() && node->InList()) {
-        if(front_ == node) front_ = node->child_;
-        if(back_ == node) back_ = node->parent_;
+        if(front_ == node) front_ = node->GetChild();
+        if(back_ == node) back_ = node->GetParent();
 
-        std::shared_ptr<T> next_node = node->child_;
-        std::shared_ptr<T> prev_node = node->parent_;
+        std::shared_ptr<T> next_node = node->GetChild();
+        std::shared_ptr<T> prev_node = node->GetParent();
 
-        if(length_ > 1 && prev_node != prev_node->child_) prev_node->child_ = next_node;
-        if(length_ > 1 && next_node != next_node->child_) next_node->parent_ = prev_node;
+        if(length_ > 1 && prev_node != prev_node->GetChild()) prev_node->SetChild(next_node);
+        if(length_ > 1 && next_node != next_node->GetChild()) next_node->SetParent(prev_node);
 
         length_ -= 1;
 
@@ -79,8 +102,8 @@ void List<T>::Remove(std::shared_ptr<T> &node)
             front_ = bound_;
         }
 
-        node->child_ = node;
-        node->parent_ = node;
+        node->SetChild(node);
+        node->SetParent(node);
         node->SetInList(false);
     } else { if(DEBUG) std::cout << "Node not in List." << std::endl; }
 }
@@ -92,6 +115,8 @@ void List<T>::Empty()
     List::Pop(temp);
     while(temp != temp->child_) List::Pop(temp);
 }
+
+
 
 //template <class T>
 //void List<T>::Print()

@@ -2,7 +2,7 @@
 
 using namespace std;
 
-void Move(CSpace_ptr &cspace, double slice_time, double hyper_ball_rad)
+void Move(CSpace_ptr &cspace, double hyper_ball_rad)
 {
     lockguard lock(cspace->robot_->mutex);
     Robot_ptr robot = cspace->robot_;
@@ -18,34 +18,34 @@ void Move(CSpace_ptr &cspace, double slice_time, double hyper_ball_rad)
         robot->num_move_points += robot->num_local_move_points;
 
         cspace->warmup_time_ended_ = false;
-        } else {
-            robot->moving = true;
+    } else {
+        robot->moving = true;
 
-            if(!cspace->move_goal_->RrtParentExist())
-                robot->current_move_invalid = true;
-            else {
-                cspace->move_goal_->GetRrtParentEdge(robot->current_edge);
-                robot->current_edge_used = true;
-                robot->dist_along_current_edge = 0.0;
-            }
-
-            cspace->warmup_time_ended_ = true;
+        if(!cspace->move_goal_->RrtParentExist())
+            robot->current_move_invalid = true;
+        else {
+            cspace->move_goal_->GetRrtParentEdge(robot->current_edge);
+            robot->current_edge_used = true;
+            robot->dist_along_current_edge = 0.0;
         }
 
-        if(robot->current_move_invalid)
-            FindNewTarget(cspace, hyper_ball_rad);
-        else {
-            lockguard lock(cspace->mutex_);
-            cspace->move_goal_->SetIsGoal(false);
-            cspace->move_goal_ = robot->next_move_target;
-            cspace->move_goal_->SetIsGoal(true);
+        cspace->warmup_time_ended_ = true;
+    }
+
+    if(robot->current_move_invalid)
+        FindNewTarget(cspace, hyper_ball_rad);
+    else {
+        lockguard lock(cspace->mutex_);
+        cspace->move_goal_->SetIsGoal(false);
+        cspace->move_goal_ = robot->next_move_target;
+        cspace->move_goal_->SetIsGoal(true);
     }
 
     Kdnode_ptr next_node = robot->next_move_target;
 
     // Calculate distance from robot to end of its current edge
     double next_dist = robot->current_edge->GetDist() - robot->dist_along_current_edge;
-    double remaining = cspace->max_velocity_ * slice_time;
+    double remaining = cspace->max_velocity_ * cspace->slice_time_;
 
     // Save the first local path point
     robot->num_local_move_points = 1;
@@ -102,7 +102,7 @@ void Move(CSpace_ptr &cspace, double slice_time, double hyper_ball_rad)
 }
 
 
-void MovementThread(CSpace_ptr &cspace, double plan_time, double ball_constant)
+void MovementThread(CSpace_ptr cspace)
 {
     Eigen::VectorXd last_pose;
     {
@@ -117,14 +117,17 @@ void MovementThread(CSpace_ptr &cspace, double plan_time, double ball_constant)
     {
         elapsed_time = cspace->elapsed_time_;
 
-        if(elapsed_time > plan_time + cspace->slice_time_)
+        cout << "elapsed: "<< elapsed_time << endl;
+        cout << "plan time: " << cspace->plan_time_ << endl;
+        if(elapsed_time > cspace->plan_time_ + cspace->slice_time_)
         {
+            cout << "Moving" << endl;
             if(!started) {
                 started = true;
             }
 
             hyper_ball_rad = min(cspace->saturation_delta_,
-                                 ball_constant*(pow( log(1 + cspace->kdtree_->size_)/cspace->kdtree_->size_,
+                                 cspace->ball_constant_*(pow( log(1 + cspace->kdtree_->size_)/cspace->kdtree_->size_,
                                                      1/NUM_DIM)));
 
             Move(cspace, hyper_ball_rad);
@@ -138,7 +141,8 @@ void MovementThread(CSpace_ptr &cspace, double plan_time, double ball_constant)
                 break;
             } else if(move_dist > 1.5) {
                 if(DEBUG)
-                    cout << "Moved more than 1.5m in " << cspace->slice_time_ << ". Impossibru!" << endl;
+                    cout << "Moved more than 1.5m in " << cspace->slice_time_ << "s. Impossibru!" << endl;
+                exit(-1);
             }
 
             {

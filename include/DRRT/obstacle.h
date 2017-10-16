@@ -47,7 +47,9 @@ public:
           path_(path), path_times_(path_times), current_path_idx_(0),
           cspace(configspace)
     {
-        original_shape_global_ = shape_.GetGlobalPose2D(origin);
+        origin.resize(NUM_DIM, Eigen::NoChange_t());
+        original_shape_global_ = shape_.GetGlobalPose2D(Eigen::Array2d(origin.head(2)));
+
         double dist, max = 0;
         for(int i = 0; i < shape.rows(); i++) {
             dist = sqrt(pow(shape.row(i)(0) - origin_(0), 2)

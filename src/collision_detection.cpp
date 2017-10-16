@@ -217,7 +217,7 @@ bool PointCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
         length = cspace->obstacles_->GetLength();
         for(int i = 0; i < length; i++) {
             obs_listnode->GetData(obstacle);
-            if(PointCheck2D(cspace, point, obstacle)) return true;
+            if(PointCheck2D(cspace, point.head(2), obstacle)) return true;
             obs_listnode = obs_listnode->GetChild();
         }
     }
@@ -234,7 +234,7 @@ bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
     if(!obs->IsUsed() || obs->GetLifeTime() <= 0) return false;
 
     // Calculate distance from robot boundary to obstacle center
-    this_dist = DistanceFunction(obs->GetOrigin(), point);
+    this_dist = DistanceFunction(obs->GetOrigin().head(2), point);
     if(this_dist - obs->GetRadius() > min_dist) return false;
 
     if(PointInPolygon(point.head(2), obs->GetShape())) return true;
@@ -248,7 +248,9 @@ bool PointCheck2D(std::shared_ptr<ConfigSpace> cspace, Eigen::Vector2d point,
 
 bool EdgeCheck(Obstacle_ptr obstacle, Edge_ptr edge)
 {
-    Eigen::MatrixX2d trajectory = edge->GetTrajectory();
+    Eigen::MatrixXd trajectory;
+    trajectory.resize(edge->GetTrajectory().rows(), edge->GetTrajectory().cols());
+    trajectory = edge->GetTrajectory();
     for(int i = 1; i < trajectory.rows(); i++) {
         if(DetectCollision(obstacle,
                            trajectory.row(i-1),
@@ -289,7 +291,7 @@ bool QuickCheck(std::shared_ptr<ConfigSpace> cspace, Eigen::VectorXd point)
         length = cspace->obstacles_->GetLength();
         for(int i = 0; i < length; i++) {
             obs_listnode->GetData(obstacle);
-            if(QuickCheck2D(cspace, point, obstacle)) return true;
+            if(QuickCheck2D(cspace, point.head(2), obstacle)) return true;
             obs_listnode = obs_listnode->GetChild();
         }
     }

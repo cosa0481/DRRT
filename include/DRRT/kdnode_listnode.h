@@ -15,8 +15,8 @@ class KdnodeListNode
     Kdnode_ptr data_;
 
 public:
-    KdnodeListNode(Kdnode_ptr &n) : data_(n) { SetEmpty(false); }
-    KdnodeListNode() : is_empty_(true) {}
+    KdnodeListNode(Kdnode_ptr &n) : is_empty_(false), in_list_(false), data_(n) {}
+    KdnodeListNode() : is_empty_(true), in_list_(false) {}
 
     void GetData(Kdnode_ptr &node) { node = data_; }
     std::shared_ptr<KdnodeListNode> GetChild() { return child_; }

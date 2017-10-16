@@ -41,7 +41,8 @@ public:
     void SetStart(std::shared_ptr<Kdnode> start) { start_ = start; }
     void SetEnd(std::shared_ptr<Kdnode> end) { end_ = end; }
     void SetDist(double dist) { dist_ = dist; }
-    void SetTrajectory(Eigen::MatrixXd traj) { trajectory_ = traj; }
+    void SetTrajectory(Eigen::MatrixXd traj)
+    { trajectory_.resize(traj.rows(), traj.cols());  trajectory_ = traj; }
 
     // Edge Functions
     virtual bool ValidMove()=0;

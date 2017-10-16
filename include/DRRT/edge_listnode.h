@@ -15,8 +15,8 @@ class EdgeListNode
     Edge_ptr data_;
 
 public:
-    EdgeListNode(Edge_ptr &e) : data_(e) { SetEmpty(false); }
-    EdgeListNode() : is_empty_(true) {}
+    EdgeListNode(Edge_ptr &e) : is_empty_(false), in_list_(false), data_(e) {}
+    EdgeListNode() : is_empty_(true), in_list_(false) {}
 
     void GetData(Edge_ptr &edge) { edge = data_; }
     std::shared_ptr<EdgeListNode> GetChild() { return child_; }

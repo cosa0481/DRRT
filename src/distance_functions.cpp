@@ -53,8 +53,10 @@ Eigen::Vector3d SaturateDubins(Eigen::Vector3d position,
     Eigen::Vector3d saturated_point;
     saturated_point.head(2) = closest_point.head(2)
             + (position.head(2) - closest_point.head(2))*delta/dist;
+
+    saturated_point(2) = position(2);
     while(saturated_point(2) < 0.0) saturated_point(2) += 2.0*PI;
-    while(saturated_point(2) > 2.0*3.1415926536) saturated_point(2) -= 2.0*3.1415926536;
+    while(saturated_point(2) > 2.0*PI) saturated_point(2) -= 2.0*PI;
     return saturated_point;
 }
 

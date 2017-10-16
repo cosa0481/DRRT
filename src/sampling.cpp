@@ -72,10 +72,10 @@ Eigen::VectorXd RandomPoint(CSpace_ptr cspace)
                     + (rand(1)*sqrt(rand(0))) * triangles(i,5);
     }
 
-    rand_var = RandomDouble(0, num_triangles);
+    rand_var = RandomDouble(0.0, num_triangles);
     point(0) = points(std::floor(rand_var), 0);
     point(1) = points(std::floor(rand_var), 1);
-    point(2) = RandomDouble(-2*PI, 2*PI);
+    point(2) = RandomDouble(0.0, 2*PI);
     return point;
 }
 
