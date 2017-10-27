@@ -47,7 +47,9 @@ Robot_ptr Rrtx(Problem p)
 
     // Initial Theta* run
 
+
     // End initialization
+    cout << "===========================================" << endl;
     cspace->start_time_ = chrono::high_resolution_clock::now();
     cspace->elapsed_time_ = 0.0;
 

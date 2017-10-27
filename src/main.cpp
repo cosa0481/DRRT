@@ -7,13 +7,13 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     cout << "Dubin's Example" << endl;
-    cout << "===============" << endl;
+    cout << "===========================================" << endl;
 
     string obstacle_file = argv[1];
     bool static_obstacles = (strcmp(argv[2], "true") == 0 ? true : false);
 
     // Configuration Space Parameters
-    double plan_only_time = 5;  // plan only for this long
+    double plan_only_time = 25;  // plan only for this long
     Eigen::MatrixX2d physical_cspace;  // specify counter-clockwise from origin
 // Normal
 //    physical_cspace.resize(4, Eigen::NoChange_t());
@@ -85,15 +85,14 @@ int main(int argc, char* argv[])
     Robot_ptr robot_data = Rrtx(problem);
 
     double algorithm_time = cspace->elapsed_time_;
-    cout << "\nTotal Algorithm Time: " << algorithm_time << " s" << endl;
+    cout << "===========================================" << endl;
+    cout << "Total Algorithm Time: " << algorithm_time << " s" << endl;
 
     // Delete bullet pointers
     delete cspace->bt_collision_config_;
     delete cspace->bt_dispatcher_;
     delete cspace->bt_broadphase_;
     delete cspace->bt_collision_world_;
-
-    cout << "Done" << endl;
 
     return 0;
 }

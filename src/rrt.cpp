@@ -44,8 +44,8 @@ void Rrt(CSpace_ptr cspace)
 
         if(elapsed_time >= slice_end)
         {
-            cout << "Iteration: " << iteration++ << endl;
-            cout << "Time: " << cspace->elapsed_time_ << "s" << endl;
+            if(DEBUG) cout << "Iteration: " << iteration++ << endl;
+            if(DEBUG) cout << "Time: " << cspace->elapsed_time_ << "s" << endl;
             slice_start = now;
             slice_end = (++slice_counter)*cspace->slice_time_;
 

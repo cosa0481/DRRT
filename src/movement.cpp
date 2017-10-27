@@ -172,6 +172,7 @@ void MovementThread(CSpace_ptr cspace)
             diff.col(0)(i) = diff.row(i).sum();
 
         double move_length = diff.col(0).sqrt().sum();
-        cout << "\nRobot travel distance: " << move_length << "?" << endl;
+        cout << "Robot travel distance: " << move_length << "?" << endl;
+        cout << "===========================================" << endl;
     }
 }
