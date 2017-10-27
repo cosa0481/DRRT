@@ -113,7 +113,7 @@ void List<T>::Empty()
 {
     std::shared_ptr<T> temp = std::make_shared<T>();
     List::Pop(temp);
-    while(temp != temp->child_) List::Pop(temp);
+    while(temp != temp->GetChild()) List::Pop(temp);
 }
 
 

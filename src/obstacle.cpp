@@ -7,22 +7,25 @@
 void Obstacle::UpdateObstacles(CSpace_ptr cspace)
 {
     bool goal_reached = false;
-    bool moved;
+    bool moved = false;
 
     while(!goal_reached)
     {
-        moved = Obstacle::MoveObstacles(cspace);
-        {
-            lockguard lock(cspace->mutex_);
-            cspace->obstacle_update_ = moved;
+        if(!cspace->static_obstacles_) {
+            moved = Obstacle::MoveObstacles(cspace);
+            {
+                lockguard lock(cspace->mutex_);
+                cspace->obstacle_update_ = moved;
+            }
         }
 
         if(moved) {
-            // TODO: ThetaStar
-            std::cout << "TODO: ThetaStar" << std::endl;
-//            cspace->robot->theta_star_path = ThetaStar();
-//            cspace->robot->thetas = PathToThetas(cspace->robot->theta_star_path);
-            exit(-1);
+            PropogateDescendents(cspace);
+//            // TODO: ThetaStar
+//            std::cout << "TODO: ThetaStar" << std::endl;
+////            cspace->robot->theta_star_path = ThetaStar();
+////            cspace->robot->thetas = PathToThetas(cspace->robot->theta_star_path);
+//            exit(-1);
         }
 
         {
@@ -55,6 +58,9 @@ bool Obstacle::MoveObstacle()
     if(current_path_idx_ < path_times_.size()
             && path_times_(current_path_idx_) < now) {
         origin_ = path_.row(current_path_idx_);
+        btVector3 pos = btVector3(btScalar(origin_(0)), btScalar(origin_(1)), btScalar(0.0));
+        GetCollisionObject()->getWorldTransform().setOrigin(pos);
+        AddObstacle();
         current_path_idx_++;
         return true;
     }
@@ -82,6 +88,7 @@ void Obstacle::AddObstacle()
             }
             list_item = next_item;
         }
+
 
         Edge_ptr parent_edge;
         if(node->RrtParentExist()) {
@@ -174,6 +181,9 @@ void Obstacle::AddToCSpace()
 {
     lockguard lock(cspace->mutex_);
     Obstacle_ptr obstacle = GetSharedPointer();
+    obstacle->SetIsUsed(true);
+    obstacle->SetIsSensible(true);
+    obstacle->SetIsUsedAfterSense(true);
     ObstacleListNode_ptr obstacle_listnode = std::make_shared<ObstacleListNode>(obstacle);
     cspace->obstacles_->Push(obstacle_listnode);
 }

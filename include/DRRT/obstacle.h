@@ -37,6 +37,23 @@ public:
     std::shared_ptr<ConfigSpace> cspace;  // pointer to cspace where obstacle lives
 
     Obstacle(int kind) : kind_(kind) {}
+    Obstacle(int kind, Eigen::VectorXd origin, Eigen::MatrixXd shape,
+             std::shared_ptr<ConfigSpace> configspace)
+        : kind_(kind), is_used_(false), is_sensible_(false),
+          is_used_after_sense_(false), origin_(origin), shape_(Region(shape)),
+          collision_object_(std::make_shared<btCollisionObject>()), cspace(configspace)
+    {
+        origin.resize(NUM_DIM, Eigen::NoChange_t());
+        original_shape_global_ = shape_.GetGlobalPose2D(Eigen::Array2d(origin.head(2)));
+
+        double dist, max = 0;
+        for(int i = 0; i < shape.rows(); i++) {
+            dist = sqrt(pow(shape.row(i)(0) - origin_(0), 2)
+                        + pow(shape.row(i)(1) - origin_(1), 2));
+            if(dist > max) max = dist;
+        }
+        radius_ = max;
+    }
     Obstacle(int kind, Eigen::VectorXd origin, Eigen::MatrixX2d shape,
              Eigen::MatrixXd path, Eigen::VectorXd path_times,
              std::shared_ptr<ConfigSpace> configspace)

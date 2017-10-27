@@ -1,4 +1,5 @@
 #include <DRRT/kdtree.h>
+#include <DRRT/data_structures.h>
 #include "../src/list.cpp"
 
 void KdTree::Print(Kdnode_ptr node, int indent, char type)
@@ -139,7 +140,7 @@ double KdTree::FindNearestInSubtree(Kdnode_ptr &nearest, Kdnode_ptr sub_root,
                                     Eigen::VectorXd query, Kdnode_ptr &suggested,
                                     double suggested_dist)
 {
-    Kdnode_ptr parent = root_;
+    Kdnode_ptr parent = sub_root;
     Kdnode_ptr current_closest_node = suggested;
     double current_closest_dist = suggested_dist;
 
@@ -285,7 +286,7 @@ double KdTree::FindNearestInSubtreeWithGuess(Kdnode_ptr &nearest,
                                              Kdnode_ptr &suggested,
                                              double suggested_dist)
 {
-    Kdnode_ptr parent = root_;
+    Kdnode_ptr parent = sub_root;
     Kdnode_ptr current_closest_node = suggested;
     double current_closest_dist = suggested_dist;
 
@@ -452,7 +453,7 @@ RangeList_ptr KdTree::FindWithinRangeInSubtree(Kdnode_ptr sub_root,
                                                RangeList_ptr range_list)
 {
     // Walk down tree as if node would be inserted
-    Kdnode_ptr parent = root_;
+    Kdnode_ptr parent = sub_root;
     while(true) {
         if(query(parent->split_) < parent->GetPosition()(parent->split_)) {
             // Traverse tree to the left

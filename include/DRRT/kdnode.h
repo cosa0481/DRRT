@@ -43,7 +43,8 @@ public:
     // Cost constructor
     Kdnode(double cost)
         : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
-          in_tree_(false), is_movegoal_(false), cost_(cost), lmc_(INF),
+          in_tree_(false), is_movegoal_(false), parent_exist_(false),
+          lchild_exist_(false), rchild_exist_(false), cost_(cost), lmc_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -57,7 +58,9 @@ public:
     // Position constructor
     Kdnode(Eigen::VectorXd pos)
         : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
-          in_tree_(false), is_movegoal_(false), cost_(INF), lmc_(INF), position_(pos),
+          in_tree_(false), is_movegoal_(false), parent_exist_(false),
+          lchild_exist_(false), rchild_exist_(false), cost_(INF), lmc_(INF),
+          position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -71,7 +74,9 @@ public:
     // Cost and position constructor
     Kdnode(double cost, Eigen::VectorXd pos)
         : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
-          in_tree_(false), is_movegoal_(false), cost_(cost), lmc_(INF), position_(pos),
+          in_tree_(false), is_movegoal_(false), parent_exist_(false),
+          lchild_exist_(false), rchild_exist_(false), cost_(cost), lmc_(INF),
+          position_(pos),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),
@@ -85,7 +90,8 @@ public:
     // Default constructor
     Kdnode()
         : in_range_list_(false), in_priority_queue_(false), in_OS_queue_(false),
-          in_tree_(false), is_movegoal_(false), cost_(INF), lmc_(INF),
+          in_tree_(false), is_movegoal_(false), parent_exist_(false),
+          lchild_exist_(false), rchild_exist_(false), cost_(INF), lmc_(INF),
           rrt_parent_exist_(false),
           rrt_parent_edge_(Edge::NewEdge()),
           out_neighbors_(std::make_shared<EdgeList>()),

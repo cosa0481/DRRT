@@ -54,7 +54,10 @@ Eigen::VectorXd RandomPoint(CSpace_ptr cspace)
     }
 
     MatrixX6d triangles;
-    triangles = TriangulatePolygon(drivable_region);
+    {
+        lockguard lock(cspace->mutex_);
+        triangles = TriangulatePolygon(drivable_region);
+    }
     num_triangles = triangles.rows();
 
     Eigen::Vector2d rand;

@@ -169,10 +169,10 @@ void FindBestParent(CSpace_ptr &cspace, Kdnode_ptr &new_node,
             lockguard lock(cspace->kdtree_->mutex_);
             near_node->temp_edge_ = near_edge;
             if(!edge_is_safe || !near_edge->ValidMove()) {
-                cout << "EdgeCheck returned true collision for edge:" << endl;
-                cout << near_edge->GetStart()->GetPosition() << endl;
-                cout << "V" << endl;
-                cout << near_edge->GetEnd()->GetPosition() << endl;
+//                cout << "EdgeCheck returned true collision for edge:" << endl;
+//                cout << near_edge->GetStart()->GetPosition() << endl;
+//                cout << "V" << endl;
+//                cout << near_edge->GetEnd()->GetPosition() << endl;
                 near_node->temp_edge_->SetDist(INF);
                 near_node_item = near_node_item->GetChild();
                 continue;
@@ -192,6 +192,7 @@ void FindBestParent(CSpace_ptr &cspace, Kdnode_ptr &new_node,
 
 void FindNewTarget(CSpace_ptr &cspace, double radius)
 {
+    cout << "FindNewTarget" << endl;
     Eigen::VectorXd robot_pose, next_pose;
     robot_pose = cspace->robot_->pose;
     cspace->robot_->current_edge_used = false;
@@ -210,7 +211,7 @@ void FindNewTarget(CSpace_ptr &cspace, double radius)
                     + pow(shape.row(i)(1) - origin(1), 2));
         if(dist > max) max = dist;
     }
-    double max_search_rad = max;
+    double max_search_rad = 1; //max;
     search_ball_rad = min(search_ball_rad, max_search_rad);
 
     RangeList_ptr range_list = cspace->kdtree_->FindWithinRange(search_ball_rad, robot_pose);
@@ -230,14 +231,21 @@ void FindNewTarget(CSpace_ptr &cspace, double radius)
         RangeListNode_ptr range_item = range_list->GetFront();
         Edge_ptr range_edge;
         double dist_to_goal, dist_to_neighbor;
-        while(range_item != range_item->GetChild()) {
+        while(!range_item->IsEmpty()) {
             dist_to_neighbor = range_item->GetData(neighbor_node);
+
+            cout << "neighbor: " << dist_to_neighbor << "\n" << neighbor_node->GetPosition() << endl;
 
             range_edge = Edge::NewEdge(dummy_robot_node, neighbor_node);
             range_edge->CalculateTrajectory(cspace);
-            if(range_edge->ValidMove() && EdgeCheck(cspace, range_edge)) {
+
+            cout << "EdgeCheck(range_edge): " << EdgeCheck(cspace, range_edge) << endl;
+            if(range_edge->ValidMove() && !EdgeCheck(cspace, range_edge)) {
                 // Safe point found, see if it is the best so far
+                cout << "neighbor LMC: " << neighbor_node->GetLmc() << endl;
+                cout << "range_edge dist: " << range_edge->GetDist() << endl;
                 dist_to_goal = neighbor_node->GetLmc() + range_edge->GetDist();
+                cout << "dist_to_goal: " << dist_to_goal << endl;
                 if(dist_to_goal < best_dist_to_goal) {
                     // Found a new and better neighbor
                     best_dist_to_goal = dist_to_goal;
@@ -252,6 +260,7 @@ void FindNewTarget(CSpace_ptr &cspace, double radius)
         // Done trying to find a target within radius
 
         // If valid neighbor found, use it
+        cout << "best_dist_to_goal: " << best_dist_to_goal << endl;
         if(best_dist_to_goal != INF) {
             lockguard lock(cspace->mutex_);
             cspace->robot_->next_move_target = best_neighbor;
@@ -275,8 +284,8 @@ void FindNewTarget(CSpace_ptr &cspace, double radius)
 
         search_ball_rad *= 2;
         if(search_ball_rad > max_search_rad) {
-            // Unable to find a valid move target so sample randomly
-            Kdnode_ptr new_node = RandomNode(cspace);
+            // Unable to find a valid move target so sample the goal
+            Kdnode_ptr new_node = cspace->goal_node_;
             double new_dist = DistanceFunction(new_node->GetPosition(), robot_pose);
             new_node->Saturate(new_node->GetPosition(), robot_pose,
                                cspace->saturation_delta_, new_dist);
@@ -308,7 +317,8 @@ bool Extend(CSpace_ptr &cspace, Kdnode_ptr &new_node,
     }
 
     // Otherwise insert the new node into the k-d tree
-    cspace->kdtree_->Insert(new_node);
+    bool inserted = cspace->kdtree_->Insert(new_node);
+    if(inserted) cspace->AddNodeToVis(new_node);
 
     // Link the neighbors and rewire neighbors that would do better to use
     // new_node as their parent
@@ -490,8 +500,9 @@ void Rewire(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, double radiu
                 MakeParent(node, neighbor_node, neighbor_edge);
 
                 // If the reduction was great enough then propagate to neighbor
-                if(neighbor_node->GetCost() - neighbor_node->GetLmc() > cspace->change_thresh_)
+                if(neighbor_node->GetCost() - neighbor_node->GetLmc() > cspace->change_thresh_) {
                     AddToPriorityQueue(cspace, neighbor_node);
+                }
             }
 
             edge_item = NextInNeighbor(node_in_neighbors);
@@ -501,7 +512,7 @@ void Rewire(CSpace_ptr &cspace, Kdnode_ptr &node, Kdnode_ptr &root, double radiu
 
 void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root, double radius)
 {
-    lockguard lock(cspace->mutex_);
+    lockguard lock(cspace->kdtree_->mutex_);
     HeapNode_ptr node_heap_item;
     Kdnode_ptr node;
     if(cspace->priority_queue_->GetHeapSize() > 0)
@@ -513,8 +524,11 @@ void ReduceInconsistency(CSpace_ptr &cspace, Kdnode_ptr goal, Kdnode_ptr &root, 
         bool less_than = (min_node_cost < min_goal_cost) || (min_node_cost == min_goal_cost && node->IsGoal());
         while(cspace->priority_queue_->GetIndexOfLast() > 0
               && (less_than || goal->GetLmc() == INF || goal->GetCost() == INF || goal->InPriorityQueue())) {
-            cspace->priority_queue_->Pop(node_heap_item);
-            node_heap_item->GetData(node);
+            {
+                lockguard lock(cspace->mutex_);
+                cspace->priority_queue_->Pop(node_heap_item);
+                node_heap_item->GetData(node);
+            }
 
             // Update neighbors of node if it has changed enough
             if(node->GetCost() - node->GetLmc() > cspace->change_thresh_) {

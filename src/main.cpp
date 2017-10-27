@@ -10,23 +10,42 @@ int main(int argc, char* argv[])
     cout << "===============" << endl;
 
     string obstacle_file = argv[1];
+    bool static_obstacles = (strcmp(argv[2], "true") == 0 ? true : false);
 
     // Configuration Space Parameters
-    double plan_only_time = 30;  // plan only for this long
+    double plan_only_time = 5;  // plan only for this long
     Eigen::MatrixX2d physical_cspace;  // specify counter-clockwise from origin
+// Normal
+//    physical_cspace.resize(4, Eigen::NoChange_t());
+//    physical_cspace(0,0) = -25;  // lower left
+//    physical_cspace(0,1) = -25;
+//    physical_cspace(1,0) = 25;  // lower right
+//    physical_cspace(1,1) = -25;
+//    physical_cspace(2,0) = 25;  // upper right
+//    physical_cspace(2,1) = 25;
+//    physical_cspace(3,0) = -25;  // upper left
+//    physical_cspace(3,1) = 25;
+
+// Smallgrid
     physical_cspace.resize(4, Eigen::NoChange_t());
-    physical_cspace(0,0) = 0;  // lower left
-    physical_cspace(0,1) = 0;
-    physical_cspace(1,0) = 50;  // lower right
-    physical_cspace(1,1) = 0;
-    physical_cspace(2,0) = 50;  // upper right
-    physical_cspace(2,1) = 50;
-    physical_cspace(3,0) = 0;  // upper left
-    physical_cspace(3,1) = 50;
+    physical_cspace(0,0) = -10;
+    physical_cspace(0,1) = -10;
+    physical_cspace(1,0) = 10;
+    physical_cspace(1,1) = -10;
+    physical_cspace(2,0) = 10;
+    physical_cspace(2,1) = 10;
+    physical_cspace(3,0) = -10;
+    physical_cspace(3,1) = 10;
+
 
     Eigen::Vector3d start, goal;
-    start << 0.0, 0.0, -3*PI/4;  // destination
-    goal << 49.0, 49.0, -3*PI/4;  // robot start
+// Normal
+//    start << -25.0, -25.0, -3*PI/4;  // destination
+//    goal << 25.0, 25.0, -3*PI/4;  // robot start
+
+// Smallgrid
+    start << -10.0, -10.0, -3*PI/4;  // destination
+    goal << 10.0, 10.0, -3*PI/4;  // robot start
 
     CSpace_ptr cspace = make_shared<ConfigSpace>(start, goal, physical_cspace, plan_only_time);
 
@@ -36,17 +55,22 @@ int main(int argc, char* argv[])
     cspace->slice_time_ = 1.0/100;
 
     cspace->min_turn_radius_ = 1.0;
-    cspace->max_velocity_ = 20.0;
-    cspace->min_velocity_ = 20.0;
+    cspace->max_velocity_ = 30.0;
+    cspace->min_velocity_ = 30.0;
     cspace->goal_sample_prob_ = 0.01;
-    cspace->goal_thresh_ = 1.0;
+    cspace->goal_thresh_ = 0.1;
 
     cspace->change_thresh_ = 0.5;
     cspace->collision_thresh_ = 0.1;
     cspace->saturation_delta_ = 5.0;
     cspace->ball_constant_ = 100.0;
+    // Set max search ball radius in drrt.cpp::FindNewTarget()
 
-    ReadObstaclesFromFile(obstacle_file, cspace);
+    cspace->static_obstacles_ = static_obstacles;
+    if(cspace->static_obstacles_)
+        ReadStaticObstaclesFromFile(obstacle_file, cspace);
+    else
+        ReadObstaclesFromFile(obstacle_file, cspace);
 
     // Problem Parameters
     Eigen::VectorXi wrap_vec(1);
@@ -60,8 +84,8 @@ int main(int argc, char* argv[])
     cout << "Starting Algorithm" << endl;
     Robot_ptr robot_data = Rrtx(problem);
 
-    double algorithm_time = GetTimeNs(cspace->start_time_);
-    cout << "\nTotal Algorithm Time: " << algorithm_time/1000000000 << " s" << endl;
+    double algorithm_time = cspace->elapsed_time_;
+    cout << "\nTotal Algorithm Time: " << algorithm_time << " s" << endl;
 
     // Delete bullet pointers
     delete cspace->bt_collision_config_;

@@ -9,8 +9,8 @@ set( CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules ${CMAKE_MODULE_
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" )
 
 find_package( Eigen3        REQUIRED )
-#find_package( Pangolin      REQUIRED )
-#find_package( SceneGraph    REQUIRED )
+find_package( Pangolin      REQUIRED )
+find_package( SceneGraph    REQUIRED )
 find_package( Bullet        REQUIRED )
 
 set( _INCLUDE_DIRS
@@ -79,6 +79,9 @@ set( HDRS
                 # tripoly lib headers
                 include/DRRT/tripolyinterface.h
                 include/DRRT/triangulate.h
+
+                # visualizer
+                include/DRRT/visualizer.h
         )
 
 set( SRCS
@@ -89,11 +92,12 @@ set( SRCS
                 src/sampling.cpp
                 src/movement.cpp
                 src/rrt.cpp
+                src/treetest.cpp
+                src/smallgrid.cpp
 
                 # k-d tree
                 src/kdtree.cpp
                 src/ghost_point.cpp
-                src/kdnode.cpp
                 src/neighbor_iterator.cpp
 
                 # obstacles
@@ -117,6 +121,9 @@ set( SRCS
                 src/tri.c
                 src/monotone.c
                 src/misc.c
+
+                # visualizer
+                src/visualizer.cpp
         )
 
 #option(BUILD_EXAMPLES "Build Examples" ON)

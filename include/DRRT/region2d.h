@@ -11,6 +11,7 @@ public:
     Region2D() : region_(Eigen::MatrixX2d()) {}
 
     Eigen::MatrixX2d GetGlobalPose2D(Eigen::Array2d origin);
+    Region2D GetGlobalRegion(Eigen::Array2d origin) { return Region2D(GetGlobalPose2D(origin)); }
     Eigen::MatrixX2d GetRegion() { return region_; }
     void SetRegion(Eigen::MatrixX2d poly) { region_ = poly; }
 };

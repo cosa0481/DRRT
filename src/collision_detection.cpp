@@ -21,7 +21,7 @@ bool PointInPolygon(Eigen::VectorXd point, Region polygon)
     // MacMartic Crossings Test
     Eigen::MatrixXd shape = polygon.GetRegion();
     shape.resize(polygon.GetRegion().rows(), polygon.GetRegion().cols());
-    if(shape.rows() < 2) return false;
+    if(shape.rows() < 3) return false;
 
     int num_crossings = 0;
     Eigen::VectorXd start = shape.row(shape.rows() - 1);
@@ -66,14 +66,21 @@ bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd en
     // Get length of segment start - end
     double x = end(0) - start(0);
     double y = end(1) - start(1);
-    double length = sqrt((x*x) + (y*y));
+    double length = std::sqrt((x*x) + (y*y));
 
     // Create box around segment with width: 2*robot_radius
     // and height: length + 2*robot_radius
-    btCylinderShape* segment_shape = new btCylinderShape(
-                btVector3((btScalar) obs->cspace->robot_->radius + length/2,
-                          (btScalar) 0.1,
-                          (btScalar) obs->cspace->robot_->radius + length/2));
+//    btCylinderShape* segment_shape = new btCylinderShapeX(
+//                btVector3((btScalar) length/2,
+//                          (btScalar) obs->cspace->robot_->radius,
+//                          (btScalar) obs->cspace->robot_->radius));
+
+//    btBoxShape* segment_shape = new btBoxShape(
+//                btVector3((btScalar) length/2,
+//                          (btScalar) length/2/*obs->cspace->robot_->radius*/,
+//                          (btScalar) 0.1));
+
+    btCapsuleShape* segment_shape = new btCapsuleShape(obs->cspace->robot_->radius, length);
 
     // Set the collision shape of the segment collision object
     segment->setCollisionShape(segment_shape);
@@ -82,19 +89,16 @@ bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd en
     obs->cspace->bt_collision_world_->addCollisionObject(segment);
 
     // Set origin to be senter of the line segment
-    segment->getWorldTransform().setOrigin(
-                btVector3((btScalar) (start(0) + end(0))/2,
-                          (btScalar) (start(1) + end(1))/2,
-                          (btScalar) 0.0));
+    btVector3 pos = btVector3((start(0) + end(0))/2,
+                              (start(1) + end(1))/2,
+                              0.0);
 
     // Find the yaw rotation of the collision object
     double angle = std::atan2(end(1) - start(1), end(0) - start(0));
-    x = std::cos(angle);
-    y = std::sin(angle);  // was cosine (this may have been an error)
-    segment->getWorldTransform().setRotation(
-                btQuaternion((btScalar) 0,
-                             (btScalar) 0,
-                             (btScalar) std::atan2(y,x)));
+    btQuaternion quat = btQuaternion(angle,0,0);
+
+    // Set position of collision object in bullet world
+    segment->setWorldTransform(btTransform(quat, pos));
 
     // Check for collisions
     obs->cspace->bt_collision_world_->performDiscreteCollisionDetection();
@@ -114,6 +118,7 @@ bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd en
         obB = contact_manifold->getBody1();
         contact_manifold->refreshContactPoints(obA->getWorldTransform(),
                                                obB->getWorldTransform());
+
         num_contacts[i] = contact_manifold->getNumContacts();
     }
 
@@ -126,6 +131,7 @@ bool DetectCollision(Obstacle_ptr obs, Eigen::VectorXd start, Eigen::VectorXd en
             return true;
         }
     }
+
     return false;
 }
 
@@ -267,15 +273,12 @@ bool EdgeCheck(std::shared_ptr<ConfigSpace> cspace, Edge_ptr edge)
     ObstacleListNode_ptr obs_listnode;
     Obstacle_ptr obstacle;
     int length;
-    {
-        lockguard lock(cspace->mutex_);
-        obs_listnode = cspace->obstacles_->GetFront();
-        length = cspace->obstacles_->GetLength();
-        for(int i = 0; i < length; i++) {
-            obs_listnode->GetData(obstacle);
-            if(EdgeCheck(obstacle, edge)) return true;
-            obs_listnode = obs_listnode->GetChild();
-        }
+    obs_listnode = cspace->obstacles_->GetFront();
+    length = cspace->obstacles_->GetLength();
+    for(int i = 0; i < length; i++) {
+        obs_listnode->GetData(obstacle);
+        if(EdgeCheck(obstacle, edge)) return true;
+        obs_listnode = obs_listnode->GetChild();
     }
     return false;
 }

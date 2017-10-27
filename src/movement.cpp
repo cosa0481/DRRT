@@ -12,8 +12,8 @@ void Move(CSpace_ptr &cspace, double hyper_ball_rad)
         robot->pose = robot->next_pose;
 
         for(int i = 0; i < robot->num_local_move_points - 1; i++) {
-        robot->move_path.row(robot->num_move_points + i)
-                = robot->local_move_path.row(i);
+            robot->move_path.row(robot->num_move_points + i)
+                    = robot->local_move_path.row(i);
         }
         robot->num_move_points += robot->num_local_move_points;
 
@@ -41,6 +41,7 @@ void Move(CSpace_ptr &cspace, double hyper_ball_rad)
         cspace->move_goal_->SetIsGoal(true);
     }
 
+//    cout << "next_move_target:\n" << robot->next_move_target->GetPosition() << endl;
     Kdnode_ptr next_node = robot->next_move_target;
 
     // Calculate distance from robot to end of its current edge
@@ -95,6 +96,7 @@ void Move(CSpace_ptr &cspace, double hyper_ball_rad)
     }
 
     robot->next_move_target = robot->current_edge->GetEnd();
+//    cout << "robot->next_move_target:\n" << robot->next_move_target->GetPosition() << endl;
 
     // Last point in local path
     robot->num_local_move_points += 1;
@@ -109,6 +111,7 @@ void MovementThread(CSpace_ptr cspace)
         lockguard lock(cspace->robot_->mutex);
         last_pose = cspace->robot_->pose;
     }
+
     double elapsed_time;
     double hyper_ball_rad, current_dist, move_dist;
     bool started = false;
@@ -117,11 +120,8 @@ void MovementThread(CSpace_ptr cspace)
     {
         elapsed_time = cspace->elapsed_time_;
 
-        cout << "elapsed: "<< elapsed_time << endl;
-        cout << "plan time: " << cspace->plan_time_ << endl;
         if(elapsed_time > cspace->plan_time_ + cspace->slice_time_)
         {
-            cout << "Moving" << endl;
             if(!started) {
                 started = true;
             }
@@ -130,7 +130,10 @@ void MovementThread(CSpace_ptr cspace)
                                  cspace->ball_constant_*(pow( log(1 + cspace->kdtree_->size_)/cspace->kdtree_->size_,
                                                      1/NUM_DIM)));
 
+//            cout << "current move_goal->GetLmc(): " << cspace->move_goal_->GetLmc() << endl;
+//            cout << "current move_goal:\n" << cspace->move_goal_->GetPosition() << endl;
             Move(cspace, hyper_ball_rad);
+            cspace->robot_->AddPoseToVis(cspace->robot_->pose);
             current_dist = DistanceFunction(cspace->robot_->pose, cspace->kdtree_->root_->GetPosition());
             move_dist = DistanceFunction(cspace->robot_->pose, last_pose);
 
@@ -139,9 +142,9 @@ void MovementThread(CSpace_ptr cspace)
                 cspace->robot_->goal_reached = true;
                 ended = true;
                 break;
-            } else if(move_dist > 1.5) {
+            } else if(move_dist > 5.0) {
                 if(DEBUG)
-                    cout << "Moved more than 1.5m in " << cspace->slice_time_ << "s. Impossibru!" << endl;
+                    cout << "Moved more than 5.0m in " << cspace->slice_time_ << "s. Impossibru!" << endl;
                 exit(-1);
             }
 
@@ -169,6 +172,6 @@ void MovementThread(CSpace_ptr cspace)
             diff.col(0)(i) = diff.row(i).sum();
 
         double move_length = diff.col(0).sqrt().sum();
-        cout << "\nRobot travel distance: " << move_length << " m" << endl;
+        cout << "\nRobot travel distance: " << move_length << "?" << endl;
     }
 }

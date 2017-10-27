@@ -134,6 +134,7 @@ void Rrt(CSpace_ptr cspace)
             }*/
 
             new_node = RandomNodeOrFromStack(cspace);
+
             if(new_node->InTree()) continue;
             {
                 lockguard lock(cspace->kdtree_->mutex_);
@@ -179,19 +180,13 @@ void Rrt(CSpace_ptr cspace)
                                       );
             }
 
-            cspace->kdtree_->Print(cspace->kdtree_->root_);
-
             // Extend the graph
             Extend(cspace, new_node, closest_node, hyper_ball_rad);
 
-            cout << "Extend complete" << endl;
-
             // Make graph consistent
-            ReduceInconsistency(cspace, cspace->move_goal_, cspace->kdtree_->root_, hyper_ball_rad);
+            ReduceInconsistency(cspace, cspace->move_goal_, cspace->root_node_, hyper_ball_rad);
             if(cspace->move_goal_->GetLmc() != old_lmc)
                 old_lmc = cspace->move_goal_->GetLmc();
-
-            cout << "ReduceInconsistency complete" << endl;
         }
 
         {

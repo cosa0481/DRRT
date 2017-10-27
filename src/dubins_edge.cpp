@@ -27,13 +27,14 @@ Eigen::VectorXd DubinsEdge::PoseAtDistAlongEdge(double dist_along_edge)
         return GetEnd()->GetPosition();
 
     // Find the piece of the trajectory that contains the point
-    int i = 1;
+    int i = 0;
     double dist = INF;
-    while(i <= GetTrajectory().rows()) {
-        dist = DubinsDistance(GetTrajectory().row(i-1), GetTrajectory().row(i));
+    while(i < GetTrajectory().rows() - 1) {
+        i += 1;
+        dist = DubinsDistance(GetTrajectory().row(i-1).head(3), GetTrajectory().row(i).head(3));
         if(dist_remaining <= dist) break;
         dist_remaining -= dist;
-        i += 1;
+
     }
 
     // For subtraction-based precision errors

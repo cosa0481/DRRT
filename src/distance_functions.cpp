@@ -14,10 +14,11 @@ double DubinsDistance(Eigen::Vector3d a, Eigen::Vector3d b)
 {
     Eigen::Array2d temp = a.head(2) - b.head(2);
     temp = temp*temp;
-    return sqrt(temp.sum()
+    double dist = sqrt(temp.sum()
                 + pow(std::min(std::abs(a(2) - b(2)),
-                               std::min(a(2), b(2) + 2.0*3.1415926536 - std::max(a(2), b(2)))),
+                               std::min(a(2), b(2)) + 2.0*3.1415926536 - std::max(a(2), b(2))),
                       2));
+    return dist;
 }
 
 double RightTurnDist(Eigen::Vector2d a, Eigen::Vector2d b,

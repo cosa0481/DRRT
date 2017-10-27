@@ -54,6 +54,9 @@ typedef struct RobotData {
     vector<Eigen::VectorXd> theta_star_path;
     vector<double> thetas;
 
+    // Visualizer
+    vector<Eigen::VectorXd> poses;
+
     // Constructor
     RobotData(string nombre, Eigen::VectorXd start_pose, Kdnode_ptr movetarget)
         : name(nombre), goal_reached(false), pose(start_pose), next_pose(start_pose),
@@ -65,8 +68,14 @@ typedef struct RobotData {
         next_pose.resize(NUM_DIM);
         move_path.resize(MAXPATHNODES, NUM_DIM);
         local_move_path.resize(MAXPATHNODES, NUM_DIM);
+        AddPoseToVis(start_pose);
     }
 
+    void AddPoseToVis(Eigen::VectorXd new_pose)
+    {
+        lockguard lock(mutex);
+        poses.push_back(new_pose);
+    }
 
 } RobotData;
 
@@ -81,6 +90,7 @@ public:
     ObstacleList_ptr obstacles_;  // List of obstacles in cspace
     double obstacle_thresh_;  // Amount by which an obstacle must move to detect a change
     bool obstacle_update_;  // True if obstacles have been updated and graph needs to be checked
+    bool static_obstacles_;
 
     // System time for start of the program
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
@@ -130,6 +140,10 @@ public:
     // K-D Tree
     KdTree_ptr kdtree_;
 
+    // Visualization
+    KdnodeList_ptr new_nodes_;
+    EdgeList_ptr collisions_;
+
     ConfigSpace(Eigen::VectorXd start_pos, Eigen::VectorXd end_pos,
                 Eigen::MatrixXd drive_region, double plan_time)
         : num_dimensions_(NUM_DIM), plan_time_(plan_time), start_(start_pos), end_(end_pos)
@@ -159,6 +173,9 @@ public:
         obstacle_update_ = true;
         obstacles_ = std::make_shared<List<ObstacleListNode>>();
 
+        // Add obstacle for bounds of space
+        // Make new obstacle from initial_region_
+
         // Initialize sample stack
         sample_stack_ = std::make_shared<KdnodeList>();
 
@@ -167,6 +184,24 @@ public:
 
         // Initialize obstacle successors list
         obstacle_successors_ = std::make_shared<KdnodeList>();
+
+        // Initialize node list for visualizer
+        new_nodes_ = std::make_shared<KdnodeList>();
+        collisions_ = std::make_shared<EdgeList>();
+    }
+
+    void AddNodeToVis(Kdnode_ptr new_node)
+    {
+        lockguard lock(mutex_);
+        KdnodeListNode_ptr new_node_listnode = std::make_shared<KdnodeListNode>(new_node);
+        new_nodes_->Push(new_node_listnode);
+    }
+
+    void AddEdgeToVis(Edge_ptr new_edge)
+    {
+        lockguard lock(mutex_);
+        EdgeListNode_ptr new_edge_listnode = std::make_shared<EdgeListNode>(new_edge);
+        collisions_->Push(new_edge_listnode);
     }
 };
 
