@@ -48,6 +48,7 @@ Robot_ptr Rrtx(Problem p)
     // Initial Theta* run
 
 
+
     // End initialization
     cout << "===========================================" << endl;
     cspace->start_time_ = chrono::high_resolution_clock::now();
@@ -252,6 +253,7 @@ void ReadObstaclesFromFile(std::string obs_file, CSpace_ptr cspace)
     std::cout << "Read in " << num_polygons << " obstacles" << std::endl;
 }
 
+// For reading static polygons from a file
 void ReadStaticObstaclesFromFile(std::string obs_file, CSpace_ptr cspace)
 {
     ifstream read_stream;
