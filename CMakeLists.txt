@@ -92,8 +92,6 @@ set( SRCS
                 src/sampling.cpp
                 src/movement.cpp
                 src/rrt.cpp
-                src/treetest.cpp
-                src/smallgrid.cpp
 
                 # k-d tree
                 src/kdtree.cpp
@@ -168,5 +166,5 @@ target_link_libraries( ${LIBRARY_NAME} ${_LIBRARIES} )
 #    LINK_LIBS ${_LIBRARIES}
 #)
 
-add_executable( dubins src/main.cpp src/rrtx.cpp src/rrtx.h ${HDRS} )
-target_link_libraries( dubins ${LIBRARY_NAME} )
+add_executable( ltl src/main.cpp src/ltl.cpp src/ltl.h ${HDRS} )
+target_link_libraries( ltl ${LIBRARY_NAME} )

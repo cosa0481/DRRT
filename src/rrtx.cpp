@@ -1,6 +1,6 @@
 #include "rrtx.h"
 //#include "treetest.h"
-#include "smallgrid.h"
+//#include "smallgrid.h"
 #include "../src/list.cpp"
 
 using namespace std;

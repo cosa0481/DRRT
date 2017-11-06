@@ -1,5 +1,6 @@
 #include <DRRT/drrt.h>
-#include "rrtx.h"
+//#include "rrtx.h"
+#include "ltl.h"
 #include "../src/list.cpp"
 
 using namespace std;
@@ -10,7 +11,6 @@ int main(int argc, char* argv[])
     cout << "===========================================" << endl;
 
     string obstacle_file = argv[1];
-    bool static_obstacles = (strcmp(argv[2], "true") == 0 ? true : false);
 
     // Configuration Space Parameters
     double plan_only_time = 25;  // plan only for this long
@@ -66,11 +66,8 @@ int main(int argc, char* argv[])
     cspace->ball_constant_ = 100.0;
     // Set max search ball radius in drrt.cpp::FindNewTarget()
 
-    cspace->static_obstacles_ = static_obstacles;
-    if(cspace->static_obstacles_)
-        ReadStaticObstaclesFromFile(obstacle_file, cspace);
-    else
-        ReadObstaclesFromFile(obstacle_file, cspace);
+    cspace->static_obstacles_ = true;
+    ReadStaticObstaclesFromFile(obstacle_file, cspace);
 
     // Problem Parameters
     Eigen::VectorXi wrap_vec(1);
@@ -82,7 +79,7 @@ int main(int argc, char* argv[])
     Problem problem = Problem(cspace, drive_robot, wrap_vec, wrap_points_vec, num_threads);
 
     cout << "Starting Algorithm" << endl;
-    Robot_ptr robot_data = Rrtx(problem);
+    Robot_ptr robot_data = Ltl(problem);
 
     double algorithm_time = cspace->elapsed_time_;
     cout << "===========================================" << endl;
