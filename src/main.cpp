@@ -7,10 +7,13 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    cout << "Dubin's Example" << endl;
+    cout << "Dubin's Example using LTL" << endl;
     cout << "===========================================" << endl;
 
     string obstacle_file = argv[1];
+
+    // Define the LTL formula
+
 
     // Configuration Space Parameters
     double plan_only_time = 25;  // plan only for this long

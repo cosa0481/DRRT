@@ -53,7 +53,7 @@ void Visualizer(CSpace_ptr cspace)
     vector<Eigen::MatrixXd> obs_paths;
     Region obs_region;
     Eigen::VectorXd obs_origin;
-    EdgeList colls;
+    EdgeList colls = EdgeList();
     EdgeListNode_ptr transfer_edge = make_shared<EdgeListNode>();
     EdgeListNode_ptr edge_item = make_shared<EdgeListNode>();
 
@@ -124,7 +124,6 @@ void Visualizer(CSpace_ptr cspace)
                 cspace->collisions_->Pop(transfer_edge);
                 colls.Push(transfer_edge);
             }
-            colls.Pop(edge_item);
             for(int i = 0; i < cspace->new_nodes_->GetLength(); i++) {
                 cspace->new_nodes_->Pop(transfer_item);
                 nodes.Push(transfer_item);
@@ -185,8 +184,12 @@ void Visualizer(CSpace_ptr cspace)
         }
 
         // Collisions
-        if(DEBUGBULLET) {
-            while(!edge_item->IsEmpty()) {
+        if(DEBUGBULLET || LTL) {
+            cout << "doin collisions" << endl;
+            while(colls.GetLength() > 0) {
+                cout << "length: " << colls.GetLength() << endl;
+                colls.Pop(edge_item);
+                cout << "popped" << endl;
                 SceneGraph::GLLineStrip *col_edge = new SceneGraph::GLLineStrip();
                 Edge_ptr dedge = Edge::NewEdge();
                 edge_item->GetData(dedge);
@@ -200,8 +203,6 @@ void Visualizer(CSpace_ptr cspace)
                 // Show in red
                 col_edge->SetColor(SceneGraph::GLColor(Eigen::Vector4d(1,0,0,1)));
                 graph.AddChild(col_edge);
-
-                colls.Pop(edge_item);
             }
         }
 

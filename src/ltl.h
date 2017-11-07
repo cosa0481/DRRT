@@ -2,6 +2,7 @@
 #define LTL_H
 
 #include <DRRT/drrt.h>
+#include <DRRT/theta_star.h>
 #include <DRRT/visualizer.h>
 
 Robot_ptr Ltl(Problem p);

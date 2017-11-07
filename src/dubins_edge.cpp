@@ -9,6 +9,13 @@ Edge_ptr Edge::NewEdge(Kdnode_ptr start, Kdnode_ptr end)
     return new_edge;
 }
 
+Edge_ptr Edge::NewEdge(Eigen::VectorXd start, Eigen::VectorXd end)
+{
+    Edge_ptr new_edge = std::make_shared<DubinsEdge>(make_shared<Kdnode>(start), make_shared<Kdnode>(end));
+    new_edge->SetDist(DistanceFunction(start, end));
+    return new_edge;
+}
+
 Edge_ptr Edge::NewEdge()
 {
     Edge_ptr new_edge = std::make_shared<DubinsEdge>(); // new_edge->dist_ == INF

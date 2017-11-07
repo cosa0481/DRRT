@@ -3,6 +3,7 @@
 template <class T>
 List<T>::List() {
     std::shared_ptr<T> end = std::make_shared<T>();
+    end->SetEmpty(true);
     end->SetChild(end);
     end->SetParent(end);
     front_ = end;
@@ -27,6 +28,18 @@ template <class T>
 int List<T>::GetLength()
 {
     return length_;
+}
+
+template <class T>
+bool List<T>::Contains(std::shared_ptr<T> &node)
+{
+    std::shared_ptr<T> current = front_;
+    while(!current->IsEmpty()) {
+        if(node == current)
+            return true;
+        current = current->GetChild();
+    }
+    return false;
 }
 
 template <class T>

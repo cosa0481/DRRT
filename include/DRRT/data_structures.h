@@ -146,7 +146,8 @@ public:
 
     ConfigSpace(Eigen::VectorXd start_pos, Eigen::VectorXd end_pos,
                 Eigen::MatrixXd drive_region, double plan_time)
-        : num_dimensions_(NUM_DIM), plan_time_(plan_time), start_(start_pos), end_(end_pos)
+        : num_dimensions_(NUM_DIM), elapsed_time_(0.0), plan_time_(plan_time),
+          start_(start_pos), end_(end_pos)
     {
         start_.resize(NUM_DIM);
         end_.resize(NUM_DIM);

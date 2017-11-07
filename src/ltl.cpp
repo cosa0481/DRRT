@@ -3,7 +3,106 @@
 
 Robot_ptr Ltl(Problem p)
 {
+    CSpace_ptr cspace = p.cspace;
 
+    // K-D Tree
+    cspace->kdtree_ = make_shared<KdTree>(NUM_DIM, p.wraps, p.wrap_points);
+
+    Kdnode_ptr root = make_shared<Kdnode>(cspace->start_);
+    root->SetLmc(0.0);
+    root->SetCost(0.0);
+    root->SetRrtParentEdge(Edge::NewEdge(root,root));
+    root->SetRrtParentExist(false);
+    cspace->kdtree_->Insert(root);
+
+    Kdnode_ptr goal = make_shared<Kdnode>(cspace->end_);
+    goal->SetLmc(INF);
+    goal->SetCost(INF);
+
+    cspace->root_node_ = root;
+    cspace->goal_node_ = goal;
+    cspace->move_goal_ = goal;
+    cspace->move_goal_->SetIsGoal(true);
+
+    cout << "Created K-D Tree" << endl;
+
+    // Robot
+    cspace->robot_ = make_shared<RobotData>("Dubinss LTL Car",
+                                            cspace->goal_node_->GetPosition(),
+                                            cspace->root_node_);
+    cspace->robot_->robot_sensor_range = 5.0;
+    cspace->robot_->radius = 0.5;
+
+    cout << "Created Robot" << endl;
+
+    if(NodeCheck(cspace, root)) {
+        cout << "Start node does not pass NodeCheck()" << endl;
+        exit(-2);
+    }
+
+    // Visualizer
+    thread visualizer_thread = thread(Visualizer, cspace);
+    thread obstacle_thread = thread(Obstacle::UpdateObstacles, cspace);
+
+    cout << "Started visualizer and obstacle threads" << endl;
+
+    // Triangulate environment
+    MatrixX6d triangles;
+    {
+        lockguard lock(cspace->mutex_);
+        triangles = TriangulatePolygon(cspace->drivable_region_);
+    }
+
+    cout << "Triangulated environment" << endl;
+
+    // Display triangulation
+    Edge_ptr tri1, tri2, tri3;
+    for(int i = 0; i < triangles.rows(); i++) {
+        tri1 = Edge::NewEdge(Eigen::Vector3d(triangles(i, 0), triangles(i, 1), 0),
+                             Eigen::Vector3d(triangles(i, 2), triangles(i, 3), 0));
+        tri2 = Edge::NewEdge(Eigen::Vector3d(triangles(i, 2), triangles(i, 3), 0),
+                             Eigen::Vector3d(triangles(i, 4), triangles(i, 5), 0));
+        tri2 = Edge::NewEdge(Eigen::Vector3d(triangles(i, 4), triangles(i, 5), 0),
+                             Eigen::Vector3d(triangles(i, 0), triangles(i, 1), 0));
+        cspace->AddEdgeToVis(tri1);
+        cspace->AddEdgeToVis(tri2);
+        cspace->AddEdgeToVis(tri3);
+    }
+
+    cout << "Added triangulation to visualizer" << endl;
+    this_thread::sleep_for(chrono::milliseconds(10000));
+    visualizer_thread.join();
+    exit(-3);
+
+    // Run Theta*
+    {
+        lockguard lock(cspace->robot_->mutex);
+        cspace->robot_->theta_star_path = ThetaStar(cspace);
+        cspace->robot_->thetas = PathToThetas(cspace->robot_->theta_star_path);
+    }
+
+    // Find triangle trajectory
+    Eigen::Matrix2Xd triangle_traj; // ccw
+
+
+    // Define sampling region (ccw)
+    cspace->drivable_region_ = Region(triangle_traj);
+
+    // Run RRTx in this region
+    cspace->start_time_ = chrono::high_resolution_clock::now();
+
+    vector<thread> main_thread_pool(p.threads);
+    for(auto & thr : main_thread_pool)
+        thr = thread(Rrt, cspace);
+    thread movement_thread = thread(MovementThread, cspace);
+
+    movement_thread.join();
+    for(auto & thr : main_thread_pool)
+        thr.join();
+    obstacle_thread.join();
+    visualizer_thread.join();
+
+    return cspace->robot_;
 }
 
 // For reading static polygons from a file

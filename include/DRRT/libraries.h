@@ -38,5 +38,6 @@ typedef Eigen::Matrix<double, Eigen::Dynamic, 6> MatrixX6d;
 
 #define DEBUG false          // Debugging print statements
 #define DEBUGBULLET false
+#define LTL true
 
 #endif // LIBRARIES_H

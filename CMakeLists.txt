@@ -76,6 +76,9 @@ set( HDRS
                 include/DRRT/heap.h
                 include/DRRT/heapnode.h
 
+                # theta*
+                include/DRRT/theta_star.h
+
                 # tripoly lib headers
                 include/DRRT/tripolyinterface.h
                 include/DRRT/triangulate.h
@@ -114,6 +117,9 @@ set( SRCS
                 # heap
                 src/heap.cpp
 
+                # theta*
+                src/theta_star.cpp
+
                 # tripoly lib functions
                 src/construct.c
                 src/tri.c
@@ -124,47 +130,13 @@ set( SRCS
                 src/visualizer.cpp
         )
 
-#option(BUILD_EXAMPLES "Build Examples" ON)
-#if(BUILD_EXAMPLES)
-#    add_subdirectory(examples)
-#endif()
-
 include_directories( ${DRRT_INCLUDE_DIRS} )
 
 set( LIBRARY_NAME ${PROJECT_NAME} )
 string( TOLOWER ${LIBRARY_NAME} LIBRARY_NAME )
 
-# VV Make this shared VV ( ... ${LIBRARY_NAME} SHARED ${SRCS} ... )???
 add_library( ${LIBRARY_NAME} SHARED ${SRCS} ${HDRS} )
 target_link_libraries( ${LIBRARY_NAME} ${_LIBRARIES} )
-
-# VV Didn't do anything
-#install(TARGETS ${LIBRARY_NAME} DESTINATION lib)
-#install(FILES include/DRRT/drrt.h DESTINATION include)
-
-# add_executable( smalltest src/smalltest.cpp ${HDRS} )
-# target_link_libraries( smalltest ${LIBRARY_NAME} )
-
-# List class test
-# add_executable( list_test src/list.cpp ${HDRS} )
-# target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
-
-# Heap class test
-# add_executable( heap_test src/heap.cpp ${HDRS} )
-# target_link_libraries( ${LIBRARY_NAME} ${DRRT_LIBRARIES} )
-
-# VV Needed for release???
-#install_package(
-#    PKG_NAME ${PROJECT_NAME}
-#    LIB_NAME ${LIBRARY_NAME}
-#    VERSION ${VERSION}
-#        DESCRIPTION "RRTx library"
-##        INSTALL_INCLUDE_DIR true
-##        INSTALL_GENERATED_HEADERS ${GENERATED_HEADERS}
-#    DESTINATION ${CMAKE_INSTALL_PREFIX}
-#    INCLUDE_DIRS ${_INCLUDE_DIRS}
-#    LINK_LIBS ${_LIBRARIES}
-#)
 
 add_executable( ltl src/main.cpp src/ltl.cpp src/ltl.h ${HDRS} )
 target_link_libraries( ltl ${LIBRARY_NAME} )

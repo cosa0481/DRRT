@@ -22,6 +22,7 @@ public:
     std::shared_ptr<T> GetFront() { return front_; }
     std::shared_ptr<T> GetBack() { return back_; }
     std::shared_ptr<T> GetBound() { return bound_; }
+    bool Contains(std::shared_ptr<T> &node);
     void Push(std::shared_ptr<T> &new_node);
     void Top(std::shared_ptr<T> &top_node);
     void Pop(std::shared_ptr<T> &top_node);
