@@ -1,5 +1,4 @@
 #include <DRRT/drrt.h>
-//#include "rrtx.h"
 #include "ltl.h"
 #include "../src/list.cpp"
 
@@ -11,6 +10,7 @@ int main(int argc, char* argv[])
     cout << "===========================================" << endl;
 
     string obstacle_file = argv[1];
+    string triangle_file = argv[2];
 
     // Define the LTL formula
 
@@ -39,7 +39,6 @@ int main(int argc, char* argv[])
     physical_cspace(2,1) = 10;
     physical_cspace(3,0) = -10;
     physical_cspace(3,1) = 10;
-
 
     Eigen::Vector3d start, goal;
 // Normal
@@ -82,7 +81,7 @@ int main(int argc, char* argv[])
     Problem problem = Problem(cspace, drive_robot, wrap_vec, wrap_points_vec, num_threads);
 
     cout << "Starting Algorithm" << endl;
-    Robot_ptr robot_data = Ltl(problem);
+    Robot_ptr robot_data = Ltl(problem, triangle_file);
 
     double algorithm_time = cspace->elapsed_time_;
     cout << "===========================================" << endl;

@@ -58,6 +58,8 @@ bool UpdateVertex(CSpace_ptr cspace, Kdnode_ptr &node, Kdnode_ptr &neighbor, Kdn
             if(!LineCheck(edge->GetStart(), edge->GetEnd(), cspace)
                     && neighbor->GetCost() < min_neighbor->GetCost()) {
                 min_neighbor = neighbor;
+                cout << "line of sight between:\n" << edge->GetStart()->GetPosition()
+                     << "\nand\n" << edge->GetEnd()->GetPosition() << endl;
                 min_neighbor->SetRrtParentEdge(edge);
                 min_neighbor->SetRrtParentExist(true);
                 return true;
@@ -170,23 +172,33 @@ vector<Eigen::VectorXd> ThetaStar(CSpace_ptr cspace)
     // Initialize closed set
     closed_set = make_shared<KdnodeList>();
 
-    Kdnode_ptr node, end_node, min_neighbor;
+    Kdnode_ptr node = make_shared<Kdnode>();
+    Kdnode_ptr end_node = make_shared<Kdnode>();
+    Kdnode_ptr min_neighbor = make_shared<Kdnode>();
+    HeapNode_ptr node_heapnode = make_shared<HeapNode>();
+    KdnodeListNode_ptr node_listnode = make_shared<KdnodeListNode>();
     end_node = make_shared<Kdnode>(Eigen::Vector3d(-1,-1,-1));
     end_node->SetRrtParentEdge(Edge::NewEdge(end_node, end_node));
     end_node->SetCost(INF);
 
     while(open_set->GetIndexOfLast() > 0)
     {
+        open_set->Pop(node_heapnode);
+        node_heapnode->GetData(node);
+
         if(node == start)
+            cout << "Found path\n" << endl;
             return GetPath(node);
 
-        KdnodeListNode_ptr node_listnode = make_shared<KdnodeListNode>(node);
+        node_listnode = make_shared<KdnodeListNode>(node);
         closed_set->Push(node_listnode);
 
         // Find eight neighbors around node
         node_list = kdtree->FindWithinRange(2, node->GetPosition());  // range = 2
         min_neighbor = make_shared<Kdnode>();
         min_neighbor->SetCost(INF);
+
+//        cout << "found " << node_list->GetLength() << " neighbors" << endl;
 
         // Iterate through the eight neighbors
         node_item = node_list->GetFront();

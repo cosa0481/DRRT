@@ -1,7 +1,7 @@
 #include "ltl.h"
 #include "../src/list.cpp"
 
-Robot_ptr Ltl(Problem p)
+Robot_ptr Ltl(Problem p, string triangle_file)
 {
     CSpace_ptr cspace = p.cspace;
 
@@ -47,11 +47,7 @@ Robot_ptr Ltl(Problem p)
     cout << "Started visualizer and obstacle threads" << endl;
 
     // Triangulate environment
-    MatrixX6d triangles;
-    {
-        lockguard lock(cspace->mutex_);
-        triangles = TriangulatePolygon(cspace->drivable_region_);
-    }
+    MatrixX6d triangles = ReadTriangulation(triangle_file);
 
     cout << "Triangulated environment" << endl;
 
@@ -62,7 +58,7 @@ Robot_ptr Ltl(Problem p)
                              Eigen::Vector3d(triangles(i, 2), triangles(i, 3), 0));
         tri2 = Edge::NewEdge(Eigen::Vector3d(triangles(i, 2), triangles(i, 3), 0),
                              Eigen::Vector3d(triangles(i, 4), triangles(i, 5), 0));
-        tri2 = Edge::NewEdge(Eigen::Vector3d(triangles(i, 4), triangles(i, 5), 0),
+        tri3 = Edge::NewEdge(Eigen::Vector3d(triangles(i, 4), triangles(i, 5), 0),
                              Eigen::Vector3d(triangles(i, 0), triangles(i, 1), 0));
         cspace->AddEdgeToVis(tri1);
         cspace->AddEdgeToVis(tri2);
@@ -70,9 +66,6 @@ Robot_ptr Ltl(Problem p)
     }
 
     cout << "Added triangulation to visualizer" << endl;
-    this_thread::sleep_for(chrono::milliseconds(10000));
-    visualizer_thread.join();
-    exit(-3);
 
     // Run Theta*
     {
@@ -80,6 +73,14 @@ Robot_ptr Ltl(Problem p)
         cspace->robot_->theta_star_path = ThetaStar(cspace);
         cspace->robot_->thetas = PathToThetas(cspace->robot_->theta_star_path);
     }
+
+    cout << "Theta* path saved to Robot" << endl;
+    for(int i = 0; i < cspace->robot_->theta_star_path.size(); i++) {
+        cout << cspace->robot_->theta_star_path[i] << endl;
+    }
+    this_thread::sleep_for(chrono::milliseconds(10000));
+    visualizer_thread.join();
+    exit(-3);
 
     // Find triangle trajectory
     Eigen::Matrix2Xd triangle_traj; // ccw
@@ -105,8 +106,58 @@ Robot_ptr Ltl(Problem p)
     return cspace->robot_;
 }
 
+// For reading environment triangulation from a file
+MatrixX6d ReadTriangulation(string tri_file)
+{
+    ifstream read_stream;
+    string line, substring;
+    stringstream line_stream;
+    stringstream num_stream;
+
+    MatrixX6d triangles;
+
+    read_stream.open(tri_file);
+    if(read_stream.is_open())
+    {
+        cout << "Triangulation File: " << tri_file << endl;
+
+        int row = 0;
+        while(true)
+        {
+            line = "";
+            substring = "";
+
+            cout << "line: " << row << endl;
+            getline(read_stream, line, '\r');  // Excel -> .csv uses carriage returns (\r)
+            line_stream = stringstream(line);
+
+            cout << line << endl;
+
+            triangles.resize(row + 1, Eigen::NoChange_t());
+            for(int i = 0; i < 5; i++) {
+                getline(line_stream, substring, ',');
+                stringstream num_stream;
+                num_stream << substring.c_str();
+                cout << num_stream.str() << endl;
+                triangles(row, i) = stod(num_stream.str());
+            }
+            getline(line_stream, substring);
+            triangles(row, 5) = stod(substring);
+
+            if(read_stream.fail())
+                break;
+
+            row++;
+        }
+
+    } else cout << "Error opening triangulation file: " << tri_file << endl;
+    read_stream.close();
+    cout << "Read in environment triangulation" << endl;
+    return triangles;
+}
+
 // For reading static polygons from a file
-void ReadStaticObstaclesFromFile(std::string obs_file, CSpace_ptr cspace)
+void ReadStaticObstaclesFromFile(string obs_file, CSpace_ptr cspace)
 {
     ifstream read_stream;
     string line, substring;

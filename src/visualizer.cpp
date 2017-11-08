@@ -54,7 +54,6 @@ void Visualizer(CSpace_ptr cspace)
     Region obs_region;
     Eigen::VectorXd obs_origin;
     EdgeList colls = EdgeList();
-    EdgeListNode_ptr transfer_edge = make_shared<EdgeListNode>();
     EdgeListNode_ptr edge_item = make_shared<EdgeListNode>();
 
     //this_thread::sleep_for(chrono::milliseconds(1000));
@@ -121,6 +120,7 @@ void Visualizer(CSpace_ptr cspace)
             lockguard lock(cspace->mutex_);
             now = cspace->elapsed_time_;
             for(int i = 0; i < cspace->collisions_->GetLength(); i++) {
+                EdgeListNode_ptr transfer_edge = make_shared<EdgeListNode>();
                 cspace->collisions_->Pop(transfer_edge);
                 colls.Push(transfer_edge);
             }
@@ -185,11 +185,8 @@ void Visualizer(CSpace_ptr cspace)
 
         // Collisions
         if(DEBUGBULLET || LTL) {
-            cout << "doin collisions" << endl;
             while(colls.GetLength() > 0) {
-                cout << "length: " << colls.GetLength() << endl;
                 colls.Pop(edge_item);
-                cout << "popped" << endl;
                 SceneGraph::GLLineStrip *col_edge = new SceneGraph::GLLineStrip();
                 Edge_ptr dedge = Edge::NewEdge();
                 edge_item->GetData(dedge);
